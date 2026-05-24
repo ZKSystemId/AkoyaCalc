@@ -1030,7 +1030,7 @@ async function refresh() {
     // Workers
     const wbody = document.getElementById("workers-body");
     const instances = (m.instances || []).filter(i => i.is_connected);
-    document.getElementById("workers-count").textContent = `${instances.length} active`;
+    document.getElementById("workers-count").innerHTML = `${instances.length} <span data-i18n="active">${t("active")}</span>`;
     
     if (instances.length === 0) {
       wbody.innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600">No active workers</td></tr>`;
@@ -1043,7 +1043,7 @@ async function refresh() {
           <td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">${fmtHash(w.hashrate || 0)}</td>
           <td class="px-5 py-2.5 text-xs text-slate-400 font-mono-num text-right">${w.shares1_h || 0}</td>
           <td class="px-5 py-2.5 text-xs ${staleColor} font-mono-num text-right">${stale.toFixed(2)}%</td>
-          <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${fmtAge(w.last_seen_at)}</td>
+          <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${w.last_seen_at ? fmtAge(w.last_seen_at) : "—"}</td>
         </tr>`;
       }).join("");
     }
