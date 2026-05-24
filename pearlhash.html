@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calc Your Pool — Pearlhash</title>
+<meta name="description" content="Pearlhash Pool epoch-based P/L tracker. Per-hour epoch credit tracking + auto payments.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🦪%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+body { font-family: 'Inter', sans-serif; }
+.font-mono-num { font-family: 'JetBrains Mono', monospace; }
+.card-glow {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 4px 24px rgba(0,0,0,0.4);
+  border: 1px solid #1a2235;
+}
+.pulse-dot { animation: pulse 2s infinite; }
+@keyframes pulse {
+  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(168,85,247,0.7); }
+  50% { opacity:.6; box-shadow: 0 0 0 6px rgba(168,85,247,0); }
+}
+.pool-btn { color: #cbd5e1; }
+.pool-btn.active { background: #4c1d95; color: #c4b5fd; font-weight: 600; }
+.lang-btn { color: #cbd5e1; }
+.lang-btn.active { background: #4c1d95; color: #c4b5fd; font-weight: 600; }
+
+input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monospace; }
+.profit { color: #22c55e !important; }
+.loss { color: #f87171 !important; }
+.neutral { color: #94a3b8 !important; }
+
+.hour-bar { display:flex; align-items:flex-end; gap:2px; height:80px; padding:8px 0; }
+.hour-cell { flex:1; min-width:6px; border-radius:2px; transition:opacity .2s; cursor:pointer; }
+.hour-cell:hover { opacity:.7; }
+.hour-cell.profit-cell { background:#a855f7; }
+.hour-cell.loss-cell { background:#f87171; }
+.hour-cell.future-cell { background:#475569; }
+
+/* Pearlhash theme — purple instead of cyan */
+.theme-accent { color: #c4b5fd; }
+.theme-accent-bright { color: #a855f7; }
+.theme-bg-accent { background: linear-gradient(to bottom right, #1a0d2e, #0a0e1a); }
+
+/* Pool switching overlay */
+#switch-overlay {
+  position: fixed; inset: 0; background: rgba(8, 11, 20, 0.98);
+  backdrop-filter: blur(8px); z-index: 99999;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 24px;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+#switch-overlay.show { opacity: 1; pointer-events: all; }
+.switch-spinner {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 3px solid #1f2937; border-top-color: #a855f7;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.switch-text {
+  font-family: 'JetBrains Mono', monospace; color: #94a3b8;
+  font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase;
+}
+.switch-text-pool { color: #c4b5fd; font-weight: 600; }
+.switch-dots::after {
+  content: ''; display: inline-block; width: 1em; text-align: left;
+  animation: dots 1.4s steps(4, end) infinite;
+}
+@keyframes dots {
+  0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; }
+  75% { content: '...'; } 100% { content: ''; }
+}
+</style>
+</head>
+<body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
+
+<!-- Pool Switching Overlay -->
+<div id="switch-overlay">
+  <div class="switch-spinner"></div>
+  <div class="switch-text">
+    <span data-i18n="switching">Switching to</span>
+    <span class="switch-text-pool" id="switch-target">Akoya</span>
+    <span class="switch-dots"></span>
+  </div>
+</div>
+
+<div class="max-w-6xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
+
+<header class="mb-8 flex items-start justify-between gap-3">
+  <div class="flex items-center gap-3 min-w-0 flex-1">
+    <span class="w-2.5 h-2.5 rounded-full bg-purple-400 pulse-dot flex-shrink-0"></span>
+    <div class="min-w-0">
+      <h1 class="text-base lg:text-2xl font-semibold text-slate-100 truncate" data-i18n="app_title">🦪 Calc Your Pool — Pearlhash</h1>
+      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate" data-i18n="app_subtitle">Epoch · Hourly Credits · PoUW</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-2 flex-shrink-0">
+    <div class="relative">
+      <button id="pool-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-purple-700/40 active:bg-purple-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+        <span class="text-purple-400">🦪</span>
+        <span id="pool-current">Pearlhash</span>
+        <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="pool-menu" class="hidden absolute right-0 top-full mt-1 w-44 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
+        <button data-pool="akoya" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition select-none">⛏ Akoya</button>
+        <button data-pool="pearlhash" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition border-t border-[#1f2937] select-none">🦪 Pearlhash</button>
+        <a href="index.html?pick=1" class="block w-full px-3 py-2.5 text-[12px] text-left text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition border-t border-[#1f2937] select-none">↺ Choose pool…</a>
+      </div>
+    </div>
+    <div class="relative">
+      <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-purple-700/40 active:bg-purple-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+        <span id="lang-current">🇬🇧 EN</span>
+        <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="lang-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
+        <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition select-none">🇬🇧 English</button>
+        <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
+        <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Setup Card -->
+<div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 mb-6 card-glow">
+  <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="your_setup">Your Setup</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
+    <div class="lg:col-span-2">
+      <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="wallet_label">Wallet Address</label>
+      <input id="wallet" type="text" placeholder="prl1..." class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+    </div>
+    <div>
+      <label class="text-[10px] text-slate-600 uppercase tracking-wider"><span data-i18n="cost">Cost</span> ($/hr)</label>
+      <input id="cost" type="number" step="0.01" value="11" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+    </div>
+    <div>
+      <label class="text-[10px] text-slate-600 uppercase tracking-wider"><span data-i18n="prl_price">PRL Price</span> ($)</label>
+      <input id="prl-price" type="number" step="0.01" value="0.40" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+    </div>
+  </div>
+  <div class="flex items-center justify-between mt-4">
+    <span id="status" class="text-[11px] text-slate-500">—</span>
+    <button id="refresh-btn" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-700/40 text-purple-300 text-xs px-4 py-1.5 rounded transition" data-i18n="refresh_btn">↻ Refresh</button>
+  </div>
+  <div id="error" class="hidden mt-3 text-xs text-red-400 bg-red-950/30 border border-red-900/40 rounded px-3 py-2"></div>
+</div>
+
+<!-- Top stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="your_hashrate">Your Hashrate</p>
+    <span id="stat-hashrate" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+    <p class="text-[11px] text-slate-500 mt-1" data-i18n="from_workers">from workers</p>
+  </div>
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="pool_share">Pool Share</p>
+    <div class="flex items-baseline gap-1">
+      <span id="stat-share" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+      <span class="text-[11px] text-slate-600">%</span>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-1" data-i18n="of_pool">of pool</p>
+  </div>
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="workers">Workers</p>
+    <span id="stat-workers" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+    <p class="text-[11px] text-slate-500 mt-1" data-i18n="connected">connected</p>
+  </div>
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="pending_balance_short">Pending</p>
+    <div class="flex items-baseline gap-1.5">
+      <span id="stat-pending" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+      <span class="text-[11px] text-slate-600">PRL</span>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-1" data-i18n="next_payout">next payout</p>
+  </div>
+</div>
+
+<!-- P/L Panel -->
+<div class="rounded-lg p-5 card-glow theme-bg-accent border-purple-900/30 mb-6">
+  <div class="flex items-center justify-between mb-3">
+    <p class="text-[11px] text-purple-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
+    <span class="text-[10px] text-slate-600" data-i18n="credits_minus_cost">Epoch credits − cost</span>
+  </div>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_24h">24 Hours</p>
+      <div class="flex items-baseline gap-1 mt-1">
+        <span id="actual-pl-24h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
+      </div>
+      <p id="actual-pl-24h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_hour">Last Hour</p>
+      <div class="flex items-baseline gap-1 mt-1">
+        <span id="actual-pl-1h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
+      </div>
+      <p id="actual-pl-1h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
+    </div>
+  </div>
+</div>
+
+<!-- Insight -->
+<div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 mb-6 card-glow">
+  <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3" data-i18n="insight">📊 Insight</h2>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="best_hour">Best Hour</p>
+      <p id="best-hour" class="text-base font-mono-num text-purple-300 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="worst_hour">Worst Hour</p>
+      <p id="worst-hour" class="text-base font-mono-num text-red-400 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="active_hours">Active Hours</p>
+      <p id="hours-hit" class="text-base font-mono-num text-slate-300 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="total_credits_24h">Credits 24h</p>
+      <p id="total-credits" class="text-base font-mono-num text-purple-300 mt-1">—</p>
+    </div>
+  </div>
+</div>
+
+<!-- Hourly chart -->
+<div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 mb-6 card-glow">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · P/L Per Hour</h2>
+    <div class="flex items-center gap-3 text-[10px] text-slate-600">
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-purple-400"></span><span data-i18n="profit">Profit</span></span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-slate-600"></span><span data-i18n="future">Future</span></span>
+    </div>
+  </div>
+  <div id="hour-chart" class="hour-bar"></div>
+  <div class="flex justify-between text-[10px] text-slate-600 mt-1">
+    <span data-i18n="ago_24h">24h ago</span>
+    <span data-i18n="now">now</span>
+  </div>
+</div>
+
+<!-- Hourly table -->
+<div class="bg-[#0f1420] border border-[#1a2235] rounded-lg overflow-hidden mb-6 card-glow">
+  <div class="px-5 py-3 border-b border-[#1a2235] flex items-center justify-between flex-wrap gap-2">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider"><span data-i18n="hourly_breakdown">Hourly Breakdown</span> · <span data-i18n="latest_first">Latest First</span></h2>
+    <div class="text-[11px] text-slate-500">
+      <span data-i18n="total_24h">Total 24h:</span>
+      <span id="hourly-total-pl" class="font-mono-num font-semibold profit">—</span>
+      <span class="text-slate-600">(<span data-i18n="rev">rev</span> <span id="hourly-total-rev" class="font-mono-num text-cyan-400">—</span> − <span data-i18n="cost_short">cost</span> <span id="hourly-total-cost" class="font-mono-num text-red-400">—</span>)</span>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-xs">
+      <thead class="bg-[#0a0e16] text-slate-600 uppercase tracking-wider text-[10px]">
+        <tr>
+          <th class="px-3 py-2.5 text-left" data-i18n="th_hour_wib">Jam (WIB)</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_epoch">Epoch</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_credit_prl">Credit PRL</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_revenue">Revenue</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_cost">Cost</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_pl">P/L</th>
+        </tr>
+      </thead>
+      <tbody id="hourly-body" class="divide-y divide-slate-800/40">
+        <tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pool & Network Stats -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
+  <div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 card-glow">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="pool_stats">Pool Stats</h2>
+    <div class="space-y-2.5">
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_hashrate">Pool hashrate</span><span id="pool-hash" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="total_accounts">Total accounts</span><span id="pool-accounts" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="total_workers_pool">Total workers</span><span id="pool-total-workers" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="my_share_pool">Your share</span><span id="my-share" class="text-xs text-slate-300 font-mono-num">—</span></div>
+    </div>
+  </div>
+  <div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 card-glow">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="network_info">Network</h2>
+    <div class="space-y-2.5">
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="network_hashrate">Network hashrate</span><span id="net-hash" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="network_blocks">Block height</span><span id="net-blocks" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="network_supply">PRL supply</span><span id="net-supply" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="network_difficulty">Difficulty</span><span id="net-difficulty" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="avg_block_time">Avg block time</span><span id="net-blocktime" class="text-xs text-slate-300 font-mono-num">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Wallet card -->
+<div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 mb-6 card-glow">
+  <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="wallet">💳 Wallet</h2>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="pending_balance">Pending balance</p>
+      <p id="w-pending" class="text-sm text-slate-200 font-mono-num mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="total_paid">Total paid</p>
+      <p id="w-total-paid" class="text-sm text-slate-200 font-mono-num mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_epoch">Last epoch</p>
+      <p id="w-last-epoch" class="text-sm text-slate-200 font-mono-num mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="status_label">Status</p>
+      <p id="w-status" class="text-sm text-slate-200 font-mono-num mt-1">—</p>
+    </div>
+  </div>
+</div>
+
+<!-- Workers -->
+<div id="workers-section" class="bg-[#0f1420] border border-[#1a2235] rounded-lg overflow-hidden mb-6 card-glow">
+  <div class="px-5 py-3 border-b border-[#1a2235] flex items-center justify-between">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="workers_title">⚙️ Connected Workers</h2>
+    <span id="workers-count" class="text-[11px] text-slate-500">—</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-xs">
+      <thead class="bg-[#0a0e16] text-slate-600 uppercase tracking-wider text-[10px]">
+        <tr>
+          <th class="px-5 py-2.5 text-left" data-i18n="th_worker">Worker</th>
+          <th class="px-5 py-2.5 text-right" data-i18n="th_hashrate">Hashrate</th>
+          <th class="px-5 py-2.5 text-right" data-i18n="th_last_seen">Last seen</th>
+        </tr>
+      </thead>
+      <tbody id="workers-body" class="divide-y divide-slate-800/40">
+        <tr><td colspan="3" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="no_workers_synthetic">No real-time worker data (Pearlhash exposes via dashboard only)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Donate -->
+<div class="bg-gradient-to-br from-[#1a1428] via-[#0f1420] to-[#0c1a2a] border border-purple-900/40 rounded-lg p-4 mb-6 card-glow">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div class="flex items-center gap-3 min-w-0">
+      <span class="text-2xl flex-shrink-0">☕</span>
+      <div class="min-w-0">
+        <p class="text-[11px] text-pink-400 uppercase tracking-widest font-semibold" data-i18n="donate_title">Support This Tool</p>
+        <p class="text-[10px] text-slate-500 mt-0.5" data-i18n="donate_sub">Donate PRL · Tip the dev</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 min-w-0 flex-1 lg:flex-none">
+      <code id="donate-addr" class="text-[10px] lg:text-xs text-slate-300 font-mono-num bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 truncate min-w-0 flex-1">prl1pejnmtenn2r72skjhz8a266k58a003tlqxrmtdd7ljw6lcvm4643sz0z027</code>
+      <button id="copy-btn" type="button" class="flex-shrink-0 flex items-center gap-1 bg-pink-600/20 hover:bg-pink-600/30 active:bg-pink-600/40 border border-pink-700/40 text-pink-300 text-[11px] px-3 py-1.5 rounded transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        <span id="copy-label" data-i18n="copy">Copy</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer class="mt-8 pb-6 text-center">
+  <p class="text-[10px] text-slate-600" data-i18n="footer_explain">P/L = Epoch credits × $price − cost. Cost charged flat per hour while mining.<br>No epoch credit (HR &lt; 5%) = no cost.</p>
+  <p class="text-[10px] text-slate-700 mt-2" id="last-update">never</p>
+</footer>
+
+</div>
+
+<script>
+// ============ POOL CONFIG ============
+const POOLS = {
+  akoya: { name: "Akoya", url: "akoya.html" },
+  pearlhash: { name: "Pearlhash", url: "pearlhash.html" },
+};
+let currentPool = "pearlhash";
+const STORAGE_KEY = "akoya_hybrid_pl_settings";
+
+// ============ I18N ============
+const I18N = {
+  en: {
+    app_title: "🦪 Calc Your Pool — Pearlhash",
+    app_subtitle: "Epoch · Hourly Credits · PoUW",
+    your_setup: "Your Setup",
+    wallet_label: "Wallet Address",
+    cost: "Cost",
+    prl_price: "PRL Price",
+    refresh: "Refresh",
+    refresh_btn: "↻ Refresh",
+    your_hashrate: "Your Hashrate",
+    from_workers: "from workers",
+    pool_share: "Pool Share",
+    of_pool: "of pool",
+    workers: "Workers",
+    connected: "connected",
+    pending_balance_short: "Pending",
+    next_payout: "next payout",
+    profit_loss: "📦 Profit / Loss",
+    credits_minus_cost: "Epoch credits − cost",
+    last_24h: "24 Hours",
+    last_hour: "Last Hour",
+    insight: "📊 Insight",
+    best_hour: "Best Hour",
+    worst_hour: "Worst Hour",
+    active_hours: "Active Hours",
+    total_credits_24h: "Credits 24h",
+    last_24h_chart: "Last 24h · P/L Per Hour",
+    profit: "Profit",
+    loss: "Loss",
+    future: "Future",
+    ago_24h: "24h ago",
+    now: "now",
+    hourly_breakdown: "Hourly Breakdown",
+    latest_first: "Latest First",
+    total_24h: "Total 24h:",
+    rev: "rev",
+    cost_short: "cost",
+    th_hour_wib: "Hour (WIB)",
+    th_epoch: "Epoch",
+    th_credit_prl: "Credit PRL",
+    th_revenue: "Revenue",
+    th_cost: "Cost",
+    th_pl: "P/L",
+    pool_stats: "🦪 Pool Stats",
+    pool_hashrate: "Pool hashrate",
+    total_accounts: "Total accounts",
+    total_workers_pool: "Total workers",
+    my_share_pool: "Your share",
+    network_info: "🌐 Network",
+    network_hashrate: "Network hashrate",
+    network_blocks: "Block height",
+    network_supply: "PRL supply",
+    network_difficulty: "Difficulty",
+    avg_block_time: "Avg block time",
+    wallet: "💳 Wallet",
+    pending_balance: "Pending balance",
+    total_paid: "Total paid",
+    last_epoch: "Last epoch",
+    status_label: "Status",
+    online_status: "🟢 Online",
+    offline_status: "🔴 Offline",
+    workers_title: "⚙️ Connected Workers",
+    th_worker: "Worker",
+    th_hashrate: "Hashrate",
+    th_last_seen: "Last seen",
+    no_workers_synthetic: "No real-time worker data (Pearlhash exposes via dashboard only)",
+    donate_title: "Support This Tool",
+    donate_sub: "Donate PRL · Tip the dev",
+    copy: "Copy",
+    copied: "Copied!",
+    footer_explain: "P/L = Epoch credits × $price − cost. Cost charged flat per hour while mining.<br>No epoch credit (HR &lt; 5%) = no cost.",
+    fetching: "Fetching data...",
+    updated: "Updated",
+    auto_refresh_60s: "Auto-refresh in 60s",
+    error_prefix: "Error: ",
+    invalid_wallet: "Wallet must start with 'prl1'",
+    no_credits: "No epoch credits in last 24h",
+    switching: "Switching to",
+  },
+  id: {
+    app_title: "🦪 Hitung Pool Kamu — Pearlhash",
+    app_subtitle: "Epoch · Credit Per Jam · PoUW",
+    your_setup: "Setup Kamu",
+    wallet_label: "Alamat Wallet",
+    cost: "Biaya",
+    prl_price: "Harga PRL",
+    refresh: "Refresh",
+    refresh_btn: "↻ Muat ulang",
+    your_hashrate: "Hashrate Kamu",
+    from_workers: "dari worker",
+    pool_share: "Share Pool",
+    of_pool: "dari pool",
+    workers: "Worker",
+    connected: "terhubung",
+    pending_balance_short: "Pending",
+    next_payout: "payout berikut",
+    profit_loss: "📦 Profit / Loss",
+    credits_minus_cost: "Credit epoch − biaya",
+    last_24h: "24 Jam Terakhir",
+    last_hour: "Jam Terakhir",
+    insight: "📊 Insight",
+    best_hour: "Jam Terbaik",
+    worst_hour: "Jam Terburuk",
+    active_hours: "Jam Aktif",
+    total_credits_24h: "Credit 24j",
+    last_24h_chart: "24 Jam Terakhir · P/L Per Jam",
+    profit: "Profit",
+    loss: "Loss",
+    future: "Belum",
+    ago_24h: "24j lalu",
+    now: "sekarang",
+    hourly_breakdown: "Breakdown Per Jam",
+    latest_first: "Terbaru Dulu",
+    total_24h: "Total 24j:",
+    rev: "rev",
+    cost_short: "biaya",
+    th_hour_wib: "Jam (WIB)",
+    th_epoch: "Epoch",
+    th_credit_prl: "Credit PRL",
+    th_revenue: "Revenue",
+    th_cost: "Cost",
+    th_pl: "P/L",
+    pool_stats: "🦪 Stats Pool",
+    pool_hashrate: "Hashrate pool",
+    total_accounts: "Total akun",
+    total_workers_pool: "Total worker",
+    my_share_pool: "Share kamu",
+    network_info: "🌐 Jaringan",
+    network_hashrate: "Hashrate jaringan",
+    network_blocks: "Tinggi block",
+    network_supply: "Supply PRL",
+    network_difficulty: "Difficulty",
+    avg_block_time: "Rata-rata waktu block",
+    wallet: "💳 Wallet",
+    pending_balance: "Saldo pending",
+    total_paid: "Total dibayar",
+    last_epoch: "Epoch terakhir",
+    status_label: "Status",
+    online_status: "🟢 Online",
+    offline_status: "🔴 Offline",
+    workers_title: "⚙️ Worker Terhubung",
+    th_worker: "Worker",
+    th_hashrate: "Hashrate",
+    th_last_seen: "Terakhir terlihat",
+    no_workers_synthetic: "Tidak ada data worker real-time (Pearlhash expose via dashboard saja)",
+    donate_title: "Dukung Tool Ini",
+    donate_sub: "Donasi PRL · Tip developer",
+    copy: "Salin",
+    copied: "Tersalin!",
+    footer_explain: "P/L = Credit epoch × harga$ − biaya. Biaya di-charge flat per jam selama mining.<br>Tanpa credit epoch (HR &lt; 5%) = tanpa biaya.",
+    fetching: "Mengambil data...",
+    updated: "Diperbarui",
+    auto_refresh_60s: "Auto-refresh dalam 60d",
+    error_prefix: "Error: ",
+    invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
+    no_credits: "Tidak ada credit epoch dalam 24 jam terakhir",
+    switching: "Pindah ke",
+  },
+  zh: {
+    app_title: "🦪 计算你的矿池 — Pearlhash",
+    app_subtitle: "周期 · 每小时积分 · PoUW",
+    your_setup: "你的设置",
+    wallet_label: "钱包地址",
+    cost: "成本",
+    prl_price: "PRL 价格",
+    refresh: "刷新",
+    refresh_btn: "↻ 刷新",
+    your_hashrate: "你的算力",
+    from_workers: "来自工作机",
+    pool_share: "矿池占比",
+    of_pool: "占比矿池",
+    workers: "工作机",
+    connected: "已连接",
+    pending_balance_short: "待发放",
+    next_payout: "下次支付",
+    profit_loss: "📦 盈亏",
+    credits_minus_cost: "周期积分 − 成本",
+    last_24h: "24小时",
+    last_hour: "上一小时",
+    insight: "📊 洞察",
+    best_hour: "最佳时段",
+    worst_hour: "最差时段",
+    active_hours: "活跃小时",
+    total_credits_24h: "24小时积分",
+    last_24h_chart: "过去24小时 · 每小时盈亏",
+    profit: "盈利",
+    loss: "亏损",
+    future: "未来",
+    ago_24h: "24小时前",
+    now: "现在",
+    hourly_breakdown: "按小时分解",
+    latest_first: "最新优先",
+    total_24h: "24小时合计:",
+    rev: "收入",
+    cost_short: "成本",
+    th_hour_wib: "小时 (WIB)",
+    th_epoch: "周期",
+    th_credit_prl: "积分 PRL",
+    th_revenue: "收入",
+    th_cost: "成本",
+    th_pl: "盈亏",
+    pool_stats: "🦪 矿池统计",
+    pool_hashrate: "矿池算力",
+    total_accounts: "总账户",
+    total_workers_pool: "总工作机",
+    my_share_pool: "你的份额",
+    network_info: "🌐 网络",
+    network_hashrate: "网络算力",
+    network_blocks: "区块高度",
+    network_supply: "PRL 供应",
+    network_difficulty: "难度",
+    avg_block_time: "平均出块时间",
+    wallet: "💳 钱包",
+    pending_balance: "待发放余额",
+    total_paid: "已支付总额",
+    last_epoch: "最近周期",
+    status_label: "状态",
+    online_status: "🟢 在线",
+    offline_status: "🔴 离线",
+    workers_title: "⚙️ 已连接工作机",
+    th_worker: "工作机",
+    th_hashrate: "算力",
+    th_last_seen: "最后在线",
+    no_workers_synthetic: "无实时工作机数据（Pearlhash仅通过仪表盘暴露）",
+    donate_title: "支持此工具",
+    donate_sub: "捐赠 PRL · 给开发者打赏",
+    copy: "复制",
+    copied: "已复制!",
+    footer_explain: "盈亏 = 周期积分 × 价格$ − 成本。挖矿期间按小时固定收取成本。<br>无周期积分 (算力 &lt; 5%) = 无成本。",
+    fetching: "获取数据中...",
+    updated: "已更新",
+    auto_refresh_60s: "60秒后自动刷新",
+    error_prefix: "错误: ",
+    invalid_wallet: "钱包必须以 'prl1' 开头",
+    no_credits: "过去24小时无周期积分",
+    switching: "切换到",
+  },
+};
+
+let currentLang = localStorage.getItem("akoya_lang") || "en";
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key; }
+
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    const val = t(key);
+    if (val) el.innerHTML = val;
+  });
+  document.querySelectorAll(".lang-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-lang") === currentLang);
+  });
+  const labels = { en: "🇬🇧 EN", id: "🇮🇩 ID", zh: "🇨🇳 中文" };
+  const cur = document.getElementById("lang-current");
+  if (cur) cur.textContent = labels[currentLang] || "🇬🇧 EN";
+  document.documentElement.lang = currentLang;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem("akoya_lang", lang);
+  applyI18n();
+  closeLangMenu();
+  if (window._lastWallet) refresh();
+}
+
+function toggleLangMenu() {
+  document.getElementById("lang-menu").classList.toggle("hidden");
+  document.getElementById("pool-menu").classList.add("hidden");
+}
+function closeLangMenu() { document.getElementById("lang-menu").classList.add("hidden"); }
+
+function applyPool() {
+  document.querySelectorAll(".pool-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-pool") === currentPool);
+  });
+}
+
+function setPool(pool) {
+  if (!POOLS[pool] || pool === currentPool) { closePoolMenu(); return; }
+  localStorage.setItem("akoya_pool", pool);
+  closePoolMenu();
+  const overlay = document.getElementById("switch-overlay");
+  const target = document.getElementById("switch-target");
+  if (target) target.textContent = POOLS[pool].name;
+  if (overlay) overlay.classList.add("show");
+  setTimeout(() => { location.href = POOLS[pool].url; }, 600);
+}
+function togglePoolMenu() {
+  document.getElementById("pool-menu").classList.toggle("hidden");
+  document.getElementById("lang-menu").classList.add("hidden");
+}
+function closePoolMenu() { document.getElementById("pool-menu").classList.add("hidden"); }
+
+// ============ HELPERS ============
+const API = "https://pearlhash.xyz/api";
+const corsProxy = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
+
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function showError(msg) {
+  const e = document.getElementById("error");
+  e.textContent = msg;
+  e.classList.remove("hidden");
+}
+function hideError() { document.getElementById("error").classList.add("hidden"); }
+function setStatus(msg) { document.getElementById("status").textContent = msg; }
+
+function fmtPL(v) { return (v >= 0 ? "+$" : "-$") + Math.abs(v).toFixed(2); }
+
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+function fmtNum(n, dec = 2) {
+  if (n == null || isNaN(n)) return "—";
+  return Number(n).toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtHash(hps) {
+  if (!hps) return "0 H/s";
+  const units = ["H/s", "KH/s", "MH/s", "GH/s", "TH/s", "PH/s", "EH/s"];
+  let i = 0;
+  while (hps >= 1000 && i < units.length - 1) { hps /= 1000; i++; }
+  return hps.toFixed(2) + " " + units[i];
+}
+function fmtAge(ts) {
+  if (!ts) return "—";
+  const t = typeof ts === "string" ? new Date(ts).getTime() / 1000 : (ts > 1e12 ? ts / 1000 : ts);
+  const ago = Math.floor(Date.now() / 1000 - t);
+  if (ago < 60) return ago + "s ago";
+  if (ago < 3600) return Math.floor(ago / 60) + "m ago";
+  if (ago < 86400) return Math.floor(ago / 3600) + "h ago";
+  return Math.floor(ago / 86400) + "d ago";
+}
+function fmtHourLabel(ts) {
+  const d = new Date(ts * 1000);
+  const wibHours = (d.getUTCHours() + 7) % 24;
+  return String(wibHours).padStart(2, "0") + ":00";
+}
+
+// ============ SETTINGS ============
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    if (s.wallet) document.getElementById("wallet").value = s.wallet;
+    if (s.cost) document.getElementById("cost").value = s.cost;
+    if (s.prlPrice) document.getElementById("prl-price").value = s.prlPrice;
+  } catch (e) {}
+}
+function saveSettings() {
+  const s = {
+    wallet: document.getElementById("wallet").value.trim(),
+    cost: document.getElementById("cost").value,
+    prlPrice: document.getElementById("prl-price").value,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+}
+
+// ============ FETCH ============
+async function fetchPearlhash(wallet) {
+  const [account, stats, chain] = await Promise.all([
+    fetchJSON(corsProxy(`${API}/account/${wallet}`)),
+    fetchJSON(corsProxy(`${API}/stats`)),
+    fetchJSON(corsProxy(`${API}/chain-info`)).catch(() => ({})),
+  ]);
+  return { account, stats, chain };
+}
+
+// ============ REFRESH ============
+async function refresh() {
+  const wallet = document.getElementById("wallet").value.trim();
+  const cost = parseFloat(document.getElementById("cost").value) || 0;
+  const prlPrice = parseFloat(document.getElementById("prl-price").value) || 0;
+
+  if (!wallet || !wallet.startsWith("prl1")) {
+    showError(t("invalid_wallet"));
+    return;
+  }
+  hideError();
+  saveSettings();
+  setStatus(t("fetching"));
+  window._lastWallet = wallet;
+
+  try {
+    const { account, stats, chain } = await fetchPearlhash(wallet);
+
+    const txs = account.balance_transactions || [];
+    const workers = account.connected_workers || [];
+
+    // Build hourly buckets (24h)
+    const now = Math.floor(Date.now() / 1000);
+    const currentHourStart = Math.floor(now / 3600) * 3600;
+    const buckets = [];
+    for (let i = 23; i >= 0; i--) {
+      const hourStart = currentHourStart - i * 3600;
+      buckets.push({
+        hour_start: hourStart,
+        hour_end: hourStart + 3600,
+        epoch_label: null,
+        credit_prl: 0,
+        is_active: false,
+      });
+    }
+
+    // Process credit txs
+    let totalCredits24h = 0, totalPaidAllTime = 0, lastEpochTs = 0;
+    for (const tx of txs) {
+      const ts = tx.timestamp / 1000;
+      if (tx.amount > 0 && /credit/i.test(tx.reason)) {
+        const m = tx.reason.match(/Epoch (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC/);
+        const epochStart = m ? Math.floor(new Date(m[1] + " UTC").getTime() / 1000) : Math.floor(ts);
+        if (epochStart >= now - 86400) {
+          const idx = buckets.findIndex(b => epochStart >= b.hour_start && epochStart < b.hour_end);
+          if (idx !== -1) {
+            buckets[idx].credit_prl += tx.amount;
+            buckets[idx].is_active = true;
+            buckets[idx].epoch_label = m ? m[1].slice(11, 13) + ":00" : "—";
+            totalCredits24h += tx.amount;
+          }
+        }
+        if (ts > lastEpochTs) lastEpochTs = ts;
+      }
+      if (tx.amount < 0 && /payment/i.test(tx.reason)) {
+        totalPaidAllTime += Math.abs(tx.amount);
+      }
+    }
+
+    // Compute pending balance from unpaid credits (positive sum)
+    let pendingBalance = 0;
+    for (const tx of txs) pendingBalance += tx.amount;
+    pendingBalance = Math.max(0, pendingBalance);
+
+    // ===== HASHRATE INFERENCE =====
+    // Pearlhash API doesn't expose real-time hashrate via /api/account
+    // Workers list is usually empty. Infer from epoch credit rate:
+    //   user_credit_per_hour / pool_credit_per_hour ≈ user_hash / pool_hash
+    //   pool_credit_per_hour ≈ pool_blocks_per_hour × block_reward × (1 - fee)
+    //   pool_blocks_per_hour = (pool_hash / network_hash) × (3600 / avg_block_time_s)
+    const poolHash = stats.hashrate || 0;
+    const netHash = chain.networkhashps || 0;
+    const blockTime = chain.avg_block_time_s || 124;
+    const BLOCK_REWARD = 2715; // PRL (same as Akoya)
+    const POOL_FEE = 0.05;
+
+    // Use last active hour as best signal (filter out 0-credit hours)
+    const recentCredits = txs
+      .filter(tx => tx.amount > 0 && /credit/i.test(tx.reason) && tx.timestamp/1000 >= now - 7200)
+      .sort((a,b) => b.timestamp - a.timestamp);
+    const lastHourCreditAmount = recentCredits.length > 0 ? recentCredits[0].amount : 0;
+
+    let myHash = 0;
+    let myShare = 0;
+    if (poolHash > 0 && netHash > 0 && lastHourCreditAmount > 0) {
+      const poolBlocksPerHour = (poolHash / netHash) * (3600 / blockTime);
+      const poolCreditPerHour = poolBlocksPerHour * BLOCK_REWARD * (1 - POOL_FEE);
+      if (poolCreditPerHour > 0) {
+        myShare = lastHourCreditAmount / poolCreditPerHour;
+        myHash = poolHash * myShare;
+      }
+    }
+    // Fallback to worker list if any
+    if (myHash === 0) {
+      for (const w of workers) myHash += (w.hashrate || w.hash_rate || 0);
+      myShare = poolHash > 0 ? (myHash / poolHash) : 0;
+    }
+
+    // Top stats
+    setText("stat-hashrate", fmtHash(myHash));
+    setText("stat-share", (myShare * 100).toFixed(3));
+    setText("stat-workers", workers.length);
+    setText("stat-pending", fmtNum(pendingBalance, 4));
+
+    // Pool stats
+    setText("pool-hash", fmtHash(poolHash));
+    setText("pool-accounts", fmtNum(stats.total_accounts || 0, 0));
+    setText("pool-total-workers", fmtNum(stats.total_workers || 0, 0));
+    setText("my-share", (myShare * 100).toFixed(3) + "%");
+
+    // Network
+    setText("net-hash", fmtHash(chain.networkhashps || 0));
+    setText("net-blocks", chain.blocks ? fmtNum(chain.blocks, 0) : "—");
+    setText("net-supply", chain.supply ? fmtNum(chain.supply, 0) + " PRL" : "—");
+    setText("net-difficulty", chain.difficulty ? fmtNum(chain.difficulty, 2) : "—");
+    setText("net-blocktime", chain.avg_block_time_s ? Math.round(chain.avg_block_time_s) + "s" : "—");
+
+    // Wallet
+    setText("w-pending", fmtNum(pendingBalance, 4) + " PRL");
+    setText("w-total-paid", fmtNum(totalPaidAllTime, 2) + " PRL");
+    setText("w-last-epoch", lastEpochTs ? fmtAge(lastEpochTs) : "—");
+    const isActive = (now - lastEpochTs < 7200) || workers.length > 0;
+    setText("w-status", isActive ? t("online_status") : t("offline_status"));
+
+    // Compute P/L
+    let totalRev = 0, totalCost = 0, totalPL = 0;
+    let activeHours = 0;
+    let bestPL = -Infinity, bestHour = "—";
+    let worstPL = Infinity, worstHour = "—";
+    let lastHourPL = 0, lastHourCredit = 0;
+
+    for (const b of buckets) {
+      const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
+      const isCurrent = (now >= b.hour_start && now < b.hour_end);
+      const rev = b.credit_prl * prlPrice;
+      const c = b.is_active ? (isCurrent ? cost * hoursElapsed : cost) : 0;
+      const pl = rev - c;
+      b.revenue = rev;
+      b.cost_value = c;
+      b.pl = pl;
+
+      if (b.hour_start < now) {
+        totalRev += rev;
+        totalCost += c;
+        totalPL += pl;
+        if (b.is_active) activeHours++;
+        if (pl > bestPL && b.is_active) { bestPL = pl; bestHour = fmtHourLabel(b.hour_start); }
+        if (pl < worstPL && b.is_active) { worstPL = pl; worstHour = fmtHourLabel(b.hour_start); }
+      }
+      if (isCurrent) { lastHourPL = pl; lastHourCredit = b.credit_prl; }
+    }
+    if (bestPL === -Infinity) bestHour = "—";
+    if (worstPL === Infinity) worstHour = "—";
+
+    // P/L panel — show explicit + or − sign
+    const pl24El = document.getElementById("actual-pl-24h");
+    pl24El.className = "text-3xl font-bold font-mono-num " + (totalPL >= 0 ? "profit" : "loss");
+    pl24El.textContent = fmtPL(totalPL);
+    setText("actual-pl-24h-detail", `$${totalRev.toFixed(2)} rev · $${totalCost.toFixed(2)} cost`);
+
+    const pl1hEl = document.getElementById("actual-pl-1h");
+    pl1hEl.className = "text-3xl font-bold font-mono-num " + (lastHourPL >= 0 ? "profit" : "loss");
+    pl1hEl.textContent = fmtPL(lastHourPL);
+    setText("actual-pl-1h-detail", `${lastHourCredit.toFixed(4)} PRL credit`);
+
+    // Insight
+    setText("best-hour", bestPL !== -Infinity ? `${bestHour} (${fmtPL(bestPL)})` : "—");
+    setText("worst-hour", worstPL !== Infinity ? `${worstHour} (${fmtPL(worstPL)})` : "—");
+    setText("hours-hit", `${activeHours}/24`);
+    setText("total-credits", fmtNum(totalCredits24h, 4) + " PRL");
+
+    // Hourly chart
+    const maxAbs = Math.max(...buckets.map(b => Math.abs(b.pl || 0)), 1);
+    document.getElementById("hour-chart").innerHTML = buckets.map(b => {
+      const isFuture = b.hour_start > now;
+      const height = Math.min(100, Math.abs(b.pl || 0) / maxAbs * 100);
+      const cls = isFuture ? "future-cell" : (b.pl >= 0 ? "profit-cell" : "loss-cell");
+      const tooltip = isFuture ? "future" : `${fmtHourLabel(b.hour_start)} · ${fmtPL(b.pl)}`;
+      return `<div class="hour-cell ${cls}" style="height:${Math.max(4, height)}%" title="${tooltip}"></div>`;
+    }).join("");
+
+    // Hourly table (latest first)
+    const hourlyBody = document.getElementById("hourly-body");
+    const sortedBuckets = [...buckets].reverse();
+    if (totalCredits24h === 0) {
+      hourlyBody.innerHTML = `<tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_credits")}</td></tr>`;
+    } else {
+      hourlyBody.innerHTML = sortedBuckets.map(b => {
+        const isCurrent = (now >= b.hour_start && now < b.hour_end);
+        const isFuture = b.hour_start > now;
+        const offlineCls = !b.is_active && !isFuture ? "opacity-50" : "";
+        const plCls = b.pl >= 0 ? "profit" : "loss";
+        const plLabel = isFuture ? "—" : fmtPL(b.pl);
+        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-purple-950/20" : ""} ${offlineCls}">
+          <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-purple-400" : "text-slate-300"} font-mono-num">${fmtHourLabel(b.hour_start)}${isCurrent ? " ◀" : ""}</td>
+          <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.epoch_label || "—"}</td>
+          <td class="px-3 py-2.5 text-xs text-purple-300 font-mono-num text-right">${b.credit_prl > 0.0001 ? fmtNum(b.credit_prl, 4) : "—"}</td>
+          <td class="px-3 py-2.5 text-xs ${b.revenue > 0.01 ? "text-cyan-400" : "text-slate-600"} font-mono-num text-right">${b.revenue > 0.01 ? "$" + b.revenue.toFixed(2) : "—"}</td>
+          <td class="px-3 py-2.5 text-xs ${b.is_active ? "text-red-400" : "text-slate-600"} font-mono-num text-right">${b.is_active ? "$" + b.cost_value.toFixed(2) : "—"}</td>
+          <td class="px-3 py-2.5 text-xs ${plCls} font-mono-num text-right font-semibold">${plLabel}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    setText("hourly-total-pl", fmtPL(totalPL));
+    document.getElementById("hourly-total-pl").className = "font-mono-num font-semibold " + (totalPL >= 0 ? "profit" : "loss");
+    setText("hourly-total-rev", "$" + totalRev.toFixed(2));
+    setText("hourly-total-cost", "$" + totalCost.toFixed(2));
+
+    // Workers
+    const wbody = document.getElementById("workers-body");
+    document.getElementById("workers-count").innerHTML = `${workers.length} <span data-i18n="connected">${t("connected")}</span>`;
+    if (workers.length === 0) {
+      wbody.innerHTML = `<tr><td colspan="3" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_workers_synthetic")}</td></tr>`;
+    } else {
+      wbody.innerHTML = workers.map(w => `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">
+        <td class="px-5 py-2.5 text-xs text-slate-300 font-mono-num">${w.name || w.worker_name || "—"}</td>
+        <td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">${fmtHash(w.hashrate || w.hash_rate || 0)}</td>
+        <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${(w.last_seen_at || w.last_share_at) ? fmtAge(w.last_seen_at || w.last_share_at) : "—"}</td>
+      </tr>`).join("");
+    }
+
+    setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
+    document.getElementById("last-update").textContent = "updated " + new Date().toLocaleTimeString();
+  } catch (e) {
+    console.error("[refresh] ERROR:", e);
+    showError(t("error_prefix") + e.message);
+    setStatus(t("error_prefix") + e.message);
+  }
+}
+
+// ============ INIT ============
+document.addEventListener("DOMContentLoaded", () => {
+  applyI18n();
+  applyPool();
+
+  document.getElementById("lang-toggle").addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation(); toggleLangMenu();
+  });
+  document.querySelectorAll(".lang-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      setLang(btn.getAttribute("data-lang"));
+    });
+  });
+  document.getElementById("pool-toggle").addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation(); togglePoolMenu();
+  });
+  document.querySelectorAll(".pool-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      setPool(btn.getAttribute("data-pool"));
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    const lmenu = document.getElementById("lang-menu");
+    const ltoggle = document.getElementById("lang-toggle");
+    if (lmenu && !lmenu.contains(e.target) && ltoggle && !ltoggle.contains(e.target)) closeLangMenu();
+    const pmenu = document.getElementById("pool-menu");
+    const ptog = document.getElementById("pool-toggle");
+    if (pmenu && !pmenu.contains(e.target) && ptog && !ptog.contains(e.target)) closePoolMenu();
+  });
+
+  // Refresh button
+  document.getElementById("refresh-btn").addEventListener("click", refresh);
+
+  // Copy donate
+  document.getElementById("copy-btn").addEventListener("click", async () => {
+    const addr = document.getElementById("donate-addr").textContent;
+    const label = document.getElementById("copy-label");
+    try {
+      await navigator.clipboard.writeText(addr);
+    } catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = addr; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (_) { alert(addr); }
+      document.body.removeChild(ta);
+    }
+    const orig = label.textContent;
+    label.textContent = t("copied");
+    document.getElementById("copy-btn").classList.add("!bg-green-600/30", "!text-green-300", "!border-green-700/40");
+    setTimeout(() => {
+      label.textContent = t("copy");
+      document.getElementById("copy-btn").classList.remove("!bg-green-600/30", "!text-green-300", "!border-green-700/40");
+    }, 1500);
+  });
+
+  loadSettings();
+  if (document.getElementById("wallet").value) refresh();
+
+  // Auto-refresh every 60s
+  setInterval(() => {
+    if (document.getElementById("wallet").value) refresh();
+  }, 60000);
+});
+</script>
+</body>
+</html>
