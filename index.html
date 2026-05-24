@@ -380,7 +380,7 @@ const I18N = {
     active: "active",
     never: "never",
     footer_data: "Data: akoyapool.com · Auto-refresh 60s · Timezone: WIB (UTC+7)",
-    footer_explain: "Profit/Loss = PRL paid × $price − cost. Cost charged proportional to hashrate.<br>Rig OFF (HR &lt; 5% peak) = no cost.",
+    footer_explain: "Profit/Loss = PRL paid × $price − cost. Cost charged flat per hour while rig is mining.<br>Rig OFF (HR &lt; 5% peak) = no cost.",
     online_status: "🟢 Online",
     offline_status: "🔴 Offline",
     error_prefix: "Error: ",
@@ -461,7 +461,7 @@ const I18N = {
     active: "aktif",
     never: "belum",
     footer_data: "Data: akoyapool.com · Auto-refresh 60d · Zona: WIB (UTC+7)",
-    footer_explain: "Profit/Loss = PRL dibayar × harga$ − cost. Cost di-charge proporsional ke hashrate.<br>Rig OFF (HR &lt; 5% peak) = ga ada cost.",
+    footer_explain: "Profit/Loss = PRL dibayar × harga$ − cost. Cost di-charge flat per jam selama rig mining.<br>Rig OFF (HR &lt; 5% peak) = ga ada cost.",
     online_status: "🟢 Online",
     offline_status: "🔴 Offline",
     error_prefix: "Error: ",
@@ -542,7 +542,7 @@ const I18N = {
     active: "活跃",
     never: "从未",
     footer_data: "数据: akoyapool.com · 自动刷新60秒 · 时区: WIB (UTC+7)",
-    footer_explain: "盈亏 = PRL支付 × 价格$ − 成本。成本按算力比例收取。<br>矿机关闭 (算力 &lt; 5% 峰值) = 无成本。",
+    footer_explain: "盈亏 = PRL支付 × 价格$ − 成本。成本在矿机挖矿期间按小时固定收取。<br>矿机关闭 (算力 &lt; 5% 峰值) = 无成本。",
     online_status: "🟢 在线",
     offline_status: "🔴 离线",
     error_prefix: "错误: ",
@@ -931,14 +931,14 @@ async function refresh() {
     let hoursWithPayout = 0;
     
     // Threshold: hashrate < 5% of peak = "not mining" = 0 cost
+    // If active, charge full hourly cost (Vast bills flat per hour, not proportional)
     const ACTIVE_THRESHOLD = 0.05;
     
     for (const b of buckets) {
       const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
-      // Cost proportional to actual hashrate ratio
       const isActive = b.hashrate_ratio >= ACTIVE_THRESHOLD;
-      const effectiveRatio = isActive ? b.hashrate_ratio : 0;
-      const fractionalCost = cost * hoursElapsed * effectiveRatio;
+      // Flat cost when active (Vast.ai billing model: pay per hour regardless of utilization)
+      const fractionalCost = isActive ? cost * hoursElapsed : 0;
       
       const revenue = (b.amount || 0) * prlPrice;
       
