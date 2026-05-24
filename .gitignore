@@ -1,0 +1,13 @@
+# Editor / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Node (for any optional tooling)
+node_modules/
+npm-debug.log*
+
+# Local notes
+*.local
+.env

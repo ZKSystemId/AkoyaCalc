@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Akoya Hybrid P/L — PRL Mining</title>
+<meta name="description" content="Akoya Pool real + expected P/L tracker. Per-hour block tracking + PPS forecast.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💎%3C/text%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+body { font-family: 'Inter', sans-serif; }
+.font-mono-num { font-family: 'JetBrains Mono', monospace; }
+.card-glow {
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 4px 24px rgba(0,0,0,0.4);
+  border: 1px solid #162032;
+}
+.pulse-dot { animation: pulse 2s infinite; }
+@keyframes pulse {
+  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,211,238,0.7); }
+  50% { opacity:.6; box-shadow: 0 0 0 6px rgba(34,211,238,0); }
+}
+.lang-btn { color: #cbd5e1; }
+.lang-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
+
+input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monospace; }
+.profit { color: #22c55e !important; }
+.loss { color: #f87171 !important; }
+.neutral { color: #94a3b8 !important; }
+.expected { color: #a78bfa !important; }
+
+.hour-bar { display:flex; align-items:flex-end; gap:2px; height:80px; padding:8px 0; }
+.hour-cell { flex:1; min-width:6px; border-radius:2px; transition:opacity .2s; cursor:pointer; }
+.hour-cell:hover { opacity:.7; }
+.hour-cell.profit-cell { background:#22d3ee; }
+.hour-cell.loss-cell { background:#f87171; }
+.hour-cell.future-cell { background:#475569; }
+</style>
+</head>
+<body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
+
+<div class="max-w-6xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
+
+<header class="mb-8 flex items-start justify-between gap-3">
+  <div class="flex items-center gap-3 min-w-0 flex-1">
+    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 pulse-dot flex-shrink-0"></span>
+    <div class="min-w-0">
+      <h1 class="text-base lg:text-2xl font-semibold text-slate-100 truncate" data-i18n="app_title">Akoya Profit Calculator</h1>
+      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate" data-i18n="app_subtitle">Hourly P/L · Hashrate-aware</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-2 flex-shrink-0">
+    <div class="relative">
+      <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-cyan-700/40 active:bg-cyan-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+        <span id="lang-current">🇬🇧 EN</span>
+        <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="lang-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
+        <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition select-none">🇬🇧 English</button>
+        <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
+        <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="flex justify-end mb-3 -mt-4">
+  <div id="last-update" class="text-[9px] text-slate-600 uppercase tracking-wider" data-i18n="never">never</div>
+</div>
+
+<!-- Input panel -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-6 card-glow">
+  <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="your_setup">Your Setup</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+    <div class="lg:col-span-7">
+      <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="wallet_address">Wallet Address</label>
+      <input id="wallet" type="text" placeholder="prl1..."
+        class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60">
+    </div>
+    <div class="lg:col-span-2">
+      <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="cost_per_hr">Cost $/hr</label>
+      <input id="cost" type="number" step="0.01" min="0" value="11"
+        class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60">
+    </div>
+    <div class="lg:col-span-2">
+      <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="prl_price">PRL Price $</label>
+      <input id="prl-price" type="number" step="0.001" min="0" value="0.40"
+        class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60">
+    </div>
+    <div class="lg:col-span-1 flex items-end">
+      <button id="refresh" class="w-full px-4 py-2 text-xs bg-cyan-600/20 border border-cyan-700/40 text-cyan-300 hover:bg-cyan-600/30 rounded-md font-medium" data-i18n="refresh">Refresh</button>
+    </div>
+  </div>
+  <div id="error" class="hidden mt-3 text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
+  <div id="status" class="mt-3 text-[11px] text-slate-600" data-i18n="status_ready">Ready. Enter wallet to begin.</div>
+</div>
+
+<!-- Top stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="hashrate">Hashrate</p>
+    <span id="stat-hashrate" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+    <p id="stat-hashrate-sub" class="text-[11px] text-slate-500 mt-1" data-i18n="live">live</p>
+  </div>
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="pool_share">Pool Share</p>
+    <div class="flex items-baseline gap-1.5">
+      <span id="stat-share" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+      <span class="text-[11px] text-slate-600">%</span>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-1" data-i18n="of_pool">of pool</p>
+  </div>
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="workers">Workers</p>
+    <span id="stat-workers" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+    <p id="stat-workers-sub" class="text-[11px] text-slate-500 mt-1" data-i18n="online">online</p>
+  </div>
+  <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="total_paid">Total Paid</p>
+    <div class="flex items-baseline gap-1.5">
+      <span id="stat-paid" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+      <span class="text-[11px] text-slate-600">PRL</span>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-1" data-i18n="all_time">all time</p>
+  </div>
+</div>
+
+<!-- HYBRID P/L PANEL -->
+<div class="rounded-lg p-5 card-glow bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border-cyan-900/30 mb-6">
+  <div class="flex items-center justify-between mb-3">
+    <p class="text-[11px] text-cyan-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
+    <span class="text-[10px] text-slate-600" data-i18n="prl_minus_cost">PRL paid − cost</span>
+  </div>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_24h">24 Hours</p>
+      <div class="flex items-baseline gap-1 mt-1">
+        <span id="actual-pl-24h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
+      </div>
+      <p id="actual-pl-24h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_hour">Last Hour</p>
+      <div class="flex items-baseline gap-1 mt-1">
+        <span id="actual-pl-1h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
+      </div>
+      <p id="actual-pl-1h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
+    </div>
+  </div>
+</div>
+
+<!-- Variance breakdown -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-6 card-glow">
+  <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3" data-i18n="insight">📊 Insight</h2>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="best_hour">Best Hour</p>
+      <p id="best-hour" class="text-base font-mono-num text-cyan-400 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="worst_hour">Worst Hour</p>
+      <p id="worst-hour" class="text-base font-mono-num text-red-400 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="hours_payout">Hours w/ Payout</p>
+      <p id="hours-hit" class="text-base font-mono-num text-slate-300 mt-1">—</p>
+    </div>
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase" data-i18n="total_prl_24h">Total PRL 24h</p>
+      <p id="luck-actual" class="text-base font-mono-num text-purple-400 mt-1">—</p>
+    </div>
+  </div>
+</div>
+
+<!-- Hourly chart visualization -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-6 card-glow">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · Actual P/L Per Hour</h2>
+    <div class="flex items-center gap-3 text-[10px] text-slate-600">
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-cyan-400"></span><span data-i18n="profit">Profit</span></span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-slate-600"></span><span data-i18n="future">Future</span></span>
+    </div>
+  </div>
+  <div id="hour-chart" class="hour-bar"></div>
+  <div class="flex justify-between text-[10px] text-slate-600 mt-1">
+    <span data-i18n="ago_24h">24h ago</span>
+    <span data-i18n="now">now</span>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-4 mb-3 card-glow">
+  <h3 class="text-[10px] text-slate-500 uppercase tracking-wider mb-2" data-i18n="legend_title">📖 Column Legend</h3>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] text-slate-400 leading-relaxed">
+    <div><span class="text-cyan-400 font-semibold">HR</span> = <span data-i18n="legend_hr">hashrate that hour. Low = OFF/idle</span></div>
+    <div><span class="text-cyan-400 font-semibold">Pool Blk</span> = <span data-i18n="legend_pool_blk">total pool blocks that hour</span></div>
+    <div><span class="text-cyan-400 font-semibold">PRL Paid</span> = <span data-i18n="legend_prl_paid">real PRL paid to wallet that hour</span></div>
+    <div><span class="profit font-semibold">P/L +</span> = <span data-i18n="legend_profit">profit (PRL paid bigger than cost)</span></div>
+    <div><span class="loss font-semibold">P/L -</span> = <span data-i18n="legend_loss">loss (cost bigger than PRL paid)</span></div>
+  </div>
+</div>
+
+<!-- Hourly table -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
+  <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown · Latest First</h2>
+    <div class="flex items-center gap-3 text-[11px]">
+      <span class="text-slate-600 uppercase tracking-wider" data-i18n="total_24h_label">Total 24h:</span>
+      <span id="table-total-pl" class="text-base font-mono-num font-bold text-slate-500">—</span>
+      <span id="table-total-detail" class="text-[10px] text-slate-600">—</span>
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
+        <tr>
+          <th class="px-3 py-2.5 text-left" data-i18n="th_hour">Hour (WIB)</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_hr">HR</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_pool_blk">Pool Blk</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_prl_paid">PRL Paid</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_pl">P/L</th>
+        </tr>
+      </thead>
+      <tbody id="hourly-body">
+        <tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pool + Wallet -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
+  <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 card-glow">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="pool_stats">Pool Stats</h2>
+    <div class="space-y-2.5">
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_hashrate">Pool hashrate</span><span id="pool-hash" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="connected_miners">Connected miners</span><span id="pool-miners" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="blocks_24h_pool">Blocks 24h (pool)</span><span id="pool-blocks" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_luck_24h">Pool luck 24h</span><span id="pool-luck" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="avg_block_reward">Avg block reward</span><span id="avg-reward" class="text-xs text-slate-300 font-mono-num">—</span></div>
+    </div>
+  </div>
+  <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 card-glow">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="wallet">Wallet</h2>
+    <div class="space-y-2.5">
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pending_balance">Pending balance</span><span id="w-pending" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="maturing_blocks">Maturing blocks</span><span id="w-maturing" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="next_maturity">Next maturity</span><span id="w-next-mature" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="status_label">Status</span><span id="w-status" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="shares_24h">Shares 24h</span><span id="w-shares" class="text-xs text-slate-300 font-mono-num">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Workers -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
+  <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between">
+    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="workers">Workers</h2>
+    <span id="workers-count" class="text-[10px] text-slate-600 uppercase tracking-wider">0 <span data-i18n="active">active</span></span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
+        <tr>
+          <th class="px-5 py-2.5 text-left" data-i18n="th_worker">Worker</th>
+          <th class="px-5 py-2.5 text-right" data-i18n="th_hashrate">Hashrate</th>
+          <th class="px-5 py-2.5 text-right" data-i18n="th_shares_1h">Shares 1h</th>
+          <th class="px-5 py-2.5 text-right" data-i18n="th_stale">Stale %</th>
+          <th class="px-5 py-2.5 text-right" data-i18n="th_last_seen">Last Seen</th>
+        </tr>
+      </thead>
+      <tbody id="workers-body">
+        <tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="no_workers">No workers</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Donate -->
+<div class="bg-gradient-to-br from-[#1a1428] via-[#0f1420] to-[#0c1a2a] border border-purple-900/40 rounded-lg p-4 mb-6 card-glow">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+      <span class="text-xl">☕</span>
+      <div class="min-w-0">
+        <p class="text-xs font-semibold text-pink-300 uppercase tracking-wider" data-i18n="donate_title">Support This Tool</p>
+        <p class="text-[10px] text-slate-500" data-i18n="donate_sub">Donate PRL · Tip the dev</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 w-full sm:w-auto">
+      <code id="donate-addr" class="flex-1 sm:flex-none bg-[#080b14] border border-[#1f2937] rounded-md px-2.5 py-1.5 text-[10px] text-slate-300 font-mono-num truncate select-all">prl1pejnmtenn2r72skjhz8a266k58a003tlqxrmtdd7ljw6lcvm4643sz0z027</code>
+      <button id="donate-copy" type="button" class="flex-shrink-0 px-3 py-1.5 text-[11px] bg-pink-600/20 border border-pink-700/40 text-pink-300 hover:bg-pink-600/30 active:bg-pink-600/40 rounded-md font-medium transition select-none flex items-center gap-1.5">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        <span id="donate-copy-label" data-i18n="copy">Copy</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer class="mt-8 pb-6 text-center">
+  <p class="text-[10px] text-slate-700 uppercase tracking-wider mb-1" data-i18n="footer_data">Data: akoyapool.com · Auto-refresh 60s · Timezone: WIB (UTC+7)</p>
+  <p class="text-[10px] text-slate-700 max-w-2xl mx-auto leading-relaxed" data-i18n="footer_explain">Profit/Loss = PRL paid × $price − cost. Cost charged proportional to hashrate.<br>Rig OFF (HR &lt; 5% peak) = no cost.</p>
+</footer>
+
+</div>
+
+<script>
+const API = "https://akoyapool.com/api/v1";
+const STORAGE_KEY = "akoya_hybrid_pl_settings";
+
+// ============ I18N ============
+const I18N = {
+  en: {
+    app_title: "Akoya Profit Calculator",
+    app_subtitle: "Hourly P/L · Hashrate-aware",
+    your_setup: "Your Setup",
+    wallet_address: "Wallet Address",
+    cost_per_hr: "Cost $/hr",
+    prl_price: "PRL Price $",
+    refresh: "Refresh",
+    status_ready: "Ready. Enter wallet to begin.",
+    hashrate: "Hashrate",
+    live: "live",
+    pool_share: "Pool Share",
+    of_pool: "of pool",
+    workers: "Workers",
+    online: "online",
+    total_paid: "Total Paid",
+    all_time: "all time",
+    profit_loss: "📦 Profit / Loss",
+    prl_minus_cost: "PRL paid − cost",
+    last_24h: "24 Hours",
+    last_hour: "Last Hour",
+    insight: "📊 Insight",
+    best_hour: "Best Hour",
+    worst_hour: "Worst Hour",
+    hours_payout: "Hours w/ Payout",
+    total_prl_24h: "Total PRL 24h",
+    last_24h_chart: "Last 24h · Actual P/L Per Hour",
+    profit: "Profit",
+    loss: "Loss",
+    future: "Future",
+    ago_24h: "24h ago",
+    now: "now",
+    legend_title: "📖 Column Legend",
+    legend_hr: "hashrate that hour. Low = OFF/idle",
+    legend_pool_blk: "total pool blocks that hour",
+    legend_prl_paid: "real PRL paid to wallet that hour",
+    legend_profit: "profit (PRL paid bigger than cost)",
+    legend_loss: "loss (cost bigger than PRL paid)",
+    hourly_breakdown: "Hourly Breakdown · Latest First",
+    total_24h_label: "Total 24h:",
+    th_hour: "Hour (WIB)",
+    th_hr: "HR",
+    th_pool_blk: "Pool Blk",
+    th_prl_paid: "PRL Paid",
+    th_pl: "P/L",
+    loading: "Loading...",
+    pool_stats: "Pool Stats",
+    pool_hashrate: "Pool hashrate",
+    connected_miners: "Connected miners",
+    blocks_24h_pool: "Blocks 24h (pool)",
+    pool_luck_24h: "Pool luck 24h",
+    avg_block_reward: "Avg block reward",
+    wallet: "Wallet",
+    pending_balance: "Pending balance",
+    maturing_blocks: "Maturing blocks",
+    next_maturity: "Next maturity",
+    status_label: "Status",
+    shares_24h: "Shares 24h",
+    th_worker: "Worker",
+    th_hashrate: "Hashrate",
+    th_shares_1h: "Shares 1h",
+    th_stale: "Stale %",
+    th_last_seen: "Last Seen",
+    no_workers: "No workers",
+    active: "active",
+    never: "never",
+    footer_data: "Data: akoyapool.com · Auto-refresh 60s · Timezone: WIB (UTC+7)",
+    footer_explain: "Profit/Loss = PRL paid × $price − cost. Cost charged proportional to hashrate.<br>Rig OFF (HR &lt; 5% peak) = no cost.",
+    online_status: "🟢 Online",
+    offline_status: "🔴 Offline",
+    error_prefix: "Error: ",
+    fetching: "Fetching data...",
+    updated: "Updated",
+    auto_refresh_60s: "Auto-refresh in 60s",
+    donate_title: "Support This Tool",
+    donate_sub: "Donate PRL · Tip the dev",
+    copy: "Copy",
+    copied: "Copied!",
+  },
+  id: {
+    app_title: "Akoya Kalkulator Profit",
+    app_subtitle: "P/L per jam · Sadar hashrate",
+    your_setup: "Setup Kamu",
+    wallet_address: "Alamat Wallet",
+    cost_per_hr: "Cost $/jam",
+    prl_price: "Harga PRL $",
+    refresh: "Refresh",
+    status_ready: "Siap. Masukin wallet untuk mulai.",
+    hashrate: "Hashrate",
+    live: "live",
+    pool_share: "Bagian Pool",
+    of_pool: "dari pool",
+    workers: "Workers",
+    online: "online",
+    total_paid: "Total Dibayar",
+    all_time: "all time",
+    profit_loss: "📦 Profit / Loss",
+    prl_minus_cost: "PRL dibayar − cost",
+    last_24h: "24 Jam",
+    last_hour: "Jam Terakhir",
+    insight: "📊 Insight",
+    best_hour: "Jam Terbaik",
+    worst_hour: "Jam Terburuk",
+    hours_payout: "Jam ada Payout",
+    total_prl_24h: "Total PRL 24j",
+    last_24h_chart: "24 Jam Terakhir · P/L Aktual Per Jam",
+    profit: "Profit",
+    loss: "Loss",
+    future: "Belum",
+    ago_24h: "24j lalu",
+    now: "sekarang",
+    legend_title: "📖 Penjelasan Kolom",
+    legend_hr: "hashrate jam itu. Low = OFF/idle",
+    legend_pool_blk: "total block pool jam itu",
+    legend_prl_paid: "PRL real masuk wallet jam itu",
+    legend_profit: "profit (PRL paid lebih besar dari cost)",
+    legend_loss: "loss (cost lebih besar dari PRL paid)",
+    hourly_breakdown: "Breakdown Per Jam · Terbaru Dulu",
+    total_24h_label: "Total 24j:",
+    th_hour: "Jam (WIB)",
+    th_hr: "HR",
+    th_pool_blk: "Pool Blk",
+    th_prl_paid: "PRL Dibayar",
+    th_pl: "P/L",
+    loading: "Loading...",
+    pool_stats: "Statistik Pool",
+    pool_hashrate: "Hashrate pool",
+    connected_miners: "Miner terkoneksi",
+    blocks_24h_pool: "Block 24j (pool)",
+    pool_luck_24h: "Luck pool 24j",
+    avg_block_reward: "Reward block rata2",
+    wallet: "Wallet",
+    pending_balance: "Saldo pending",
+    maturing_blocks: "Block matang",
+    next_maturity: "Maturity berikutnya",
+    status_label: "Status",
+    shares_24h: "Shares 24j",
+    th_worker: "Worker",
+    th_hashrate: "Hashrate",
+    th_shares_1h: "Shares 1j",
+    th_stale: "Stale %",
+    th_last_seen: "Last Seen",
+    no_workers: "Ga ada workers",
+    active: "aktif",
+    never: "belum",
+    footer_data: "Data: akoyapool.com · Auto-refresh 60d · Zona: WIB (UTC+7)",
+    footer_explain: "Profit/Loss = PRL dibayar × harga$ − cost. Cost di-charge proporsional ke hashrate.<br>Rig OFF (HR &lt; 5% peak) = ga ada cost.",
+    online_status: "🟢 Online",
+    offline_status: "🔴 Offline",
+    error_prefix: "Error: ",
+    fetching: "Mengambil data...",
+    updated: "Diupdate",
+    auto_refresh_60s: "Auto-refresh dalam 60d",
+    donate_title: "Dukung Tool Ini",
+    donate_sub: "Donasi PRL · Tip developer",
+    copy: "Salin",
+    copied: "Tersalin!",
+  },
+  zh: {
+    app_title: "Akoya 利润计算器",
+    app_subtitle: "每小时盈亏 · 算力感知",
+    your_setup: "您的设置",
+    wallet_address: "钱包地址",
+    cost_per_hr: "成本 $/小时",
+    prl_price: "PRL 价格 $",
+    refresh: "刷新",
+    status_ready: "就绪。请输入钱包开始。",
+    hashrate: "算力",
+    live: "实时",
+    pool_share: "矿池占比",
+    of_pool: "占矿池",
+    workers: "矿工",
+    online: "在线",
+    total_paid: "已支付总额",
+    all_time: "全部时间",
+    profit_loss: "📦 盈亏",
+    prl_minus_cost: "PRL支付 − 成本",
+    last_24h: "24 小时",
+    last_hour: "最后一小时",
+    insight: "📊 分析",
+    best_hour: "最佳小时",
+    worst_hour: "最差小时",
+    hours_payout: "有支付的小时",
+    total_prl_24h: "24小时总PRL",
+    last_24h_chart: "过去24小时 · 每小时实际盈亏",
+    profit: "盈利",
+    loss: "亏损",
+    future: "未来",
+    ago_24h: "24小时前",
+    now: "现在",
+    legend_title: "📖 列说明",
+    legend_hr: "该小时算力。低 = 关闭/空闲",
+    legend_pool_blk: "该小时矿池总区块数",
+    legend_prl_paid: "该小时实际支付到钱包的PRL",
+    legend_profit: "盈利 (PRL支付大于成本)",
+    legend_loss: "亏损 (成本大于PRL支付)",
+    hourly_breakdown: "按小时分解 · 最新优先",
+    total_24h_label: "24小时总计:",
+    th_hour: "小时 (WIB)",
+    th_hr: "算力",
+    th_pool_blk: "池区块",
+    th_prl_paid: "PRL支付",
+    th_pl: "盈亏",
+    loading: "加载中...",
+    pool_stats: "矿池统计",
+    pool_hashrate: "矿池算力",
+    connected_miners: "已连接矿工",
+    blocks_24h_pool: "24小时区块 (池)",
+    pool_luck_24h: "24小时池运气",
+    avg_block_reward: "平均区块奖励",
+    wallet: "钱包",
+    pending_balance: "待处理余额",
+    maturing_blocks: "成熟区块",
+    next_maturity: "下次成熟",
+    status_label: "状态",
+    shares_24h: "24小时份额",
+    th_worker: "矿工",
+    th_hashrate: "算力",
+    th_shares_1h: "1小时份额",
+    th_stale: "陈旧 %",
+    th_last_seen: "上次见到",
+    no_workers: "没有矿工",
+    active: "活跃",
+    never: "从未",
+    footer_data: "数据: akoyapool.com · 自动刷新60秒 · 时区: WIB (UTC+7)",
+    footer_explain: "盈亏 = PRL支付 × 价格$ − 成本。成本按算力比例收取。<br>矿机关闭 (算力 &lt; 5% 峰值) = 无成本。",
+    online_status: "🟢 在线",
+    offline_status: "🔴 离线",
+    error_prefix: "错误: ",
+    fetching: "获取数据中...",
+    updated: "已更新",
+    auto_refresh_60s: "60秒后自动刷新",
+    donate_title: "支持此工具",
+    donate_sub: "捐赠 PRL · 给开发者打赏",
+    copy: "复制",
+    copied: "已复制!",
+  },
+};
+
+let currentLang = localStorage.getItem("akoya_lang") || "en";
+
+function t(key) {
+  return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+}
+
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    const val = t(key);
+    if (val) el.innerHTML = val;
+  });
+  // Update lang button active state
+  document.querySelectorAll(".lang-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-lang") === currentLang);
+  });
+  // Update toggle label
+  const labels = { en: "🇬🇧 EN", id: "🇮🇩 ID", zh: "🇨🇳 ZH" };
+  const cur = document.getElementById("lang-current");
+  if (cur) cur.textContent = labels[currentLang] || "🇬🇧 EN";
+  document.documentElement.lang = currentLang;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem("akoya_lang", lang);
+  applyI18n();
+  closeLangMenu();
+  // Re-render dynamic content
+  if (window._lastWallet) refresh();
+}
+
+function toggleLangMenu() {
+  const menu = document.getElementById("lang-menu");
+  if (menu) menu.classList.toggle("hidden");
+}
+
+function closeLangMenu() {
+  const menu = document.getElementById("lang-menu");
+  if (menu) menu.classList.add("hidden");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  applyI18n();
+  const toggle = document.getElementById("lang-toggle");
+  if (toggle) {
+    // Use both touchend + click for mobile compatibility
+    const handleToggle = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleLangMenu();
+    };
+    toggle.addEventListener("click", handleToggle);
+  }
+  document.querySelectorAll(".lang-btn").forEach(btn => {
+    const handleSelect = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setLang(btn.getAttribute("data-lang"));
+    };
+    btn.addEventListener("click", handleSelect);
+  });
+  // Click outside closes menu
+  document.addEventListener("click", (e) => {
+    const menu = document.getElementById("lang-menu");
+    const toggle = document.getElementById("lang-toggle");
+    if (menu && !menu.contains(e.target) && toggle && !toggle.contains(e.target)) {
+      closeLangMenu();
+    }
+  });
+  
+  // Donate copy button
+  const copyBtn = document.getElementById("donate-copy");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const addr = document.getElementById("donate-addr").textContent.trim();
+      const label = document.getElementById("donate-copy-label");
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(addr);
+        } else {
+          // Fallback for older browsers / non-HTTPS
+          const ta = document.createElement("textarea");
+          ta.value = addr;
+          ta.style.position = "fixed";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
+        const orig = label.textContent;
+        label.textContent = t("copied");
+        copyBtn.classList.add("bg-green-600/30", "border-green-700/50", "text-green-300");
+        copyBtn.classList.remove("bg-pink-600/20", "border-pink-700/40", "text-pink-300");
+        setTimeout(() => {
+          label.textContent = t("copy");
+          copyBtn.classList.remove("bg-green-600/30", "border-green-700/50", "text-green-300");
+          copyBtn.classList.add("bg-pink-600/20", "border-pink-700/40", "text-pink-300");
+        }, 1500);
+      } catch (err) {
+        console.error("Copy failed:", err);
+        alert("Copy failed. Long-press the address and copy manually.");
+      }
+    });
+  }
+});
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    if (s.wallet) document.getElementById("wallet").value = s.wallet;
+    if (s.cost) document.getElementById("cost").value = s.cost;
+    if (s.prl_price) document.getElementById("prl-price").value = s.prl_price;
+  } catch (e) {}
+}
+function saveSettings() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    wallet: document.getElementById("wallet").value.trim(),
+    cost: document.getElementById("cost").value,
+    prl_price: document.getElementById("prl-price").value,
+  }));
+}
+function fmtHash(h) {
+  if (!h) return "—";
+  if (h >= 1e18) return (h/1e18).toFixed(2) + " EH/s";
+  if (h >= 1e15) return (h/1e15).toFixed(2) + " PH/s";
+  if (h >= 1e12) return (h/1e12).toFixed(2) + " TH/s";
+  if (h >= 1e9) return (h/1e9).toFixed(2) + " GH/s";
+  return (h/1e6).toFixed(2) + " MH/s";
+}
+function fmtNum(n, dec=2) {
+  if (n == null || isNaN(n)) return "—";
+  return Number(n).toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec});
+}
+function fmtAge(ts) {
+  if (!ts) return "—";
+  const sec = Math.floor(Date.now()/1000 - ts);
+  if (sec < 60) return sec + "s ago";
+  if (sec < 3600) return Math.floor(sec/60) + "m ago";
+  if (sec < 86400) return Math.floor(sec/3600) + "h ago";
+  return Math.floor(sec/86400) + "d ago";
+}
+function fmtPL(amount) {
+  if (Math.abs(amount) < 0.01) return "$0.00";
+  if (amount > 0) return "+$" + fmtNum(amount, 2);
+  return "-$" + fmtNum(Math.abs(amount), 2);
+}
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+function setClass(id, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = el.className.replace(/\b(profit|loss|neutral|expected)\b/g, "").trim();
+  el.classList.add(cls);
+}
+function showError(msg) {
+  const e = document.getElementById("error");
+  e.textContent = msg;
+  e.classList.remove("hidden");
+}
+function hideError() { document.getElementById("error").classList.add("hidden"); }
+function setStatus(msg) { document.getElementById("status").textContent = msg; }
+
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+async function fetchPayouts(wallet) {
+  const r = await fetchJSON(`${API}/miners/${wallet}/payouts?page_size=200`);
+  return (r.data || []).map(p => ({
+    ts: p.created_at,
+    amount: p.amount,
+    fee: p.fee_amount,
+    status: p.status,
+    tx: p.tx_id,
+  }));
+}
+
+async function fetchHashrateHistory(wallet) {
+  const r = await fetchJSON(`${API}/miners/${wallet}/hashrate_history`);
+  return (r.data && r.data.samples) || [];
+}
+
+function bucketHashrateByHour(samples) {
+  const now = Math.floor(Date.now()/1000);
+  const currentHourStart = Math.floor(now / 3600) * 3600;
+  const buckets = [];
+  for (let i = 23; i >= 0; i--) {
+    const hourStart = currentHourStart - (i * 3600);
+    buckets.push({
+      hour_start: hourStart,
+      hour_end: hourStart + 3600,
+      hashrate_avg: 0,
+      hashrate_max: 0,
+      samples: 0,
+    });
+  }
+  for (const s of samples) {
+    const idx = buckets.findIndex(h => s.timestamp >= h.hour_start && s.timestamp < h.hour_end);
+    if (idx === -1) continue;
+    buckets[idx].hashrate_avg += s.hash_rate;
+    buckets[idx].hashrate_max = Math.max(buckets[idx].hashrate_max, s.hash_rate);
+    buckets[idx].samples++;
+  }
+  for (const b of buckets) {
+    if (b.samples > 0) b.hashrate_avg /= b.samples;
+  }
+  return buckets;
+}
+
+function bucketPayoutsByHour(payouts) {
+  const now = Math.floor(Date.now()/1000);
+  const currentHourStart = Math.floor(now / 3600) * 3600;
+  const buckets = [];
+  for (let i = 23; i >= 0; i--) {
+    const hourStart = currentHourStart - (i * 3600);
+    buckets.push({
+      hour_start: hourStart,
+      hour_end: hourStart + 3600,
+      payouts: 0,
+      amount: 0,
+    });
+  }
+  for (const p of payouts) {
+    if (!p.ts) continue;
+    const idx = buckets.findIndex(h => p.ts >= h.hour_start && p.ts < h.hour_end);
+    if (idx === -1) continue;
+    buckets[idx].payouts++;
+    buckets[idx].amount += (p.amount || 0);
+  }
+  return buckets;
+}
+
+async function fetchAllBlocks24h() {
+  const cutoff = Math.floor(Date.now()/1000) - 86400;
+  const all = [];
+  for (let page = 1; page <= 5; page++) {
+    const r = await fetchJSON(`${API}/pool/blocks?page=${page}&page_size=100`);
+    const blocks = r.data || [];
+    if (!blocks.length) break;
+    all.push(...blocks);
+    if (blocks[blocks.length-1].found_at < cutoff) break;
+  }
+  return all.filter(b => b.found_at >= cutoff);
+}
+
+function bucketByHour(blocks, wallet) {
+  const now = Math.floor(Date.now()/1000);
+  const currentHourStart = Math.floor(now / 3600) * 3600;
+  const buckets = [];
+  for (let i = 23; i >= 0; i--) {
+    const hourStart = currentHourStart - (i * 3600);
+    buckets.push({
+      hour_start: hourStart,
+      hour_end: hourStart + 3600,
+      my_blocks: 0,
+      my_reward: 0,
+      pool_blocks: 0,
+    });
+  }
+  for (const b of blocks) {
+    const idx = buckets.findIndex(h => b.found_at >= h.hour_start && b.found_at < h.hour_end);
+    if (idx === -1) continue;
+    buckets[idx].pool_blocks++;
+    if (b.found_by === wallet) {
+      buckets[idx].my_blocks++;
+      buckets[idx].my_reward += (b.reward || 0);
+    }
+  }
+  return buckets;
+}
+
+function fmtHourLabel(ts) {
+  // Convert UTC ts to WIB (UTC+7)
+  const d = new Date(ts * 1000);
+  const wibHours = (d.getUTCHours() + 7) % 24;
+  return String(wibHours).padStart(2, "0") + ":00";
+}
+
+async function refresh() {
+  const wallet = document.getElementById("wallet").value.trim();
+  const cost = parseFloat(document.getElementById("cost").value) || 0;
+  const prlPrice = parseFloat(document.getElementById("prl-price").value) || 0;
+  
+  if (!wallet || !wallet.startsWith("prl1")) {
+    showError(t("invalid_wallet") || "Wallet must start with 'prl1'");
+    return;
+  }
+  hideError();
+  saveSettings();
+  setStatus(t("fetching"));
+  
+  try {
+    const [miner, poolStats, poolLuck, allBlocks, payouts, hashHistory] = await Promise.all([
+      fetchJSON(`${API}/miners/${wallet}`),
+      fetchJSON(`${API}/pool/stats`),
+      fetchJSON(`${API}/pool/luck`),
+      fetchAllBlocks24h(),
+      fetchPayouts(wallet).catch(() => []),
+      fetchHashrateHistory(wallet).catch(() => []),
+    ]);
+    
+    const m = miner.data || {};
+    const ps = poolStats.data || {};
+    const pl = poolLuck.data || {};
+    const blocks = Array.isArray(allBlocks) ? allBlocks : [];
+    
+    // Top stats
+    const myHash = m.total_hashrate || 0;
+    const poolHash = ps.total_hashrate || 0;
+    const myShare = poolHash > 0 ? (myHash / poolHash) : 0;
+    
+    setText("stat-hashrate", fmtHash(myHash));
+    setText("stat-share", (myShare * 100).toFixed(3));
+    setText("stat-workers", m.online_worker_count || 0);
+    setText("stat-workers-sub", `${m.worker_count || 0} total`);
+    setText("stat-paid", fmtNum(m.total_paid || 0, 2));
+    
+    // Pool stats
+    const poolBlocks24h = ps.blocks_found24_h || 0;
+    const fee = (ps.pool_fee_percent || 5) / 100;
+    
+    // Compute avg reward from recent blocks
+    const recentRewards = blocks.slice(0, 20).map(b => b.reward || 0).filter(r => r > 0);
+    const avgReward = recentRewards.length > 0 ? recentRewards.reduce((a,b)=>a+b, 0) / recentRewards.length : 2715;
+    
+    setText("pool-hash", fmtHash(poolHash));
+    setText("pool-miners", ps.connected_miners || "—");
+    setText("pool-blocks", poolBlocks24h);
+    setText("pool-luck", pl.luck24_h ? pl.luck24_h.toFixed(0) + "%" : "—");
+    setText("avg-reward", fmtNum(avgReward, 2) + " PRL");
+    
+    // Wallet
+    setText("w-pending", fmtNum(m.pending_balance || 0, 4) + " PRL");
+    setText("w-maturing", (m.maturing_pool_blocks_count || 0) + " blocks");
+    const eta = m.next_pool_block_maturity_eta_seconds;
+    setText("w-next-mature", eta ? `${Math.floor(eta/60)}m ${eta%60}s` : "—");
+    setText("w-status", m.is_online ? t("online_status") : t("offline_status"));
+    setText("w-shares", `${fmtNum(m.accepted_shares24_h || 0, 0)} / ${fmtNum(m.total_shares24_h || 0, 0)}`);
+    
+    // ============ HYBRID P/L COMPUTATION (PAYOUT-BASED + HASHRATE-AWARE COST) ============
+    const payoutBuckets = bucketPayoutsByHour(payouts);
+    const blockBuckets = bucketByHour(blocks, wallet);
+    const hashBuckets = bucketHashrateByHour(hashHistory);
+    
+    // Find peak hashrate across 24h (defines what cost=$11/h corresponds to)
+    const peakHashrate = Math.max(...hashBuckets.map(h => h.hashrate_avg), myHash, 1);
+    
+    const buckets = payoutBuckets.map((pb, i) => ({
+      ...pb,
+      pool_blocks: blockBuckets[i].pool_blocks,
+      my_blocks: blockBuckets[i].my_blocks,
+      my_reward: blockBuckets[i].my_reward,
+      hashrate: hashBuckets[i].hashrate_avg,
+      hashrate_ratio: hashBuckets[i].hashrate_avg / peakHashrate,
+    }));
+    const now = Math.floor(Date.now()/1000);
+    
+    let actualPL24h = 0;
+    let totalPRL24h = 0;
+    let totalPayouts24h = 0;
+    let totalMyBlocks = 0;
+    let totalCost24h = 0;
+    let activeHours = 0;
+    let bestPL = -Infinity, bestLabel = "";
+    let worstPL = Infinity, worstLabel = "";
+    let hoursWithPayout = 0;
+    
+    // Threshold: hashrate < 5% of peak = "not mining" = 0 cost
+    const ACTIVE_THRESHOLD = 0.05;
+    
+    for (const b of buckets) {
+      const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
+      // Cost proportional to actual hashrate ratio
+      const isActive = b.hashrate_ratio >= ACTIVE_THRESHOLD;
+      const effectiveRatio = isActive ? b.hashrate_ratio : 0;
+      const fractionalCost = cost * hoursElapsed * effectiveRatio;
+      
+      const revenue = (b.amount || 0) * prlPrice;
+      
+      b.actual_revenue = revenue;
+      b.cost = fractionalCost;
+      b.actual_pl = revenue - fractionalCost;
+      b.reward_net = b.amount;
+      b.is_active = isActive;
+      
+      // Expected PPS forecast (only when active)
+      const expectedPoolBlocksThisHour = (poolBlocks24h / 24) * hoursElapsed;
+      const myShareThisHour = b.hashrate / poolHash;
+      const expectedMyRewardThisHour = expectedPoolBlocksThisHour * myShareThisHour * avgReward * (1 - fee);
+      b.expected_revenue = expectedMyRewardThisHour * prlPrice;
+      b.expected_pl = b.expected_revenue - fractionalCost;
+      
+      actualPL24h += b.actual_pl;
+      totalPRL24h += (b.amount || 0);
+      totalPayouts24h += b.payouts;
+      totalMyBlocks += b.my_blocks;
+      totalCost24h += fractionalCost;
+      if (isActive) activeHours++;
+      
+      if (hoursElapsed > 0.5 && isActive) {
+        if (b.actual_pl > bestPL) { bestPL = b.actual_pl; bestLabel = fmtHourLabel(b.hour_start); }
+        if (b.actual_pl < worstPL) { worstPL = b.actual_pl; worstLabel = fmtHourLabel(b.hour_start); }
+        if (b.payouts > 0) hoursWithPayout++;
+      }
+    }
+    
+    // Expected 24h smooth
+    const expectedDailyPRL = poolBlocks24h * myShare * avgReward * (1 - fee);
+    const expectedDailyRev = expectedDailyPRL * prlPrice;
+    const expectedDailyCost = cost * 24;
+    const expectedPL24h = expectedDailyRev - expectedDailyCost;
+    const expectedHourlyPRL = expectedDailyPRL / 24;
+    const expectedHourlyPL = (expectedHourlyPRL * prlPrice) - cost;
+    
+    // Last hour actual
+    const lastBucket = buckets[buckets.length - 1];
+    
+    // Display
+    setText("actual-pl-24h", fmtPL(actualPL24h));
+    setClass("actual-pl-24h", actualPL24h > 0.01 ? "profit" : actualPL24h < -0.01 ? "loss" : "neutral");
+    setText("actual-pl-24h-detail", `${activeHours}h active · ${fmtNum(totalPRL24h, 1)} PRL · cost $${fmtNum(totalCost24h, 0)}`);
+    
+    // Header total in hourly table
+    setText("table-total-pl", fmtPL(actualPL24h));
+    setClass("table-total-pl", actualPL24h > 0.01 ? "profit" : actualPL24h < -0.01 ? "loss" : "neutral");
+    const revHtml = `<span class="text-cyan-400">rev $${fmtNum(totalPRL24h * prlPrice, 0)}</span> − <span class="text-red-400">cost $${fmtNum(totalCost24h, 0)}</span>`;
+    document.getElementById("table-total-detail").innerHTML = revHtml;
+    
+    setText("actual-pl-1h", fmtPL(lastBucket.actual_pl));
+    setClass("actual-pl-1h", lastBucket.actual_pl > 0.01 ? "profit" : lastBucket.actual_pl < -0.01 ? "loss" : "neutral");
+    setText("actual-pl-1h-detail", `${lastBucket.payouts} payouts · ${fmtNum(lastBucket.amount || 0, 2)} PRL`);
+    
+    // Variance
+    setText("best-hour", isFinite(bestPL) ? fmtPL(bestPL) + " @ " + bestLabel : "—");
+    setText("worst-hour", isFinite(worstPL) ? fmtPL(worstPL) + " @ " + worstLabel : "—");
+    setText("hours-hit", `${hoursWithPayout} / 24`);
+    setText("luck-actual", fmtNum(totalPRL24h, 1) + " PRL");
+    
+    // Hourly chart (actual)
+    const chart = document.getElementById("hour-chart");
+    const maxAbs = Math.max(...buckets.map(b => Math.abs(b.actual_pl || 0)), 1);
+    chart.innerHTML = buckets.map(b => {
+      const pl = b.actual_pl || 0;
+      const heightPct = Math.abs(pl) / maxAbs * 100;
+      const elapsed = (now - b.hour_start) / 3600;
+      let cls;
+      if (elapsed < 0) cls = "future-cell";
+      else if (pl > 0.01) cls = "profit-cell";
+      else if (pl < -0.01) cls = "loss-cell";
+      else cls = "future-cell";
+      const tooltip = `${fmtHourLabel(b.hour_start)} · ${b.my_blocks} blk · ${fmtPL(pl)}`;
+      return `<div class="hour-cell ${cls}" style="height:${Math.max(heightPct, 4)}%" title="${tooltip}"></div>`;
+    }).join("");
+    
+    // Hourly table (newest first)
+    const hbody = document.getElementById("hourly-body");
+    hbody.innerHTML = buckets.slice().reverse().map(b => {
+      const isCurrent = (now >= b.hour_start && now < b.hour_end);
+      const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
+      const dot = b.payouts > 0 ? `<span class="text-cyan-400">●</span>` : "";
+      const hrColor = b.is_active ? "text-emerald-400" : "text-slate-700";
+      const hrText = b.hashrate > 0 ? fmtHash(b.hashrate) : "off";
+      const offlineRowCls = !b.is_active ? "opacity-50" : "";
+      return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-cyan-950/20" : ""} ${offlineRowCls}">
+        <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-cyan-400" : "text-slate-300"} font-mono-num">${fmtHourLabel(b.hour_start)}${isCurrent ? " ◀" : ""}</td>
+        <td class="px-3 py-2.5 text-xs ${hrColor} font-mono-num text-right">${hrText}</td>
+        <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.pool_blocks}</td>
+        <td class="px-3 py-2.5 text-xs ${b.payouts > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${b.payouts > 0 ? fmtNum(b.amount, 1) + " " + dot : "—"}</td>
+        <td class="px-3 py-2.5 text-sm ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
+      </tr>`;
+    }).join("");
+    
+    // Workers
+    const wbody = document.getElementById("workers-body");
+    const instances = (m.instances || []).filter(i => i.is_connected);
+    document.getElementById("workers-count").textContent = `${instances.length} active`;
+    
+    if (instances.length === 0) {
+      wbody.innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600">No active workers</td></tr>`;
+    } else {
+      wbody.innerHTML = instances.sort((a,b) => (b.hashrate||0)-(a.hashrate||0)).map(w => {
+        const stale = w.shares1_h ? (w.stale_shares1_h / w.shares1_h * 100) : 0;
+        const staleColor = stale < 1 ? "text-emerald-400" : stale < 5 ? "text-yellow-400" : "text-red-400";
+        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">
+          <td class="px-5 py-2.5 text-xs text-slate-300 font-mono-num">${w.worker_name || "—"}</td>
+          <td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">${fmtHash(w.hashrate || 0)}</td>
+          <td class="px-5 py-2.5 text-xs text-slate-400 font-mono-num text-right">${w.shares1_h || 0}</td>
+          <td class="px-5 py-2.5 text-xs ${staleColor} font-mono-num text-right">${stale.toFixed(2)}%</td>
+          <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${fmtAge(w.last_seen_at)}</td>
+        </tr>`;
+      }).join("");
+    }
+    
+    // (your blocks section removed, no rendering needed)
+    
+    setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
+    document.getElementById("last-update").textContent = "updated " + new Date().toLocaleTimeString();
+    
+  } catch (e) {
+    console.error("[refresh] ERROR:", e);
+    showError(t("error_prefix") + e.message);
+    setStatus(t("error_prefix") + e.message);
+  }
+}
+
+let refreshTimer = null;
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => {
+    if (document.getElementById("wallet").value.trim()) refresh();
+  }, 60000);
+}
+
+document.getElementById("refresh").addEventListener("click", refresh);
+document.getElementById("wallet").addEventListener("keydown", e => { if (e.key === "Enter") refresh(); });
+document.getElementById("cost").addEventListener("change", refresh);
+document.getElementById("prl-price").addEventListener("change", refresh);
+
+loadSettings();
+if (document.getElementById("wallet").value.trim()) refresh();
+startAutoRefresh();
+</script>
+
+</body>
+</html>
