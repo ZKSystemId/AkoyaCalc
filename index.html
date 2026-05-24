@@ -218,11 +218,13 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
           <th class="px-3 py-2.5 text-right" data-i18n="th_hr">HR</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_pool_blk">Pool Blk</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_prl_paid">PRL Paid</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_revenue">Revenue</th>
+          <th class="px-3 py-2.5 text-right" data-i18n="th_cost">Cost</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_pl">P/L</th>
         </tr>
       </thead>
       <tbody id="hourly-body">
-        <tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
+        <tr><td colspan="7" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
       </tbody>
     </table>
   </div>
@@ -353,6 +355,8 @@ const I18N = {
     th_hr: "HR",
     th_pool_blk: "Pool Blk",
     th_prl_paid: "PRL Paid",
+    th_revenue: "Revenue",
+    th_cost: "Cost",
     th_pl: "P/L",
     loading: "Loading...",
     pool_stats: "Pool Stats",
@@ -432,6 +436,8 @@ const I18N = {
     th_hr: "HR",
     th_pool_blk: "Pool Blk",
     th_prl_paid: "PRL Dibayar",
+    th_revenue: "Revenue",
+    th_cost: "Cost",
     th_pl: "P/L",
     loading: "Loading...",
     pool_stats: "Statistik Pool",
@@ -511,6 +517,8 @@ const I18N = {
     th_hr: "算力",
     th_pool_blk: "池区块",
     th_prl_paid: "PRL支付",
+    th_revenue: "收入",
+    th_cost: "成本",
     th_pl: "盈亏",
     loading: "加载中...",
     pool_stats: "矿池统计",
@@ -1023,6 +1031,8 @@ async function refresh() {
         <td class="px-3 py-2.5 text-xs ${hrColor} font-mono-num text-right">${hrText}</td>
         <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.pool_blocks}</td>
         <td class="px-3 py-2.5 text-xs ${b.payouts > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${b.payouts > 0 ? fmtNum(b.amount, 1) + " " + dot : "—"}</td>
+        <td class="px-3 py-2.5 text-xs ${b.actual_revenue > 0.01 ? "text-cyan-400" : "text-slate-700"} font-mono-num text-right">${b.actual_revenue > 0.01 ? "$" + b.actual_revenue.toFixed(2) : "—"}</td>
+        <td class="px-3 py-2.5 text-xs ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
         <td class="px-3 py-2.5 text-sm ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
       </tr>`;
     }).join("");
