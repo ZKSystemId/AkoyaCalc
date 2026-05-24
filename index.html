@@ -435,31 +435,30 @@ main {
       </div>
     </a>
 
-    <div class="pool-card alpha soon" data-pool="alpha">
-      <span class="soon-badge" data-i18n="soon_badge">SOON</span>
-      <span class="pool-icon">🌟</span>
+    <a href="alphapool.html" class="pool-card alpha" data-pool="alphapool">
+      <span class="pool-icon">⛏</span>
       <h2 class="pool-name">AlphaPool</h2>
-      <p class="pool-tagline" data-i18n="alpha_tag">Coming Soon · TBA</p>
+      <p class="pool-tagline" data-i18n="alpha_tag">PPLNS · Multi-region · Time-weighted</p>
       <ul class="pool-features">
-        <li data-i18n="alpha_f1">Multi-coin mining support</li>
-        <li data-i18n="alpha_f2">Smart routing & failover</li>
-        <li data-i18n="alpha_f3">Stay tuned for launch</li>
+        <li data-i18n="alpha_f1">Singapore / EU / US endpoints</li>
+        <li data-i18n="alpha_f2">Live worker tracking</li>
+        <li data-i18n="alpha_f3">65-min decay PPLNS</li>
       </ul>
       <div class="pool-stats">
         <div>
-          <div class="pool-stat-label" data-i18n="status_label">Status</div>
-          <div class="pool-stat-value alpha-status" data-i18n="status_dev">In Development</div>
+          <div class="pool-stat-label" data-i18n="payout_label">Payout</div>
+          <div class="pool-stat-value">PPLNS</div>
         </div>
         <div style="text-align:right">
-          <div class="pool-stat-label" data-i18n="launch">Launch</div>
-          <div class="pool-stat-value alpha-status">TBA</div>
+          <div class="pool-stat-label" data-i18n="fee_label">Fee</div>
+          <div class="pool-stat-value">5%</div>
         </div>
       </div>
-      <div class="pool-cta alpha-cta">
-        <span data-i18n="cta_soon">Coming Soon</span>
-        <span>✨</span>
+      <div class="pool-cta">
+        <span data-i18n="cta_enter">Enter</span>
+        <span>→</span>
       </div>
-    </div>
+    </a>
   </div>
 
   <p class="footer-hint" data-i18n="hint">⏎ Tap a card to enter · Choice saved for next visit</p>
@@ -497,11 +496,12 @@ const I18N = {
     cta_enter: "Enter",
     hint: "⏎ Tap a card to enter · Choice saved for next visit",
     entering: "Entering",
-    alpha_tag: "Coming Soon · TBA",
-    alpha_f1: "Multi-coin mining support",
-    alpha_f2: "Smart routing & failover",
-    alpha_f3: "Stay tuned for launch",
-    soon_badge: "SOON",
+    alpha_tag: "PPLNS · Multi-region · Time-weighted",
+    alpha_f1: "Singapore / EU / US endpoints",
+    alpha_f2: "Live worker tracking",
+    alpha_f3: "65-min decay PPLNS",
+    payout_label: "Payout",
+    fee_label: "Fee",
     status_label: "Status",
     status_dev: "In Development",
     launch: "Launch",
@@ -524,11 +524,12 @@ const I18N = {
     cta_enter: "Masuk",
     hint: "⏎ Tap card buat masuk · Pilihan disimpan",
     entering: "Masuk ke",
-    alpha_tag: "Coming Soon · TBA",
-    alpha_f1: "Multi-coin mining support",
-    alpha_f2: "Smart routing & failover",
-    alpha_f3: "Tunggu launch-nya ya",
-    soon_badge: "SOON",
+    alpha_tag: "PPLNS · Multi-region · Time-weighted",
+    alpha_f1: "Endpoint Singapore / EU / US",
+    alpha_f2: "Tracking worker live",
+    alpha_f3: "PPLNS decay 65 menit",
+    payout_label: "Payout",
+    fee_label: "Fee",
     status_label: "Status",
     status_dev: "Development",
     launch: "Launch",
@@ -551,11 +552,12 @@ const I18N = {
     cta_enter: "进入",
     hint: "⏎ 点击卡片进入 · 选择已保存",
     entering: "进入",
-    alpha_tag: "即将推出 · 待定",
-    alpha_f1: "多币种挖矿支持",
-    alpha_f2: "智能路由与故障转移",
-    alpha_f3: "敬请期待发布",
-    soon_badge: "即将",
+    alpha_tag: "PPLNS · 多区域 · 时间加权",
+    alpha_f1: "新加坡 / 欧盟 / 美国端点",
+    alpha_f2: "实时矿工跟踪",
+    alpha_f3: "65分钟衰减 PPLNS",
+    payout_label: "支付",
+    fee_label: "费用",
     status_label: "状态",
     status_dev: "开发中",
     launch: "发布",
@@ -584,9 +586,9 @@ document.querySelectorAll(".lang-pill").forEach(b => {
 
 // ============ AUTO-REDIRECT ============
 const SAVED_POOL_KEY = "akoya_pool";
-const POOL_URLS = { akoya: "akoya.html", pearlhash: "pearlhash.html" };
-const POOL_ACCENTS = { akoya: "#22d3ee", pearlhash: "#a855f7" };
-const POOL_NAMES = { akoya: "Akoya", pearlhash: "Pearlhash" };
+const POOL_URLS = { akoya: "akoya.html", pearlhash: "pearlhash.html", alphapool: "alphapool.html" };
+const POOL_ACCENTS = { akoya: "#22d3ee", pearlhash: "#a855f7", alphapool: "#fbbf24" };
+const POOL_NAMES = { akoya: "Akoya", pearlhash: "Pearlhash", alphapool: "AlphaPool" };
 
 const url = new URL(location.href);
 const forcePicker = url.searchParams.has("pick");

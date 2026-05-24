@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Calc Your Pool — Pearlhash</title>
-<meta name="description" content="Pearlhash Pool epoch-based P/L tracker. Per-hour epoch credit tracking + auto payments.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🦪%3C/text%3E%3C/svg%3E">
+<title>Calc Your Pool — AlphaPool</title>
+<meta name="description" content="AlphaPool PPLNS time-weighted P/L tracker. Per-worker hashrate, blocks, and 24h payments.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%8F%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -17,13 +17,13 @@ body { font-family: 'Inter', sans-serif; }
 }
 .pulse-dot { animation: pulse 2s infinite; }
 @keyframes pulse {
-  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(168,85,247,0.7); }
-  50% { opacity:.6; box-shadow: 0 0 0 6px rgba(168,85,247,0); }
+  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(251,191,36,0.7); }
+  50% { opacity:.6; box-shadow: 0 0 0 6px rgba(251,191,36,0); }
 }
 .pool-btn { color: #cbd5e1; }
-.pool-btn.active { background: #4c1d95; color: #c4b5fd; font-weight: 600; }
+.pool-btn.active { background: #78350f; color: #fcd34d; font-weight: 600; }
 .lang-btn { color: #cbd5e1; }
-.lang-btn.active { background: #4c1d95; color: #c4b5fd; font-weight: 600; }
+.lang-btn.active { background: #78350f; color: #fcd34d; font-weight: 600; }
 
 input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monospace; }
 .profit { color: #22c55e !important; }
@@ -33,14 +33,14 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .hour-bar { display:flex; align-items:flex-end; gap:2px; height:80px; padding:8px 0; }
 .hour-cell { flex:1; min-width:6px; border-radius:2px; transition:opacity .2s; cursor:pointer; }
 .hour-cell:hover { opacity:.7; }
-.hour-cell.profit-cell { background:#a855f7; }
+.hour-cell.profit-cell { background:#fbbf24; }
 .hour-cell.loss-cell { background:#f87171; }
 .hour-cell.future-cell { background:#475569; }
 
 /* Pearlhash theme — purple instead of cyan */
-.theme-accent { color: #c4b5fd; }
-.theme-accent-bright { color: #a855f7; }
-.theme-bg-accent { background: linear-gradient(to bottom right, #1a0d2e, #0a0e1a); }
+.theme-accent { color: #fcd34d; }
+.theme-accent-bright { color: #fbbf24; }
+.theme-bg-accent { background: linear-gradient(to bottom right, #2e1f0a, #0a0e1a); }
 
 /* Pool switching overlay */
 #switch-overlay {
@@ -53,7 +53,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 #switch-overlay.show { opacity: 1; pointer-events: all; }
 .switch-spinner {
   width: 56px; height: 56px; border-radius: 50%;
-  border: 3px solid #1f2937; border-top-color: #a855f7;
+  border: 3px solid #1f2937; border-top-color: #fbbf24;
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -61,7 +61,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   font-family: 'JetBrains Mono', monospace; color: #94a3b8;
   font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase;
 }
-.switch-text-pool { color: #c4b5fd; font-weight: 600; }
+.switch-text-pool { color: #fcd34d; font-weight: 600; }
 .switch-dots::after {
   content: ''; display: inline-block; width: 1em; text-align: left;
   animation: dots 1.4s steps(4, end) infinite;
@@ -88,35 +88,35 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 
 <header class="mb-8 flex items-start justify-between gap-3">
   <div class="flex items-center gap-3 min-w-0 flex-1">
-    <span class="w-2.5 h-2.5 rounded-full bg-purple-400 pulse-dot flex-shrink-0"></span>
+    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 pulse-dot flex-shrink-0"></span>
     <div class="min-w-0">
-      <h1 class="text-base lg:text-2xl font-semibold text-slate-100 truncate" data-i18n="app_title">🦪 Calc Your Pool — Pearlhash</h1>
-      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate" data-i18n="app_subtitle">Epoch · Hourly Credits · PoUW</p>
+      <h1 class="text-base lg:text-2xl font-semibold text-slate-100 truncate" data-i18n="app_title">🦪 Calc Your Pool — AlphaPool</h1>
+      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate" data-i18n="app_subtitle">PPLNS · Multi-region · Time-weighted</p>
     </div>
   </div>
   <div class="flex items-center gap-2 flex-shrink-0">
     <div class="relative">
-      <button id="pool-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-purple-700/40 active:bg-purple-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
-        <span class="text-purple-400">🦪</span>
-        <span id="pool-current">Pearlhash</span>
+      <button id="pool-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-amber-700/40 active:bg-amber-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+        <span class="text-amber-400">⛏</span>
+        <span id="pool-current">AlphaPool</span>
         <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
       </button>
       <div id="pool-menu" class="hidden absolute right-0 top-full mt-1 w-44 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
-        <button data-pool="akoya" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition select-none">⛏ Akoya</button>
-        <button data-pool="pearlhash" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition border-t border-[#1f2937] select-none">🦪 Pearlhash</button>
-        <button data-pool="alphapool" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition border-t border-[#1f2937] select-none">⛏ AlphaPool</button>
+        <button data-pool="akoya" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-amber-900/40 hover:bg-amber-900/30 transition select-none">⛏ Akoya</button>
+        <button data-pool="pearlhash" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-amber-900/40 hover:bg-amber-900/30 transition border-t border-[#1f2937] select-none">🦪 Pearlhash</button>
+        <button data-pool="alphapool" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-amber-900/40 hover:bg-amber-900/30 transition border-t border-[#1f2937] select-none">⛏ AlphaPool</button>
         <a href="index.html?pick=1" class="block w-full px-3 py-2.5 text-[12px] text-left text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition border-t border-[#1f2937] select-none">↺ Choose pool…</a>
       </div>
     </div>
     <div class="relative">
-      <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-purple-700/40 active:bg-purple-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+      <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-amber-700/40 active:bg-amber-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
         <span id="lang-current">🇬🇧 EN</span>
         <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
       </button>
       <div id="lang-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
-        <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition select-none">🇬🇧 English</button>
-        <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
-        <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-purple-900/40 hover:bg-purple-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
+        <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-amber-900/40 hover:bg-amber-900/30 transition select-none">🇬🇧 English</button>
+        <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-amber-900/40 hover:bg-amber-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
+        <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-amber-900/40 hover:bg-amber-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
       </div>
     </div>
   </div>
@@ -128,20 +128,20 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
     <div class="lg:col-span-2">
       <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="wallet_label">Wallet Address</label>
-      <input id="wallet" type="text" placeholder="prl1..." class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+      <input id="wallet" type="text" placeholder="prl1..." class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-amber-500/50 focus:outline-none transition">
     </div>
     <div>
       <label class="text-[10px] text-slate-600 uppercase tracking-wider"><span data-i18n="cost">Cost</span> ($/hr)</label>
-      <input id="cost" type="number" step="0.01" value="11" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+      <input id="cost" type="number" step="0.01" value="11" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-amber-500/50 focus:outline-none transition">
     </div>
     <div>
       <label class="text-[10px] text-slate-600 uppercase tracking-wider"><span data-i18n="prl_price">PRL Price</span> ($)</label>
-      <input id="prl-price" type="number" step="0.01" value="0.40" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+      <input id="prl-price" type="number" step="0.01" value="0.40" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-3 py-2 text-sm text-slate-200 focus:border-amber-500/50 focus:outline-none transition">
     </div>
   </div>
   <div class="flex items-center justify-between mt-4">
     <span id="status" class="text-[11px] text-slate-500">—</span>
-    <button id="refresh-btn" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-700/40 text-purple-300 text-xs px-4 py-1.5 rounded transition" data-i18n="refresh_btn">↻ Refresh</button>
+    <button id="refresh-btn" class="bg-amber-600/20 hover:bg-amber-600/30 border border-amber-700/40 text-amber-300 text-xs px-4 py-1.5 rounded transition" data-i18n="refresh_btn">↻ Refresh</button>
   </div>
   <div id="error" class="hidden mt-3 text-xs text-red-400 bg-red-950/30 border border-red-900/40 rounded px-3 py-2"></div>
 </div>
@@ -177,9 +177,9 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 </div>
 
 <!-- P/L Panel -->
-<div class="rounded-lg p-5 card-glow theme-bg-accent border-purple-900/30 mb-6">
+<div class="rounded-lg p-5 card-glow theme-bg-accent border-amber-900/30 mb-6">
   <div class="flex items-center justify-between mb-3">
-    <p class="text-[11px] text-purple-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
+    <p class="text-[11px] text-amber-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
     <span class="text-[10px] text-slate-600" data-i18n="credits_minus_cost">Epoch credits − cost</span>
   </div>
   <div class="grid grid-cols-2 gap-4">
@@ -206,7 +206,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
     <div>
       <p class="text-[10px] text-slate-600 uppercase" data-i18n="best_hour">Best Hour</p>
-      <p id="best-hour" class="text-base font-mono-num text-purple-300 mt-1">—</p>
+      <p id="best-hour" class="text-base font-mono-num text-amber-300 mt-1">—</p>
     </div>
     <div>
       <p class="text-[10px] text-slate-600 uppercase" data-i18n="worst_hour">Worst Hour</p>
@@ -218,7 +218,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
     </div>
     <div>
       <p class="text-[10px] text-slate-600 uppercase" data-i18n="total_credits_24h">Credits 24h</p>
-      <p id="total-credits" class="text-base font-mono-num text-purple-300 mt-1">—</p>
+      <p id="total-credits" class="text-base font-mono-num text-amber-300 mt-1">—</p>
     </div>
   </div>
 </div>
@@ -228,7 +228,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   <div class="flex items-center justify-between mb-3">
     <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · P/L Per Hour</h2>
     <div class="flex items-center gap-3 text-[10px] text-slate-600">
-      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-purple-400"></span><span data-i18n="profit">Profit</span></span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-amber-400"></span><span data-i18n="profit">Profit</span></span>
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-slate-600"></span><span data-i18n="future">Future</span></span>
     </div>
@@ -338,7 +338,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 </div>
 
 <!-- Donate -->
-<div class="bg-gradient-to-br from-[#1a1428] via-[#0f1420] to-[#0c1a2a] border border-purple-900/40 rounded-lg p-4 mb-6 card-glow">
+<div class="bg-gradient-to-br from-[#1a1428] via-[#0f1420] to-[#0c1a2a] border border-amber-900/40 rounded-lg p-4 mb-6 card-glow">
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <div class="flex items-center gap-3 min-w-0">
       <span class="text-2xl flex-shrink-0">☕</span>
@@ -371,14 +371,14 @@ const POOLS = {
   pearlhash: { name: "Pearlhash", url: "pearlhash.html" },
   alphapool: { name: "AlphaPool", url: "alphapool.html" },
 };
-let currentPool = "pearlhash";
+let currentPool = "alphapool";
 const STORAGE_KEY = "akoya_hybrid_pl_settings";
 
 // ============ I18N ============
 const I18N = {
   en: {
-    app_title: "🦪 Calc Your Pool — Pearlhash",
-    app_subtitle: "Epoch · Hourly Credits · PoUW",
+    app_title: "🦪 Calc Your Pool — AlphaPool",
+    app_subtitle: "PPLNS · Multi-region · Time-weighted",
     your_setup: "Your Setup",
     wallet_label: "Wallet Address",
     cost: "Cost",
@@ -456,8 +456,8 @@ const I18N = {
     switching: "Switching to",
   },
   id: {
-    app_title: "🦪 Hitung Pool Kamu — Pearlhash",
-    app_subtitle: "Epoch · Credit Per Jam · PoUW",
+    app_title: "⛏ Hitung Pool Kamu — AlphaPool",
+    app_subtitle: "PPLNS · Multi-region · Time-weighted",
     your_setup: "Setup Kamu",
     wallet_label: "Alamat Wallet",
     cost: "Biaya",
@@ -535,8 +535,8 @@ const I18N = {
     switching: "Pindah ke",
   },
   zh: {
-    app_title: "🦪 计算你的矿池 — Pearlhash",
-    app_subtitle: "周期 · 每小时积分 · PoUW",
+    app_title: "⛏ 计算你的矿池 — AlphaPool",
+    app_subtitle: "PPLNS · 多区域 · 时间加权",
     your_setup: "你的设置",
     wallet_label: "钱包地址",
     cost: "成本",
@@ -670,8 +670,8 @@ function togglePoolMenu() {
 function closePoolMenu() { document.getElementById("pool-menu").classList.add("hidden"); }
 
 // ============ HELPERS ============
-const API = "https://pearlhash.xyz/api";
-const corsProxy = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
+const API = "https://pearl.alphapool.tech/api";
+// AlphaPool exposes CORS=*, no proxy needed
 
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 function showError(msg) {
@@ -734,14 +734,24 @@ function saveSettings() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
+// Parse "1.86 EH/s", "274.50 TH/s" etc → raw H/s
+function parseHashStr(s) {
+  if (!s || typeof s !== "string") return 0;
+  const m = s.match(/([\d.]+)\s*([EPTGMKk]?)H\/s/);
+  if (!m) return 0;
+  const n = parseFloat(m[1]);
+  const unit = m[2].toUpperCase();
+  const mult = { "": 1, "K": 1e3, "M": 1e6, "G": 1e9, "T": 1e12, "P": 1e15, "E": 1e18 }[unit] || 1;
+  return n * mult;
+}
+
 // ============ FETCH ============
-async function fetchPearlhash(wallet) {
-  const [account, stats, chain] = await Promise.all([
-    fetchJSON(corsProxy(`${API}/account/${wallet}`)),
-    fetchJSON(corsProxy(`${API}/stats`)),
-    fetchJSON(corsProxy(`${API}/chain-info`)).catch(() => ({})),
+async function fetchAlphaPool(wallet) {
+  const [stats, miner] = await Promise.all([
+    fetchJSON(`${API}/stats`),
+    fetchJSON(`${API}/miner/${wallet}`),
   ]);
-  return { account, stats, chain };
+  return { stats, miner };
 }
 
 // ============ REFRESH ============
@@ -760,13 +770,66 @@ async function refresh() {
   window._lastWallet = wallet;
 
   try {
-    const { account, stats, chain } = await fetchPearlhash(wallet);
+    const { stats, miner } = await fetchAlphaPool(wallet);
 
-    const txs = account.balance_transactions || [];
-    const workers = account.connected_workers || [];
+    // Pool / network from /api/stats
+    const poolHash = parseHashStr(stats?.pool?.hashrate || "");
+    const networkHash = parseHashStr(stats?.coins?.[0]?.network_hash || "");
+    const blockReward = parseFloat(stats?.coins?.[0]?.reward || 2706);
+    const feePct = parseFloat(stats?.feePercent || 5);
+    const feeFrac = feePct / 100;
+    const networkHeight = stats?.chain?.height || 0;
+    const blockTime = 60; // Pearl ~60s
+    const ttf = stats?.pool?.ttfLabel || "—";
 
-    // Build hourly buckets (24h)
+    // Miner stats
+    const myHash1h = parseFloat(miner?.estHash1hRaw || 0);
+    const myHash24h = parseFloat(miner?.estHash24hRaw || 0);
+    const balancePending = parseFloat(miner?.balance_prl || 0);
+    const totalPaid = parseFloat(miner?.total_paid_prl || 0);
+    const paymentsCount = parseInt(miner?.payments_count || 0);
+    const shares24h = parseInt(miner?.shares24h || 0);
+    const lastSeen = parseInt(miner?.last_seen || 0);
+    const workers = miner?.workers || [];
+    const blocks = miner?.blocks || [];
+    const paymentsByDay = miner?.payments_by_day || [];
+
+    const myShare1h = poolHash > 0 ? (myHash1h / poolHash) : 0;
+    const myShare24h = poolHash > 0 ? (myHash24h / poolHash) : 0;
+    const myNetShare = networkHash > 0 ? (myHash1h / networkHash) : 0;
+
+    // Online workers (last share <15min ago)
     const now = Math.floor(Date.now() / 1000);
+    const onlineWorkers = workers.filter(w => w.online && (now - (w.time || 0)) < 900);
+
+    // Top stats
+    setText("stat-hashrate", fmtHash(myHash1h));
+    setText("stat-share", (myShare1h * 100).toFixed(4));
+    setText("stat-workers", `${onlineWorkers.length}/${workers.length}`);
+    setText("stat-pending", fmtNum(balancePending, 4));
+
+    // Pool stats
+    setText("pool-hash", fmtHash(poolHash));
+    setText("pool-accounts", fmtNum(stats?.pool?.miners24h || 0, 0));
+    setText("pool-total-workers", fmtNum(stats?.pool?.workers || 0, 0));
+    setText("my-share", (myShare1h * 100).toFixed(4) + "%");
+
+    // Network
+    setText("net-hash", fmtHash(networkHash));
+    setText("net-blocks", networkHeight ? fmtNum(networkHeight, 0) : "—");
+    setText("net-supply", fmtNum(stats?.pool?.blocks24h || 0, 0) + " blocks/24h");
+    setText("net-difficulty", stats?.coins?.[0]?.difficulty ? fmtNum(stats.coins[0].difficulty, 0) : "—");
+    setText("net-blocktime", `${blockTime}s · TTF ${ttf}`);
+
+    // Wallet
+    setText("w-pending", fmtNum(balancePending, 4) + " PRL");
+    setText("w-total-paid", fmtNum(totalPaid, 4) + " PRL");
+    setText("w-last-epoch", lastSeen ? fmtAge(lastSeen) : "—");
+    const isActive = onlineWorkers.length > 0;
+    setText("w-status", isActive ? t("online_status") : t("offline_status"));
+
+    // ===== Build 24h hourly buckets from blocks[] =====
+    // Each block contributes my_share_grain (in grain, divide by 1e8 → PRL)
     const currentHourStart = Math.floor(now / 3600) * 3600;
     const buckets = [];
     for (let i = 23; i >= 0; i--) {
@@ -774,101 +837,29 @@ async function refresh() {
       buckets.push({
         hour_start: hourStart,
         hour_end: hourStart + 3600,
-        epoch_label: null,
-        credit_prl: 0,
+        block_count: 0,
+        my_prl: 0,
         is_active: false,
       });
     }
 
-    // Process credit txs
-    let totalCredits24h = 0, totalPaidAllTime = 0, lastEpochTs = 0;
-    for (const tx of txs) {
-      const ts = tx.timestamp / 1000;
-      if (tx.amount > 0 && /credit/i.test(tx.reason)) {
-        const m = tx.reason.match(/Epoch (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC/);
-        const epochStart = m ? Math.floor(new Date(m[1] + " UTC").getTime() / 1000) : Math.floor(ts);
-        if (epochStart >= now - 86400) {
-          const idx = buckets.findIndex(b => epochStart >= b.hour_start && epochStart < b.hour_end);
-          if (idx !== -1) {
-            buckets[idx].credit_prl += tx.amount;
-            buckets[idx].is_active = true;
-            buckets[idx].epoch_label = m ? m[1].slice(11, 13) + ":00" : "—";
-            totalCredits24h += tx.amount;
-          }
+    let totalCredits24h = 0;
+    for (const blk of blocks) {
+      const ts = parseInt(blk.ts || 0);
+      const myPRL = parseFloat(blk.my_share_grain || 0) / 1e8;
+      if (myPRL <= 0) continue;
+      if (ts >= now - 86400) {
+        const idx = buckets.findIndex(b => ts >= b.hour_start && ts < b.hour_end);
+        if (idx !== -1) {
+          buckets[idx].block_count += 1;
+          buckets[idx].my_prl += myPRL;
+          buckets[idx].is_active = true;
+          totalCredits24h += myPRL;
         }
-        if (ts > lastEpochTs) lastEpochTs = ts;
-      }
-      if (tx.amount < 0 && /payment/i.test(tx.reason)) {
-        totalPaidAllTime += Math.abs(tx.amount);
       }
     }
 
-    // Compute pending balance from unpaid credits (positive sum)
-    let pendingBalance = 0;
-    for (const tx of txs) pendingBalance += tx.amount;
-    pendingBalance = Math.max(0, pendingBalance);
-
-    // ===== HASHRATE INFERENCE =====
-    // Pearlhash API doesn't expose real-time hashrate via /api/account
-    // Workers list is usually empty. Infer from epoch credit rate:
-    //   user_credit_per_hour / pool_credit_per_hour ≈ user_hash / pool_hash
-    //   pool_credit_per_hour ≈ pool_blocks_per_hour × block_reward × (1 - fee)
-    //   pool_blocks_per_hour = (pool_hash / network_hash) × (3600 / avg_block_time_s)
-    const poolHash = stats.hashrate || 0;
-    const netHash = chain.networkhashps || 0;
-    const blockTime = chain.avg_block_time_s || 124;
-    const BLOCK_REWARD = 2715; // PRL (same as Akoya)
-    const POOL_FEE = 0.05;
-
-    // Use last active hour as best signal (filter out 0-credit hours)
-    const recentCredits = txs
-      .filter(tx => tx.amount > 0 && /credit/i.test(tx.reason) && tx.timestamp/1000 >= now - 7200)
-      .sort((a,b) => b.timestamp - a.timestamp);
-    const lastHourCreditAmount = recentCredits.length > 0 ? recentCredits[0].amount : 0;
-
-    let myHash = 0;
-    let myShare = 0;
-    if (poolHash > 0 && netHash > 0 && lastHourCreditAmount > 0) {
-      const poolBlocksPerHour = (poolHash / netHash) * (3600 / blockTime);
-      const poolCreditPerHour = poolBlocksPerHour * BLOCK_REWARD * (1 - POOL_FEE);
-      if (poolCreditPerHour > 0) {
-        myShare = lastHourCreditAmount / poolCreditPerHour;
-        myHash = poolHash * myShare;
-      }
-    }
-    // Fallback to worker list if any
-    if (myHash === 0) {
-      for (const w of workers) myHash += (w.hashrate || w.hash_rate || 0);
-      myShare = poolHash > 0 ? (myHash / poolHash) : 0;
-    }
-
-    // Top stats
-    setText("stat-hashrate", fmtHash(myHash));
-    setText("stat-share", (myShare * 100).toFixed(3));
-    setText("stat-workers", workers.length);
-    setText("stat-pending", fmtNum(pendingBalance, 4));
-
-    // Pool stats
-    setText("pool-hash", fmtHash(poolHash));
-    setText("pool-accounts", fmtNum(stats.total_accounts || 0, 0));
-    setText("pool-total-workers", fmtNum(stats.total_workers || 0, 0));
-    setText("my-share", (myShare * 100).toFixed(3) + "%");
-
-    // Network
-    setText("net-hash", fmtHash(chain.networkhashps || 0));
-    setText("net-blocks", chain.blocks ? fmtNum(chain.blocks, 0) : "—");
-    setText("net-supply", chain.supply ? fmtNum(chain.supply, 0) + " PRL" : "—");
-    setText("net-difficulty", chain.difficulty ? fmtNum(chain.difficulty, 2) : "—");
-    setText("net-blocktime", chain.avg_block_time_s ? Math.round(chain.avg_block_time_s) + "s" : "—");
-
-    // Wallet
-    setText("w-pending", fmtNum(pendingBalance, 4) + " PRL");
-    setText("w-total-paid", fmtNum(totalPaidAllTime, 2) + " PRL");
-    setText("w-last-epoch", lastEpochTs ? fmtAge(lastEpochTs) : "—");
-    const isActive = (now - lastEpochTs < 7200) || workers.length > 0;
-    setText("w-status", isActive ? t("online_status") : t("offline_status"));
-
-    // Compute P/L
+    // Compute P/L per bucket
     let totalRev = 0, totalCost = 0, totalPL = 0;
     let activeHours = 0;
     let bestPL = -Infinity, bestHour = "—";
@@ -878,8 +869,9 @@ async function refresh() {
     for (const b of buckets) {
       const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
       const isCurrent = (now >= b.hour_start && now < b.hour_end);
-      const rev = b.credit_prl * prlPrice;
-      const c = b.is_active ? (isCurrent ? cost * hoursElapsed : cost) : 0;
+      const rev = b.my_prl * prlPrice;
+      // Cost charged for hours where miner was active OR has online workers in current hour
+      const c = (b.is_active || (isCurrent && isActive)) ? (isCurrent ? cost * hoursElapsed : cost) : 0;
       const pl = rev - c;
       b.revenue = rev;
       b.cost_value = c;
@@ -893,12 +885,12 @@ async function refresh() {
         if (pl > bestPL && b.is_active) { bestPL = pl; bestHour = fmtHourLabel(b.hour_start); }
         if (pl < worstPL && b.is_active) { worstPL = pl; worstHour = fmtHourLabel(b.hour_start); }
       }
-      if (isCurrent) { lastHourPL = pl; lastHourCredit = b.credit_prl; }
+      if (isCurrent) { lastHourPL = pl; lastHourCredit = b.my_prl; }
     }
     if (bestPL === -Infinity) bestHour = "—";
     if (worstPL === Infinity) worstHour = "—";
 
-    // P/L panel — show explicit + or − sign
+    // P/L panel
     const pl24El = document.getElementById("actual-pl-24h");
     pl24El.className = "text-3xl font-bold font-mono-num " + (totalPL >= 0 ? "profit" : "loss");
     pl24El.textContent = fmtPL(totalPL);
@@ -907,7 +899,7 @@ async function refresh() {
     const pl1hEl = document.getElementById("actual-pl-1h");
     pl1hEl.className = "text-3xl font-bold font-mono-num " + (lastHourPL >= 0 ? "profit" : "loss");
     pl1hEl.textContent = fmtPL(lastHourPL);
-    setText("actual-pl-1h-detail", `${lastHourCredit.toFixed(4)} PRL credit`);
+    setText("actual-pl-1h-detail", `${lastHourCredit.toFixed(4)} PRL · ${buckets[buckets.length-1].block_count} blocks`);
 
     // Insight
     setText("best-hour", bestPL !== -Infinity ? `${bestHour} (${fmtPL(bestPL)})` : "—");
@@ -921,14 +913,14 @@ async function refresh() {
       const isFuture = b.hour_start > now;
       const height = Math.min(100, Math.abs(b.pl || 0) / maxAbs * 100);
       const cls = isFuture ? "future-cell" : (b.pl >= 0 ? "profit-cell" : "loss-cell");
-      const tooltip = isFuture ? "future" : `${fmtHourLabel(b.hour_start)} · ${fmtPL(b.pl)}`;
+      const tooltip = isFuture ? "future" : `${fmtHourLabel(b.hour_start)} · ${fmtPL(b.pl)} · ${b.block_count} blk`;
       return `<div class="hour-cell ${cls}" style="height:${Math.max(4, height)}%" title="${tooltip}"></div>`;
     }).join("");
 
     // Hourly table (latest first)
     const hourlyBody = document.getElementById("hourly-body");
     const sortedBuckets = [...buckets].reverse();
-    if (totalCredits24h === 0) {
+    if (totalCredits24h === 0 && blocks.length === 0) {
       hourlyBody.innerHTML = `<tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_credits")}</td></tr>`;
     } else {
       hourlyBody.innerHTML = sortedBuckets.map(b => {
@@ -937,12 +929,12 @@ async function refresh() {
         const offlineCls = !b.is_active && !isFuture ? "opacity-50" : "";
         const plCls = b.pl >= 0 ? "profit" : "loss";
         const plLabel = isFuture ? "—" : fmtPL(b.pl);
-        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-purple-950/20" : ""} ${offlineCls}">
-          <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-purple-400" : "text-slate-300"} font-mono-num">${fmtHourLabel(b.hour_start)}${isCurrent ? " ◀" : ""}</td>
-          <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.epoch_label || "—"}</td>
-          <td class="px-3 py-2.5 text-xs text-purple-300 font-mono-num text-right">${b.credit_prl > 0.0001 ? fmtNum(b.credit_prl, 4) : "—"}</td>
+        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-amber-950/20" : ""} ${offlineCls}">
+          <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-amber-400" : "text-slate-300"} font-mono-num">${fmtHourLabel(b.hour_start)}${isCurrent ? " ◀" : ""}</td>
+          <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.block_count > 0 ? b.block_count : "—"}</td>
+          <td class="px-3 py-2.5 text-xs text-amber-300 font-mono-num text-right">${b.my_prl > 0.0001 ? fmtNum(b.my_prl, 4) : "—"}</td>
           <td class="px-3 py-2.5 text-xs ${b.revenue > 0.01 ? "text-cyan-400" : "text-slate-600"} font-mono-num text-right">${b.revenue > 0.01 ? "$" + b.revenue.toFixed(2) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${b.is_active ? "text-red-400" : "text-slate-600"} font-mono-num text-right">${b.is_active ? "$" + b.cost_value.toFixed(2) : "—"}</td>
+          <td class="px-3 py-2.5 text-xs ${b.cost_value > 0 ? "text-red-400" : "text-slate-600"} font-mono-num text-right">${b.cost_value > 0 ? "$" + b.cost_value.toFixed(2) : "—"}</td>
           <td class="px-3 py-2.5 text-xs ${plCls} font-mono-num text-right font-semibold">${plLabel}</td>
         </tr>`;
       }).join("");
@@ -953,17 +945,23 @@ async function refresh() {
     setText("hourly-total-rev", "$" + totalRev.toFixed(2));
     setText("hourly-total-cost", "$" + totalCost.toFixed(2));
 
-    // Workers
+    // Workers list (sort by name)
+    const sortedWorkers = [...workers].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     const wbody = document.getElementById("workers-body");
-    document.getElementById("workers-count").innerHTML = `${workers.length} <span data-i18n="connected">${t("connected")}</span>`;
+    document.getElementById("workers-count").innerHTML = `${onlineWorkers.length}/${workers.length} <span data-i18n="connected">${t("connected")}</span>`;
     if (workers.length === 0) {
       wbody.innerHTML = `<tr><td colspan="3" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_workers_synthetic")}</td></tr>`;
     } else {
-      wbody.innerHTML = workers.map(w => `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">
-        <td class="px-5 py-2.5 text-xs text-slate-300 font-mono-num">${w.name || w.worker_name || "—"}</td>
-        <td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">${fmtHash(w.hashrate || w.hash_rate || 0)}</td>
-        <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${(w.last_seen_at || w.last_share_at) ? fmtAge(w.last_seen_at || w.last_share_at) : "—"}</td>
-      </tr>`).join("");
+      wbody.innerHTML = sortedWorkers.map(w => {
+        const isOnline = w.online && (now - (w.time || 0)) < 900;
+        const opacity = isOnline ? "" : "opacity-40";
+        const dot = isOnline ? '<span class="inline-block w-1.5 h-1.5 rounded-full bg-green-400 mr-1"></span>' : '<span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-600 mr-1"></span>';
+        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${opacity}">
+          <td class="px-5 py-2.5 text-xs text-slate-300 font-mono-num">${dot}${w.name || "—"}</td>
+          <td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">${isOnline ? (w.hashrate_live || "—") : "—"}</td>
+          <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${w.time ? fmtAge(w.time) : "—"}</td>
+        </tr>`;
+      }).join("");
     }
 
     setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
