@@ -71,7 +71,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   75% { content: '...'; } 100% { content: ''; }
 }
 </style>
-<script src="assets/cost-timeline.js?v=1"></script>
+<script src="assets/cost-adv.js?v=1"></script>
 </head>
 <body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
 
@@ -143,31 +143,38 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   <div class="flex items-center justify-between mt-4">
     <span id="status" class="text-[11px] text-slate-500">—</span>
     <div class="flex items-center gap-2">
-      <button id="cost-history-btn" type="button" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-700/40 text-purple-300 text-xs px-3 py-1.5 rounded transition flex items-center gap-1" title="Cost history">
-        <span>📊</span><span data-i18n="cost_history">Cost history</span>
+      <button id="cost-adv-btn" type="button" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-700/40 text-purple-300 text-xs px-3 py-1.5 rounded transition flex items-center gap-1" title="Cost advanced">
+        <span>📊</span><span data-i18n="cost_adv">Cost adv</span>
       </button>
       <button id="refresh-btn" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-700/40 text-purple-300 text-xs px-4 py-1.5 rounded transition" data-i18n="refresh_btn">↻ Refresh</button>
     </div>
   </div>
   <div id="error" class="hidden mt-3 text-xs text-red-400 bg-red-950/30 border border-red-900/40 rounded px-3 py-2"></div>
-  <!-- Cost timeline panel -->
-  <div id="cost-history-panel" class="hidden mt-4 pt-4 border-t border-[#1a2235]">
+    <!-- Cost advanced (range overrides) panel -->
+  <div id="cost-adv-panel" class="hidden mt-4 pt-4 border-t border-[#1a2235]">
     <div class="flex items-center justify-between mb-2">
-      <p class="text-[11px] text-slate-400 uppercase tracking-wider font-medium" data-i18n="cost_history_title">📊 Cost Timeline</p>
-      <span class="text-[10px] text-slate-600" data-i18n="cost_history_hint">Each row = a cost segment (when GPU rent changed)</span>
+      <p class="text-[11px] text-slate-400 uppercase tracking-wider font-medium" data-i18n="cost_adv_title">⚙️ Cost Advanced</p>
+      <span class="text-[10px] text-slate-600" data-i18n="cost_adv_hint">Override cost for specific time ranges</span>
     </div>
-    <div id="cost-history-list" class="bg-[#080b14] border border-[#162032] rounded mb-3 max-h-60 overflow-y-auto"></div>
-    <div class="flex items-end gap-2">
-      <div class="flex-1">
-        <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="ts_label">Date / Time</label>
-        <input id="cost-add-time" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+    <div id="cost-adv-list" class="bg-[#080b14] border border-[#162032] rounded mb-3 max-h-60 overflow-y-auto"></div>
+    <div class="grid grid-cols-12 gap-2 items-end">
+      <div class="col-span-5">
+        <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="from_label">From</label>
+        <input id="cost-adv-from" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
       </div>
-      <div style="width:90px">
+      <div class="col-span-5">
+        <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="to_label">To</label>
+        <input id="cost-adv-to" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+      </div>
+      <div class="col-span-2">
         <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="cost_label">$ /hr</label>
-        <input id="cost-add-amount" type="number" step="0.01" placeholder="12.00" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
+        <input id="cost-adv-amount" type="number" step="0.01" placeholder="15.00" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-purple-500/50 focus:outline-none transition">
       </div>
-      <button id="cost-add-btn" type="button" class="bg-purple-600/30 hover:bg-purple-600/50 border border-purple-700/40 text-purple-200 text-xs px-3 py-1.5 rounded transition" data-i18n="add_segment">+ Add</button>
     </div>
+    <div class="mt-2 flex justify-end">
+      <button id="cost-adv-add-btn" type="button" class="bg-purple-600/30 hover:bg-purple-600/50 border border-purple-700/40 text-purple-200 text-xs px-4 py-1.5 rounded transition" data-i18n="add_range">+ Add range</button>
+    </div>
+  </div>
   </div>
 </div>
 
@@ -472,11 +479,12 @@ const I18N = {
     copy: "Copy",
     copied: "Copied!",
     footer_explain: "P/L = Epoch credits × $price − cost. Cost charged flat per hour while mining.<br>No epoch credit (HR &lt; 5%) = no cost.",
-    cost_history: "Cost history",
-    cost_history_title: "📊 Cost Timeline",
-    cost_history_hint: "Each row = a cost segment (when GPU rent changed)",
-    add_segment: "+ Add",
-    ts_label: "Date / Time",
+    cost_adv: "Cost adv",
+    cost_adv_title: "⚙️ Cost Advanced",
+    cost_adv_hint: "Override cost for specific time ranges",
+    add_range: "+ Add range",
+    from_label: "From",
+    to_label: "To",
     cost_label: "$ /hr",
     fetching: "Fetching data...",
     updated: "Updated",
@@ -557,11 +565,12 @@ const I18N = {
     copy: "Salin",
     copied: "Tersalin!",
     footer_explain: "P/L = Credit epoch × harga$ − biaya. Biaya di-charge flat per jam selama mining.<br>Tanpa credit epoch (HR &lt; 5%) = tanpa biaya.",
-    cost_history: "Riwayat biaya",
-    cost_history_title: "📊 Timeline Biaya",
-    cost_history_hint: "Tiap baris = segmen biaya (kapan rent GPU berubah)",
-    add_segment: "+ Tambah",
-    ts_label: "Tanggal / Jam",
+    cost_adv: "Cost adv",
+    cost_adv_title: "⚙️ Cost Advanced",
+    cost_adv_hint: "Override biaya buat range jam tertentu",
+    add_range: "+ Tambah range",
+    from_label: "Dari",
+    to_label: "Sampai",
     cost_label: "$ /jam",
     fetching: "Mengambil data...",
     updated: "Diperbarui",
@@ -642,11 +651,12 @@ const I18N = {
     copy: "复制",
     copied: "已复制!",
     footer_explain: "盈亏 = 周期积分 × 价格$ − 成本。挖矿期间按小时固定收取成本。<br>无周期积分 (算力 &lt; 5%) = 无成本。",
-    cost_history: "成本历史",
-    cost_history_title: "📊 成本时间线",
-    cost_history_hint: "每行 = 一个成本段(GPU租金变化时)",
-    add_segment: "+ 添加",
-    ts_label: "日期 / 时间",
+    cost_adv: "高级成本",
+    cost_adv_title: "⚙️ 高级成本",
+    cost_adv_hint: "为特定时间段覆盖成本",
+    add_range: "+ 添加范围",
+    from_label: "从",
+    to_label: "到",
     cost_label: "$ /小时",
     fetching: "获取数据中...",
     updated: "已更新",
@@ -790,12 +800,7 @@ async function fetchPearlhash(wallet) {
 // ============ REFRESH ============
 async function refresh() {
   const wallet = document.getElementById("wallet").value.trim();
-  const newCost = parseFloat(document.getElementById("cost").value) || 0;
-  const lastSegmentCost = costtl.current();
-  if (newCost > 0 && newCost !== lastSegmentCost) {
-    costtl.push(newCost);
-    updateCostHistoryPanel();
-  }
+  const cost = parseFloat(document.getElementById("cost").value) || 0;
   const prlPrice = parseFloat(document.getElementById("prl-price").value) || 0;
 
   if (!wallet || !wallet.startsWith("prl1")) {
@@ -927,7 +932,7 @@ async function refresh() {
       const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
       const isCurrent = (now >= b.hour_start && now < b.hour_end);
       const rev = b.credit_prl * prlPrice;
-      const c = costtl.costInRange(b.hour_start, Math.min(b.hour_end, now));
+      const c = costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost);
       const pl = rev - c;
       b.revenue = rev;
       b.cost_value = c;
@@ -1023,27 +1028,26 @@ async function refresh() {
   }
 }
 
-// ============ COST TIMELINE ============
-const costtl = new CostTimeline("pearlhash", 11);
+// ============ COST ADV ============
+const costAdv = new CostAdv("pearlhash");
 
-function updateCostHistoryPanel() {
-  costtl.renderPanel("cost-history-list", "#a855f7", () => {
-    const c = costtl.current();
-    if (c) document.getElementById("cost").value = c.toFixed(2);
+function updateCostAdvPanel() {
+  costAdv.renderPanel("cost-adv-list", "#a855f7", () => {
     if (document.getElementById("wallet").value) refresh();
   });
 }
 
-function toggleCostHistory() {
-  const panel = document.getElementById("cost-history-panel");
+function toggleCostAdv() {
+  const panel = document.getElementById("cost-adv-panel");
   const opening = panel.classList.contains("hidden");
   panel.classList.toggle("hidden");
   if (opening) {
-    updateCostHistoryPanel();
-    CostTimeline.prefillAddTime("cost-add-time");
-    document.getElementById("cost-add-amount").value = costtl.current().toFixed(2);
+    updateCostAdvPanel();
+    CostAdv.prefillForm("cost-adv-from", "cost-adv-to");
+    document.getElementById("cost-adv-amount").value = "";
   }
 }
+
 
 // ============ INIT ============
 document.addEventListener("DOMContentLoaded", () => {
@@ -1081,15 +1085,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Refresh button
   document.getElementById("refresh-btn").addEventListener("click", refresh);
 
-  // Cost timeline panel
-  document.getElementById("cost-history-btn").addEventListener("click", toggleCostHistory);
-  document.getElementById("cost-add-btn").addEventListener("click", () => {
-    const data = CostTimeline.parseAddForm("cost-add-time", "cost-add-amount");
-    if (!data) { alert("Invalid time or cost amount"); return; }
-    costtl.push(data.cost, data.ts);
-    document.getElementById("cost").value = costtl.current().toFixed(2);
-    saveSettings();
-    updateCostHistoryPanel();
+  // Cost advanced panel
+  document.getElementById("cost-adv-btn").addEventListener("click", toggleCostAdv);
+  document.getElementById("cost-adv-add-btn").addEventListener("click", () => {
+    const data = CostAdv.parseAddForm("cost-adv-from", "cost-adv-to", "cost-adv-amount");
+    if (!data) { alert("Please fill all fields"); return; }
+    const err = costAdv.addRange(data.start, data.end, data.cost);
+    if (err) { alert(err); return; }
+    document.getElementById("cost-adv-amount").value = "";
+    updateCostAdvPanel();
     if (document.getElementById("wallet").value) refresh();
   });
 
@@ -1115,9 +1119,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   loadSettings();
-  if (costtl.load().length > 0) {
-    document.getElementById("cost").value = costtl.current().toFixed(2);
-  }
   if (document.getElementById("wallet").value) refresh();
 
   // Auto-refresh every 60s
