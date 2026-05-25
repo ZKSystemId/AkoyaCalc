@@ -671,7 +671,9 @@ function closePoolMenu() { document.getElementById("pool-menu").classList.add("h
 
 // ============ HELPERS ============
 const API = "https://pearl.alphapool.tech/api";
-// AlphaPool exposes CORS=*, no proxy needed
+// AlphaPool sends duplicate ACAO header (`*, *`) which strict browsers reject
+// → fall back to codetabs proxy if direct fetch fails
+const corsProxy = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
 
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 function showError(msg) {
@@ -685,9 +687,19 @@ function setStatus(msg) { document.getElementById("status").textContent = msg; }
 function fmtPL(v) { return (v >= 0 ? "+$" : "-$") + Math.abs(v).toFixed(2); }
 
 async function fetchJSON(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
+  // Try direct first (faster), fall back to CORS proxy if browser blocks
+  // (AlphaPool sends duplicate ACAO header that strict browsers reject)
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  } catch (e) {
+    // CORS error or network error — try proxy
+    console.warn("[fetchJSON] direct failed, using proxy:", e.message);
+    const r = await fetch(corsProxy(url));
+    if (!r.ok) throw new Error("HTTP " + r.status + " (proxy)");
+    return r.json();
+  }
 }
 
 function fmtNum(n, dec = 2) {
