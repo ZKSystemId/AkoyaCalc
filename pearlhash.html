@@ -404,7 +404,7 @@ const POOLS = {
   alphapool: { name: "AlphaPool", url: "alphapool.html" },
 };
 let currentPool = "pearlhash";
-const STORAGE_KEY = "akoya_hybrid_pl_settings";
+const STORAGE_KEY = "pearlhash_pl_settings";
 
 // ============ I18N ============
 const I18N = {
@@ -772,7 +772,10 @@ function fmtHourLabel(ts) {
 // ============ SETTINGS ============
 function loadSettings() {
   try {
-    const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    let raw = localStorage.getItem(STORAGE_KEY);
+    // Migration: fall back to old shared key if pool-specific is empty
+    if (!raw) raw = localStorage.getItem("akoya_hybrid_pl_settings");
+    const s = JSON.parse(raw || "{}");
     if (s.wallet) document.getElementById("wallet").value = s.wallet;
     if (s.cost) document.getElementById("cost").value = s.cost;
     if (s.prlPrice) document.getElementById("prl-price").value = s.prlPrice;
