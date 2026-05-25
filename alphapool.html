@@ -936,7 +936,9 @@ async function refresh() {
       const rev = b.my_prl * prlPrice;
       // Cost from timeline — only counts when timeline has events covering this bucket
       // Cap to current time so we don't charge future hours
-      const c = costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost);
+      // Only charge cost when this hour was actively mining (had blocks/credit).
+      // No mining = no rent burn from user's POV.
+      const c = b.is_active ? costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost) : 0;
       const pl = rev - c;
       b.revenue = rev;
       b.cost_value = c;
