@@ -1142,13 +1142,12 @@ async function refresh() {
     let worstPL = Infinity, worstLabel = "";
     let hoursWithPayout = 0;
     
-    // Threshold: hashrate < 5% of peak = "not mining" = 0 cost
-    // If active, charge full hourly cost (Vast bills flat per hour, not proportional)
-    const ACTIVE_THRESHOLD = 0.05;
+    // Always charge cost for elapsed hours — Vast bills flat per hour regardless of blocks found.
+    // Machine is always on; 0 blocks in an hour ≠ machine off, just unlucky.
     
     for (const b of buckets) {
       const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
-      const isActive = b.hashrate_ratio >= ACTIVE_THRESHOLD;
+      const isActive = hoursElapsed > 0;
       // Cost from timeline — overrides flat rate, supports per-hour pricing changes
       const fractionalCost = isActive ? costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost) : 0;
       
