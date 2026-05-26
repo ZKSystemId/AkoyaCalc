@@ -937,11 +937,11 @@ async function refresh() {
     for (const b of buckets) {
       const isCurrent = (now >= b.hour_start && now < b.hour_end);
       const rev = b.my_prl * prlPrice;
-      // Cost from timeline — only counts when timeline has events covering this bucket
-      // Cap to current time so we don't charge future hours
-      // Only charge cost when this hour was actively mining (had blocks/credit).
-      // No mining = no rent burn from user's POV.
-      const c = b.is_active ? costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost) : 0;
+      // Always charge cost for elapsed hours — machine runs 24/7, Vast bills flat per hour.
+      // 0 blocks in an hour = unlucky, not offline.
+      const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
+      const c = hoursElapsed > 0 ? costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost) : 0;
+      b.is_active = hoursElapsed > 0;
       const pl = rev - c;
       b.revenue = rev;
       b.cost_value = c;
