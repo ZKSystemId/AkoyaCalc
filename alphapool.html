@@ -37,6 +37,15 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .hour-cell.loss-cell { background:#f87171; }
 .hour-cell.future-cell { background:#475569; }
 
+/* Period selector tabs */
+.period-btn {
+  color: #64748b; transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer; border: none; background: transparent;
+}
+.period-btn:hover { color: #cbd5e1; }
+.period-btn.active { background: #78350f; color: #fbbf24; font-weight: 600; }
+
 /* Pearlhash theme — purple instead of cyan */
 .theme-accent { color: #fcd34d; }
 .theme-accent-bright { color: #fbbf24; }
@@ -72,6 +81,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 }
 </style>
 <script src="assets/cost-adv.js?v=1"></script>
+<script src="assets/period.js?v=1"></script>
 </head>
 <body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
 
@@ -210,20 +220,29 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 
 <!-- P/L Panel -->
 <div class="rounded-lg p-5 card-glow theme-bg-accent border-amber-900/30 mb-6">
-  <div class="flex items-center justify-between mb-3">
+  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
     <p class="text-[11px] text-amber-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
+    <div id="period-selector" class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
+      <button data-period="1d"  class="period-btn active text-[11px] px-3 py-1 rounded">1D</button>
+      <button data-period="7d"  class="period-btn text-[11px] px-3 py-1 rounded">7D</button>
+      <button data-period="30d" class="period-btn text-[11px] px-3 py-1 rounded">30D</button>
+      <button data-period="all" class="period-btn text-[11px] px-3 py-1 rounded">ALL</button>
+    </div>
+  </div>
+  <div class="flex items-center justify-between mb-3">
     <span class="text-[10px] text-slate-600" data-i18n="credits_minus_cost">Epoch credits − cost</span>
+    <span id="period-loading" class="text-[10px] text-amber-400 hidden">loading…</span>
   </div>
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_24h">24 Hours</p>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-main-label" data-i18n="last_24h">24 Hours</span></p>
       <div class="flex items-baseline gap-1 mt-1">
         <span id="actual-pl-24h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
       </div>
       <p id="actual-pl-24h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
     </div>
     <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_hour">Last Hour</p>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-recent-label" data-i18n="last_hour">Last Hour</span></p>
       <div class="flex items-baseline gap-1 mt-1">
         <span id="actual-pl-1h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
       </div>
@@ -258,7 +277,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 <!-- Hourly chart -->
 <div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 mb-6 card-glow">
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · P/L Per Hour</h2>
+    <h2 id="chart-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · P/L Per Hour</h2>
     <div class="flex items-center gap-3 text-[10px] text-slate-600">
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-amber-400"></span><span data-i18n="profit">Profit</span></span>
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
@@ -267,7 +286,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   </div>
   <div id="hour-chart" class="hour-bar"></div>
   <div class="flex justify-between text-[10px] text-slate-600 mt-1">
-    <span data-i18n="ago_24h">24h ago</span>
+    <span id="chart-axis-start" data-i18n="ago_24h">24h ago</span>
     <span data-i18n="now">now</span>
   </div>
 </div>
@@ -275,9 +294,9 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 <!-- Hourly table -->
 <div class="bg-[#0f1420] border border-[#1a2235] rounded-lg overflow-hidden mb-6 card-glow">
   <div class="px-5 py-3 border-b border-[#1a2235] flex items-center justify-between flex-wrap gap-2">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider"><span data-i18n="hourly_breakdown">Hourly Breakdown</span> · <span data-i18n="latest_first">Latest First</span></h2>
+    <h2 id="table-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider"><span data-i18n="hourly_breakdown">Hourly Breakdown</span> · <span data-i18n="latest_first">Latest First</span></h2>
     <div class="text-[11px] text-slate-500">
-      <span data-i18n="total_24h">Total 24h:</span>
+      <span id="table-total-label" data-i18n="total_24h">Total 24h:</span>
       <span id="hourly-total-pl" class="font-mono-num font-semibold profit">—</span>
       <span class="text-slate-600">(<span data-i18n="rev">rev</span> <span id="hourly-total-rev" class="font-mono-num text-cyan-400">—</span> − <span data-i18n="cost_short">cost</span> <span id="hourly-total-cost" class="font-mono-num text-red-400">—</span>)</span>
     </div>
@@ -286,8 +305,8 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
     <table class="w-full text-xs">
       <thead class="bg-[#0a0e16] text-slate-600 uppercase tracking-wider text-[10px]">
         <tr>
-          <th class="px-3 py-2.5 text-left" data-i18n="th_hour_wib">Jam (WIB)</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_epoch">Epoch</th>
+          <th id="th-period" class="px-3 py-2.5 text-left" data-i18n="th_hour_wib">Jam (WIB)</th>
+          <th id="th-blocks" class="px-3 py-2.5 text-right" data-i18n="th_epoch">Blocks</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_credit_prl">Credit PRL</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_revenue">Revenue</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_cost">Cost</th>
@@ -299,6 +318,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
       </tbody>
     </table>
   </div>
+  <div id="hourly-pagination"></div>
 </div>
 
 <!-- Pool & Network Stats -->
@@ -493,6 +513,15 @@ const I18N = {
     invalid_wallet: "Wallet must start with 'prl1'",
     no_credits: "No epoch credits in last 24h",
     switching: "Switching to",
+    period_1d: "24 Hours", period_7d: "7 Days", period_30d: "30 Days", period_all: "All-Time",
+    period_recent_1d: "Last Hour", period_recent_7d: "Today", period_recent_30d: "Today", period_recent_all: "Today",
+    chart_title_1d: "Last 24h · P/L Per Hour", chart_title_7d: "Last 7 Days · P/L Per Day",
+    chart_title_30d: "Last 30 Days · P/L Per Day", chart_title_all: "All-Time · P/L Per Month",
+    table_title_1d: "Hourly Breakdown · Latest First", table_title_7d: "Daily Breakdown · Latest First",
+    table_title_30d: "Daily Breakdown · Latest First", table_title_all: "Monthly Breakdown · Latest First",
+    th_hour_1d: "Hour (WIB)", th_hour_7d: "Date", th_hour_30d: "Date", th_hour_all: "Month",
+    chart_axis_1d: "24h ago", chart_axis_7d: "7d ago", chart_axis_30d: "30d ago", chart_axis_all: "start",
+    total_label_1d: "Total 24h:", total_label_7d: "Total 7d:", total_label_30d: "Total 30d:", total_label_all: "All-time:",
   },
   id: {
     app_title: "⛏ Hitung Pool Kamu — AlphaPool",
@@ -579,6 +608,15 @@ const I18N = {
     invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
     no_credits: "Tidak ada credit epoch dalam 24 jam terakhir",
     switching: "Pindah ke",
+    period_1d: "24 Jam", period_7d: "7 Hari", period_30d: "30 Hari", period_all: "Sepanjang Waktu",
+    period_recent_1d: "Jam Terakhir", period_recent_7d: "Hari Ini", period_recent_30d: "Hari Ini", period_recent_all: "Hari Ini",
+    chart_title_1d: "24 Jam Terakhir · P/L Per Jam", chart_title_7d: "7 Hari Terakhir · P/L Per Hari",
+    chart_title_30d: "30 Hari Terakhir · P/L Per Hari", chart_title_all: "Sepanjang Waktu · P/L Per Bulan",
+    table_title_1d: "Breakdown Per Jam · Terbaru Dulu", table_title_7d: "Breakdown Per Hari · Terbaru Dulu",
+    table_title_30d: "Breakdown Per Hari · Terbaru Dulu", table_title_all: "Breakdown Per Bulan · Terbaru Dulu",
+    th_hour_1d: "Jam (WIB)", th_hour_7d: "Tanggal", th_hour_30d: "Tanggal", th_hour_all: "Bulan",
+    chart_axis_1d: "24j lalu", chart_axis_7d: "7h lalu", chart_axis_30d: "30h lalu", chart_axis_all: "mulai",
+    total_label_1d: "Total 24j:", total_label_7d: "Total 7h:", total_label_30d: "Total 30h:", total_label_all: "Sepanjang waktu:",
   },
   zh: {
     app_title: "⛏ 计算你的矿池 — AlphaPool",
@@ -665,6 +703,15 @@ const I18N = {
     invalid_wallet: "钱包必须以 'prl1' 开头",
     no_credits: "过去24小时无周期积分",
     switching: "切换到",
+    period_1d: "24 小时", period_7d: "7 天", period_30d: "30 天", period_all: "全部时间",
+    period_recent_1d: "最后一小时", period_recent_7d: "今日", period_recent_30d: "今日", period_recent_all: "今日",
+    chart_title_1d: "过去24小时 · 每小时盈亏", chart_title_7d: "过去7天 · 每日盈亏",
+    chart_title_30d: "过去30天 · 每日盈亏", chart_title_all: "全部时间 · 每月盈亏",
+    table_title_1d: "按小时分解 · 最新优先", table_title_7d: "按日分解 · 最新优先",
+    table_title_30d: "按日分解 · 最新优先", table_title_all: "按月分解 · 最新优先",
+    th_hour_1d: "小时 (WIB)", th_hour_7d: "日期", th_hour_30d: "日期", th_hour_all: "月份",
+    chart_axis_1d: "24小时前", chart_axis_7d: "7天前", chart_axis_30d: "30天前", chart_axis_all: "开始",
+    total_label_1d: "24小时总计:", total_label_7d: "7天总计:", total_label_30d: "30天总计:", total_label_all: "全部时间:",
   },
 };
 
@@ -822,6 +869,12 @@ async function fetchAlphaPool(wallet) {
   return { stats, miner };
 }
 
+// ============ PERIOD STATE ============
+const PERIODS = Period.PERIODS;
+let currentPeriod = "1d";
+
+function fmtHourLabel(ts) { return Period.fmtHour(ts); }
+
 // ============ REFRESH ============
 async function refresh() {
   const wallet = document.getElementById("wallet").value.trim();
@@ -836,186 +889,215 @@ async function refresh() {
   saveSettings();
   setStatus(t("fetching"));
   window._lastWallet = wallet;
+  document.getElementById("period-loading").classList.remove("hidden");
 
   try {
     const { stats, miner } = await fetchAlphaPool(wallet);
 
-    // Pool / network from /api/stats
+    // Pool / network
     const poolHash = parseHashStr(stats?.pool?.hashrate || "");
     const networkHash = parseHashStr(stats?.coins?.[0]?.network_hash || "");
     const blockReward = parseFloat(stats?.coins?.[0]?.reward || 2706);
     const feePct = parseFloat(stats?.feePercent || 5);
-    const feeFrac = feePct / 100;
     const networkHeight = stats?.chain?.height || 0;
-    const blockTime = 60; // Pearl ~60s
+    const blockTime = 60;
     const ttf = stats?.pool?.ttfLabel || "—";
 
-    // Miner stats
+    // Miner
     const myHash1h = parseFloat(miner?.estHash1hRaw || 0);
     const myHash24h = parseFloat(miner?.estHash24hRaw || 0);
     const balancePending = parseFloat(miner?.balance_prl || 0);
     const totalPaid = parseFloat(miner?.total_paid_prl || 0);
-    const paymentsCount = parseInt(miner?.payments_count || 0);
     const shares24h = parseInt(miner?.shares24h || 0);
     const lastSeen = parseInt(miner?.last_seen || 0);
+    const firstSeen = parseInt(miner?.first_seen || 0);
     const workers = miner?.workers || [];
     const blocks = miner?.blocks || [];
-    const paymentsByDay = miner?.payments_by_day || [];
 
     const myShare1h = poolHash > 0 ? (myHash1h / poolHash) : 0;
-    const myShare24h = poolHash > 0 ? (myHash24h / poolHash) : 0;
     const myNetShare = networkHash > 0 ? (myHash1h / networkHash) : 0;
 
-    // Online workers (last share <15min ago)
     const now = Math.floor(Date.now() / 1000);
     const onlineWorkers = workers.filter(w => w.online && (now - (w.time || 0)) < 900);
 
-    // Top stats
+    // ===== Top stats =====
     setText("stat-hashrate", fmtHash(myHash1h));
     setText("stat-share", (myShare1h * 100).toFixed(4));
     setText("stat-workers", `${onlineWorkers.length}/${workers.length}`);
     setText("stat-pending", fmtNum(balancePending, 4));
 
-    // Pool stats
     setText("pool-hash", fmtHash(poolHash));
     setText("pool-accounts", fmtNum(stats?.pool?.miners24h || 0, 0));
     setText("pool-total-workers", fmtNum(stats?.pool?.workers || 0, 0));
     setText("my-share", (myShare1h * 100).toFixed(4) + "%");
 
-    // Network
     setText("net-hash", fmtHash(networkHash));
     setText("net-blocks", networkHeight ? fmtNum(networkHeight, 0) : "—");
     setText("net-supply", fmtNum(stats?.pool?.blocks24h || 0, 0) + " blocks/24h");
     setText("net-difficulty", stats?.coins?.[0]?.difficulty ? fmtNum(stats.coins[0].difficulty, 0) : "—");
     setText("net-blocktime", `${blockTime}s · TTF ${ttf}`);
 
-    // Wallet
     setText("w-pending", fmtNum(balancePending, 4) + " PRL");
     setText("w-total-paid", fmtNum(totalPaid, 4) + " PRL");
     setText("w-last-epoch", lastSeen ? fmtAge(lastSeen) : "—");
-    const isActive = onlineWorkers.length > 0;
-    setText("w-status", isActive ? t("online_status") : t("offline_status"));
+    const isAct = onlineWorkers.length > 0;
+    setText("w-status", isAct ? t("online_status") : t("offline_status"));
 
-    // ===== Build 24h hourly buckets from blocks[] =====
-    // Each block contributes my_share_grain (in grain, divide by 1e8 → PRL)
-    const currentHourStart = Math.floor(now / 3600) * 3600;
-    const buckets = [];
-    for (let i = 23; i >= 0; i--) {
-      const hourStart = currentHourStart - i * 3600;
-      buckets.push({
-        hour_start: hourStart,
-        hour_end: hourStart + 3600,
-        block_count: 0,
-        my_prl: 0,
-        is_active: false,
-      });
+    // ===== Build period skeleton =====
+    // For all-time, use first_seen as start; fallback to oldest block.
+    let earliestBlock = firstSeen || (now - 86400 * 90);
+    for (const blk of blocks) {
+      const ts = parseInt(blk.ts || 0);
+      if (ts > 0 && ts < earliestBlock) earliestBlock = ts;
     }
+    const skeleton = Period.buildSkeleton(currentPeriod, earliestBlock);
 
-    let totalCredits24h = 0;
+    const buckets = skeleton.buckets.map(b => ({
+      ...b, block_count: 0, my_prl: 0,
+    }));
+
+    let totalCreditsPeriod = 0;
     for (const blk of blocks) {
       const ts = parseInt(blk.ts || 0);
       const myPRL = parseFloat(blk.my_share_grain || 0) / 1e8;
       if (myPRL <= 0) continue;
-      if (ts >= now - 86400) {
-        const idx = buckets.findIndex(b => ts >= b.hour_start && ts < b.hour_end);
-        if (idx !== -1) {
-          buckets[idx].block_count += 1;
-          buckets[idx].my_prl += myPRL;
-          buckets[idx].is_active = true;
-          totalCredits24h += myPRL;
-        }
-      }
+      const idx = Period.findIdx(buckets, ts);
+      if (idx === -1) continue;
+      buckets[idx].block_count += 1;
+      buckets[idx].my_prl += myPRL;
+      totalCreditsPeriod += myPRL;
     }
 
-    // Compute P/L per bucket
+    // ===== Compute P/L per bucket =====
     let totalRev = 0, totalCost = 0, totalPL = 0;
-    let activeHours = 0;
-    let bestPL = -Infinity, bestHour = "—";
-    let worstPL = Infinity, worstHour = "—";
-    let lastHourPL = 0, lastHourCredit = 0;
+    let activeBuckets = 0;
+    let bestPL = -Infinity, bestLabel = "—";
+    let worstPL = Infinity, worstLabel = "—";
+    let lastPL = 0, lastCredit = 0, lastBlocks = 0;
 
     for (const b of buckets) {
-      const isCurrent = (now >= b.hour_start && now < b.hour_end);
+      const isCurrent = (now >= b.start && now < b.end);
+      const costEnd = Math.min(b.end, now);
+      const isPast = costEnd > b.start;
+      // Mining signal: only charge cost when bucket has at least 1 found block.
+      // Idle buckets → no false losses.
+      const hasMining = b.block_count > 0;
+      const isActive = isPast && hasMining;
+      const c = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       const rev = b.my_prl * prlPrice;
-      // Always charge cost for elapsed hours — machine runs 24/7, Vast bills flat per hour.
-      // 0 blocks in an hour = unlucky, not offline.
-      const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
-      const c = hoursElapsed > 0 ? costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost) : 0;
-      b.is_active = hoursElapsed > 0;
       const pl = rev - c;
+      b.is_active = isActive;
       b.revenue = rev;
       b.cost_value = c;
       b.pl = pl;
 
-      if (b.hour_start < now) {
+      if (isActive) {
         totalRev += rev;
         totalCost += c;
         totalPL += pl;
-        if (b.is_active) activeHours++;
-        if (pl > bestPL && b.is_active) { bestPL = pl; bestHour = fmtHourLabel(b.hour_start); }
-        if (pl < worstPL && b.is_active) { worstPL = pl; worstHour = fmtHourLabel(b.hour_start); }
+        activeBuckets++;
       }
-      if (isCurrent) { lastHourPL = pl; lastHourCredit = b.my_prl; }
+      const isCompleted = now >= b.end;
+      if (isCompleted) {
+        if (pl > bestPL) { bestPL = pl; bestLabel = b.label; }
+        if (pl < worstPL) { worstPL = pl; worstLabel = b.label; }
+      }
+      if (isCurrent) { lastPL = pl; lastCredit = b.my_prl; lastBlocks = b.block_count; }
     }
-    if (bestPL === -Infinity) bestHour = "—";
-    if (worstPL === Infinity) worstHour = "—";
+    if (bestPL === -Infinity) bestLabel = "—";
+    if (worstPL === Infinity) worstLabel = "—";
 
-    // P/L panel
+    // ===== Period labels =====
+    setText("period-main-label", t(`period_${currentPeriod}`));
+    setText("period-recent-label", t(`period_recent_${currentPeriod}`));
+    setText("chart-title", t(`chart_title_${currentPeriod}`));
+    setText("chart-axis-start", t(`chart_axis_${currentPeriod}`));
+    setText("table-title", t(`table_title_${currentPeriod}`));
+    setText("table-total-label", t(`total_label_${currentPeriod}`));
+    setText("th-period", t(`th_hour_${currentPeriod}`));
+
+    // ===== P/L panel =====
     const pl24El = document.getElementById("actual-pl-24h");
     pl24El.className = "text-3xl font-bold font-mono-num " + (totalPL >= 0 ? "profit" : "loss");
     pl24El.textContent = fmtPL(totalPL);
-    setText("actual-pl-24h-detail", `$${totalRev.toFixed(2)} rev · $${totalCost.toFixed(2)} cost`);
+    const unit = skeleton.granularity === "hour" ? "h" : skeleton.granularity === "day" ? "d" : "mo";
+    setText("actual-pl-24h-detail", `${activeBuckets}${unit} · $${totalRev.toFixed(2)} rev · $${totalCost.toFixed(2)} cost`);
 
     const pl1hEl = document.getElementById("actual-pl-1h");
-    pl1hEl.className = "text-3xl font-bold font-mono-num " + (lastHourPL >= 0 ? "profit" : "loss");
-    pl1hEl.textContent = fmtPL(lastHourPL);
-    setText("actual-pl-1h-detail", `${lastHourCredit.toFixed(4)} PRL · ${buckets[buckets.length-1].block_count} blocks`);
+    pl1hEl.className = "text-3xl font-bold font-mono-num " + (lastPL >= 0 ? "profit" : "loss");
+    pl1hEl.textContent = fmtPL(lastPL);
+    setText("actual-pl-1h-detail", `${lastCredit.toFixed(4)} PRL · ${lastBlocks} blocks`);
 
-    // Insight
-    setText("best-hour", bestPL !== -Infinity ? `${bestHour} (${fmtPL(bestPL)})` : "—");
-    setText("worst-hour", worstPL !== Infinity ? `${worstHour} (${fmtPL(worstPL)})` : "—");
-    setText("hours-hit", `${activeHours}/24`);
-    setText("total-credits", fmtNum(totalCredits24h, 4) + " PRL");
+    // ===== Insight =====
+    setText("best-hour", bestPL !== -Infinity ? `${bestLabel} (${fmtPL(bestPL)})` : "—");
+    setText("worst-hour", worstPL !== Infinity ? `${worstLabel} (${fmtPL(worstPL)})` : "—");
+    setText("hours-hit", `${activeBuckets}/${buckets.length}`);
+    setText("total-credits", fmtNum(totalCreditsPeriod, 4) + " PRL");
 
-    // Hourly chart
+    // ===== Chart =====
     const maxAbs = Math.max(...buckets.map(b => Math.abs(b.pl || 0)), 1);
     document.getElementById("hour-chart").innerHTML = buckets.map(b => {
-      const isFuture = b.hour_start > now;
+      const isFuture = !b.is_active;
       const height = Math.min(100, Math.abs(b.pl || 0) / maxAbs * 100);
       const cls = isFuture ? "future-cell" : (b.pl >= 0 ? "profit-cell" : "loss-cell");
-      const tooltip = isFuture ? "future" : `${fmtHourLabel(b.hour_start)} · ${fmtPL(b.pl)} · ${b.block_count} blk`;
+      const tooltip = isFuture ? "future" : `${b.label} · ${fmtPL(b.pl)} · ${b.block_count} blk`;
       return `<div class="hour-cell ${cls}" style="height:${Math.max(4, height)}%" title="${tooltip}"></div>`;
     }).join("");
 
-    // Hourly table (latest first)
-    const hourlyBody = document.getElementById("hourly-body");
-    const sortedBuckets = [...buckets].reverse();
-    if (totalCredits24h === 0 && blocks.length === 0) {
-      hourlyBody.innerHTML = `<tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_credits")}</td></tr>`;
-    } else {
-      hourlyBody.innerHTML = sortedBuckets.map(b => {
-        const isCurrent = (now >= b.hour_start && now < b.hour_end);
-        const isFuture = b.hour_start > now;
-        const offlineCls = !b.is_active && !isFuture ? "opacity-50" : "";
-        const plCls = b.pl >= 0 ? "profit" : "loss";
-        const plLabel = isFuture ? "—" : fmtPL(b.pl);
-        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-amber-950/20" : ""} ${offlineCls}">
-          <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-amber-400" : "text-slate-300"} font-mono-num">${fmtHourLabel(b.hour_start)}${isCurrent ? " ◀" : ""}</td>
-          <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.block_count > 0 ? b.block_count : "—"}</td>
-          <td class="px-3 py-2.5 text-xs text-amber-300 font-mono-num text-right">${b.my_prl > 0.0001 ? fmtNum(b.my_prl, 4) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${b.revenue > 0.01 ? "text-cyan-400" : "text-slate-600"} font-mono-num text-right">${b.revenue > 0.01 ? "$" + b.revenue.toFixed(2) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${b.cost_value > 0 ? "text-red-400" : "text-slate-600"} font-mono-num text-right">${b.cost_value > 0 ? "$" + b.cost_value.toFixed(2) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${plCls} font-mono-num text-right font-semibold">${plLabel}</td>
-        </tr>`;
-      }).join("");
+    // ===== Table (newest first) — paginated =====
+    const PAGE_SIZE = 10;
+    const allRows = [...buckets].reverse();
+    
+    function renderTable(page) {
+      const hourlyBody = document.getElementById("hourly-body");
+      const pag = Period.paginate(allRows, page, PAGE_SIZE);
+      const usePagination = currentPeriod !== "1d" && pag.totalPages > 1;
+      const rowsToShow = usePagination ? pag.items : allRows;
+      
+      if (totalCreditsPeriod === 0 && blocks.length === 0) {
+        hourlyBody.innerHTML = `<tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_credits")}</td></tr>`;
+      } else {
+        hourlyBody.innerHTML = rowsToShow.map(b => {
+          const isCurrent = (now >= b.start && now < b.end);
+          const isFuture = !b.is_active;
+          const offlineCls = isFuture ? "opacity-50" : "";
+          const plCls = b.pl >= 0 ? "profit" : "loss";
+          const plLabel = isFuture ? "—" : fmtPL(b.pl);
+          return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-amber-950/20" : ""} ${offlineCls}">
+            <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-amber-400" : "text-slate-300"} font-mono-num">${b.label}${isCurrent ? " ◀" : ""}</td>
+            <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.block_count > 0 ? b.block_count : "—"}</td>
+            <td class="px-3 py-2.5 text-xs text-amber-300 font-mono-num text-right">${b.my_prl > 0.0001 ? fmtNum(b.my_prl, 4) : "—"}</td>
+            <td class="px-3 py-2.5 text-xs ${b.revenue > 0.01 ? "text-cyan-400" : "text-slate-600"} font-mono-num text-right">${b.revenue > 0.01 ? "$" + b.revenue.toFixed(2) : "—"}</td>
+            <td class="px-3 py-2.5 text-xs ${b.cost_value > 0 ? "text-red-400" : "text-slate-600"} font-mono-num text-right">${b.cost_value > 0 ? "$" + b.cost_value.toFixed(2) : "—"}</td>
+            <td class="px-3 py-2.5 text-xs ${plCls} font-mono-num text-right font-semibold">${plLabel}</td>
+          </tr>`;
+        }).join("");
+      }
+      
+      const pagBox = document.getElementById("hourly-pagination");
+      if (pagBox) {
+        if (usePagination) {
+          pagBox.innerHTML = Period.renderPagination(pag.page, pag.totalPages);
+          pagBox.querySelectorAll(".page-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+              const p = parseInt(btn.getAttribute("data-page")) || 1;
+              window._alphapoolPage = p;
+              renderTable(p);
+            });
+          });
+        } else {
+          pagBox.innerHTML = "";
+        }
+      }
     }
+    renderTable(window._alphapoolPage || 1);
 
     setText("hourly-total-pl", fmtPL(totalPL));
     document.getElementById("hourly-total-pl").className = "font-mono-num font-semibold " + (totalPL >= 0 ? "profit" : "loss");
     setText("hourly-total-rev", "$" + totalRev.toFixed(2));
     setText("hourly-total-cost", "$" + totalCost.toFixed(2));
 
-    // Workers list (sort by name)
+    // ===== Workers (live, not period-aware) =====
     const sortedWorkers = [...workers].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
     const wbody = document.getElementById("workers-body");
     document.getElementById("workers-count").innerHTML = `${onlineWorkers.length}/${workers.length} <span data-i18n="connected">${t("connected")}</span>`;
@@ -1036,10 +1118,12 @@ async function refresh() {
 
     setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
     document.getElementById("last-update").textContent = "updated " + new Date().toLocaleTimeString();
+    document.getElementById("period-loading").classList.add("hidden");
   } catch (e) {
     console.error("[refresh] ERROR:", e);
     showError(t("error_prefix") + e.message);
     setStatus(t("error_prefix") + e.message);
+    document.getElementById("period-loading").classList.add("hidden");
   }
 }
 
@@ -1099,6 +1183,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Refresh button
   document.getElementById("refresh-btn").addEventListener("click", refresh);
+
+  // Period selector
+  const savedPeriod = localStorage.getItem("alphapool_period");
+  if (savedPeriod && PERIODS.includes(savedPeriod)) currentPeriod = savedPeriod;
+  function applyPeriod() {
+    document.querySelectorAll("#period-selector .period-btn").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-period") === currentPeriod);
+    });
+  }
+  applyPeriod();
+  document.querySelectorAll("#period-selector .period-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const p = btn.getAttribute("data-period");
+      if (!PERIODS.includes(p) || p === currentPeriod) return;
+      currentPeriod = p;
+      localStorage.setItem("alphapool_period", p);
+      window._alphapoolPage = 1;
+      applyPeriod();
+      if (document.getElementById("wallet").value.trim()) refresh();
+    });
+  });
 
   // Cost advanced panel
   document.getElementById("cost-adv-btn").addEventListener("click", toggleCostAdv);

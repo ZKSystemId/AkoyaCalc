@@ -37,6 +37,15 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .hour-cell.loss-cell { background:#f87171; }
 .hour-cell.future-cell { background:#475569; }
 
+/* Period selector tabs */
+.period-btn {
+  color: #64748b; transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer; border: none; background: transparent;
+}
+.period-btn:hover { color: #cbd5e1; }
+.period-btn.active { background: #4c1d95; color: #c4b5fd; font-weight: 600; }
+
 /* Pearlhash theme — purple instead of cyan */
 .theme-accent { color: #c4b5fd; }
 .theme-accent-bright { color: #a855f7; }
@@ -72,6 +81,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 }
 </style>
 <script src="assets/cost-adv.js?v=1"></script>
+<script src="assets/period.js?v=1"></script>
 </head>
 <body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
 
@@ -210,20 +220,29 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 
 <!-- P/L Panel -->
 <div class="rounded-lg p-5 card-glow theme-bg-accent border-purple-900/30 mb-6">
-  <div class="flex items-center justify-between mb-3">
+  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
     <p class="text-[11px] text-purple-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
+    <div id="period-selector" class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
+      <button data-period="1d"  class="period-btn active text-[11px] px-3 py-1 rounded">1D</button>
+      <button data-period="7d"  class="period-btn text-[11px] px-3 py-1 rounded">7D</button>
+      <button data-period="30d" class="period-btn text-[11px] px-3 py-1 rounded">30D</button>
+      <button data-period="all" class="period-btn text-[11px] px-3 py-1 rounded">ALL</button>
+    </div>
+  </div>
+  <div class="flex items-center justify-between mb-3">
     <span class="text-[10px] text-slate-600" data-i18n="credits_minus_cost">Epoch credits − cost</span>
+    <span id="period-loading" class="text-[10px] text-purple-400 hidden">loading…</span>
   </div>
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_24h">24 Hours</p>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-main-label" data-i18n="last_24h">24 Hours</span></p>
       <div class="flex items-baseline gap-1 mt-1">
         <span id="actual-pl-24h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
       </div>
       <p id="actual-pl-24h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
     </div>
     <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_hour">Last Hour</p>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-recent-label" data-i18n="last_hour">Last Hour</span></p>
       <div class="flex items-baseline gap-1 mt-1">
         <span id="actual-pl-1h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
       </div>
@@ -258,7 +277,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 <!-- Hourly chart -->
 <div class="bg-[#0f1420] border border-[#1a2235] rounded-lg p-5 mb-6 card-glow">
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · P/L Per Hour</h2>
+    <h2 id="chart-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · P/L Per Hour</h2>
     <div class="flex items-center gap-3 text-[10px] text-slate-600">
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-purple-400"></span><span data-i18n="profit">Profit</span></span>
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
@@ -267,7 +286,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   </div>
   <div id="hour-chart" class="hour-bar"></div>
   <div class="flex justify-between text-[10px] text-slate-600 mt-1">
-    <span data-i18n="ago_24h">24h ago</span>
+    <span id="chart-axis-start" data-i18n="ago_24h">24h ago</span>
     <span data-i18n="now">now</span>
   </div>
 </div>
@@ -275,9 +294,9 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 <!-- Hourly table -->
 <div class="bg-[#0f1420] border border-[#1a2235] rounded-lg overflow-hidden mb-6 card-glow">
   <div class="px-5 py-3 border-b border-[#1a2235] flex items-center justify-between flex-wrap gap-2">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider"><span data-i18n="hourly_breakdown">Hourly Breakdown</span> · <span data-i18n="latest_first">Latest First</span></h2>
+    <h2 id="table-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider"><span data-i18n="hourly_breakdown">Hourly Breakdown</span> · <span data-i18n="latest_first">Latest First</span></h2>
     <div class="text-[11px] text-slate-500">
-      <span data-i18n="total_24h">Total 24h:</span>
+      <span id="table-total-label" data-i18n="total_24h">Total 24h:</span>
       <span id="hourly-total-pl" class="font-mono-num font-semibold profit">—</span>
       <span class="text-slate-600">(<span data-i18n="rev">rev</span> <span id="hourly-total-rev" class="font-mono-num text-cyan-400">—</span> − <span data-i18n="cost_short">cost</span> <span id="hourly-total-cost" class="font-mono-num text-red-400">—</span>)</span>
     </div>
@@ -286,8 +305,8 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
     <table class="w-full text-xs">
       <thead class="bg-[#0a0e16] text-slate-600 uppercase tracking-wider text-[10px]">
         <tr>
-          <th class="px-3 py-2.5 text-left" data-i18n="th_hour_wib">Jam (WIB)</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_epoch">Epoch</th>
+          <th id="th-period" class="px-3 py-2.5 text-left" data-i18n="th_hour_wib">Jam (WIB)</th>
+          <th id="th-epoch" class="px-3 py-2.5 text-right" data-i18n="th_epoch">Epoch</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_credit_prl">Credit PRL</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_revenue">Revenue</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_cost">Cost</th>
@@ -299,6 +318,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
       </tbody>
     </table>
   </div>
+  <div id="hourly-pagination"></div>
 </div>
 
 <!-- Pool & Network Stats -->
@@ -493,6 +513,15 @@ const I18N = {
     invalid_wallet: "Wallet must start with 'prl1'",
     no_credits: "No epoch credits in last 24h",
     switching: "Switching to",
+    period_1d: "24 Hours", period_7d: "7 Days", period_30d: "30 Days", period_all: "All-Time",
+    period_recent_1d: "Last Hour", period_recent_7d: "Today", period_recent_30d: "Today", period_recent_all: "Today",
+    chart_title_1d: "Last 24h · P/L Per Hour", chart_title_7d: "Last 7 Days · P/L Per Day",
+    chart_title_30d: "Last 30 Days · P/L Per Day", chart_title_all: "All-Time · P/L Per Month",
+    table_title_1d: "Hourly Breakdown · Latest First", table_title_7d: "Daily Breakdown · Latest First",
+    table_title_30d: "Daily Breakdown · Latest First", table_title_all: "Monthly Breakdown · Latest First",
+    th_hour_1d: "Hour (WIB)", th_hour_7d: "Date", th_hour_30d: "Date", th_hour_all: "Month",
+    chart_axis_1d: "24h ago", chart_axis_7d: "7d ago", chart_axis_30d: "30d ago", chart_axis_all: "start",
+    total_label_1d: "Total 24h:", total_label_7d: "Total 7d:", total_label_30d: "Total 30d:", total_label_all: "All-time:",
   },
   id: {
     app_title: "🦪 Hitung Pool Kamu — Pearlhash",
@@ -579,6 +608,15 @@ const I18N = {
     invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
     no_credits: "Tidak ada credit epoch dalam 24 jam terakhir",
     switching: "Pindah ke",
+    period_1d: "24 Jam", period_7d: "7 Hari", period_30d: "30 Hari", period_all: "Sepanjang Waktu",
+    period_recent_1d: "Jam Terakhir", period_recent_7d: "Hari Ini", period_recent_30d: "Hari Ini", period_recent_all: "Hari Ini",
+    chart_title_1d: "24 Jam Terakhir · P/L Per Jam", chart_title_7d: "7 Hari Terakhir · P/L Per Hari",
+    chart_title_30d: "30 Hari Terakhir · P/L Per Hari", chart_title_all: "Sepanjang Waktu · P/L Per Bulan",
+    table_title_1d: "Breakdown Per Jam · Terbaru Dulu", table_title_7d: "Breakdown Per Hari · Terbaru Dulu",
+    table_title_30d: "Breakdown Per Hari · Terbaru Dulu", table_title_all: "Breakdown Per Bulan · Terbaru Dulu",
+    th_hour_1d: "Jam (WIB)", th_hour_7d: "Tanggal", th_hour_30d: "Tanggal", th_hour_all: "Bulan",
+    chart_axis_1d: "24j lalu", chart_axis_7d: "7h lalu", chart_axis_30d: "30h lalu", chart_axis_all: "mulai",
+    total_label_1d: "Total 24j:", total_label_7d: "Total 7h:", total_label_30d: "Total 30h:", total_label_all: "Sepanjang waktu:",
   },
   zh: {
     app_title: "🦪 计算你的矿池 — Pearlhash",
@@ -665,6 +703,15 @@ const I18N = {
     invalid_wallet: "钱包必须以 'prl1' 开头",
     no_credits: "过去24小时无周期积分",
     switching: "切换到",
+    period_1d: "24 小时", period_7d: "7 天", period_30d: "30 天", period_all: "全部时间",
+    period_recent_1d: "最后一小时", period_recent_7d: "今日", period_recent_30d: "今日", period_recent_all: "今日",
+    chart_title_1d: "过去24小时 · 每小时盈亏", chart_title_7d: "过去7天 · 每日盈亏",
+    chart_title_30d: "过去30天 · 每日盈亏", chart_title_all: "全部时间 · 每月盈亏",
+    table_title_1d: "按小时分解 · 最新优先", table_title_7d: "按日分解 · 最新优先",
+    table_title_30d: "按日分解 · 最新优先", table_title_all: "按月分解 · 最新优先",
+    th_hour_1d: "小时 (WIB)", th_hour_7d: "日期", th_hour_30d: "日期", th_hour_all: "月份",
+    chart_axis_1d: "24小时前", chart_axis_7d: "7天前", chart_axis_30d: "30天前", chart_axis_all: "开始",
+    total_label_1d: "24小时总计:", total_label_7d: "7天总计:", total_label_30d: "30天总计:", total_label_all: "全部时间:",
   },
 };
 
@@ -800,6 +847,12 @@ async function fetchPearlhash(wallet) {
   return { account, stats, chain };
 }
 
+// ============ PERIOD STATE ============
+const PERIODS = Period.PERIODS;
+let currentPeriod = "1d";
+
+function fmtHourLabel(ts) { return Period.fmtHour(ts); }
+
 // ============ REFRESH ============
 async function refresh() {
   const wallet = document.getElementById("wallet").value.trim();
@@ -814,6 +867,7 @@ async function refresh() {
   saveSettings();
   setStatus(t("fetching"));
   window._lastWallet = wallet;
+  document.getElementById("period-loading").classList.remove("hidden");
 
   try {
     const { account, stats, chain } = await fetchPearlhash(wallet);
@@ -821,69 +875,62 @@ async function refresh() {
     const txs = account.balance_transactions || [];
     const workers = account.connected_workers || [];
 
-    // Build hourly buckets (24h)
+    // Build period skeleton — credit txs determine since (use earliest tx for all-time)
     const now = Math.floor(Date.now() / 1000);
-    const currentHourStart = Math.floor(now / 3600) * 3600;
-    const buckets = [];
-    for (let i = 23; i >= 0; i--) {
-      const hourStart = currentHourStart - i * 3600;
-      buckets.push({
-        hour_start: hourStart,
-        hour_end: hourStart + 3600,
-        epoch_label: null,
-        credit_prl: 0,
-        is_active: false,
-      });
-    }
-
-    // Process credit txs
-    let totalCredits24h = 0, totalPaidAllTime = 0, lastEpochTs = 0;
+    let earliestTx = now - 86400 * 90;
     for (const tx of txs) {
-      const ts = tx.timestamp / 1000;
-      if (tx.amount > 0 && /credit/i.test(tx.reason)) {
-        const m = tx.reason.match(/Epoch (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC/);
+      const ts = (tx.timestamp || 0) / 1000;
+      if (ts > 0 && ts < earliestTx) earliestTx = ts;
+    }
+    const skeleton = Period.buildSkeleton(currentPeriod, earliestTx);
+
+    // ---- bucket credits + payments by period bucket ----
+    const buckets = skeleton.buckets.map(b => ({
+      ...b,
+      credit_prl: 0,
+      epoch_label: null,
+      epoch_count: 0,
+    }));
+
+    let totalCreditsPeriod = 0, totalPaidAllTime = 0, lastEpochTs = 0;
+    for (const tx of txs) {
+      const ts = (tx.timestamp || 0) / 1000;
+      if (tx.amount > 0 && /credit/i.test(tx.reason || "")) {
+        const m = (tx.reason || "").match(/Epoch (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC/);
         const epochStart = m ? Math.floor(new Date(m[1] + " UTC").getTime() / 1000) : Math.floor(ts);
-        if (epochStart >= now - 86400) {
-          const idx = buckets.findIndex(b => epochStart >= b.hour_start && epochStart < b.hour_end);
-          if (idx !== -1) {
-            buckets[idx].credit_prl += tx.amount;
-            buckets[idx].is_active = true;
-            buckets[idx].epoch_label = m ? m[1].slice(11, 13) + ":00" : "—";
-            totalCredits24h += tx.amount;
+        const idx = Period.findIdx(buckets, epochStart);
+        if (idx !== -1) {
+          buckets[idx].credit_prl += tx.amount;
+          buckets[idx].epoch_count++;
+          if (!buckets[idx].epoch_label && m) {
+            buckets[idx].epoch_label = m[1].slice(11, 13) + ":00";
           }
+          totalCreditsPeriod += tx.amount;
         }
         if (ts > lastEpochTs) lastEpochTs = ts;
       }
-      if (tx.amount < 0 && /payment/i.test(tx.reason)) {
+      if (tx.amount < 0 && /payment/i.test(tx.reason || "")) {
         totalPaidAllTime += Math.abs(tx.amount);
       }
     }
 
-    // Compute pending balance from unpaid credits (positive sum)
+    // Pending balance = sum of all txs (pearlhash convention)
     let pendingBalance = 0;
     for (const tx of txs) pendingBalance += tx.amount;
     pendingBalance = Math.max(0, pendingBalance);
 
-    // ===== HASHRATE INFERENCE =====
-    // Pearlhash API doesn't expose real-time hashrate via /api/account
-    // Workers list is usually empty. Infer from epoch credit rate:
-    //   user_credit_per_hour / pool_credit_per_hour ≈ user_hash / pool_hash
-    //   pool_credit_per_hour ≈ pool_blocks_per_hour × block_reward × (1 - fee)
-    //   pool_blocks_per_hour = (pool_hash / network_hash) × (3600 / avg_block_time_s)
+    // ===== HASHRATE INFERENCE (last hour signal — not period-dependent) =====
     const poolHash = stats.hashrate || 0;
     const netHash = chain.networkhashps || 0;
     const blockTime = chain.avg_block_time_s || 124;
-    const BLOCK_REWARD = 2715; // PRL (same as Akoya)
+    const BLOCK_REWARD = 2715;
     const POOL_FEE = 0.05;
-
-    // Use last active hour as best signal (filter out 0-credit hours)
     const recentCredits = txs
-      .filter(tx => tx.amount > 0 && /credit/i.test(tx.reason) && tx.timestamp/1000 >= now - 7200)
+      .filter(tx => tx.amount > 0 && /credit/i.test(tx.reason || "") && (tx.timestamp/1000) >= now - 7200)
       .sort((a,b) => b.timestamp - a.timestamp);
     const lastHourCreditAmount = recentCredits.length > 0 ? recentCredits[0].amount : 0;
 
-    let myHash = 0;
-    let myShare = 0;
+    let myHash = 0, myShare = 0;
     if (poolHash > 0 && netHash > 0 && lastHourCreditAmount > 0) {
       const poolBlocksPerHour = (poolHash / netHash) * (3600 / blockTime);
       const poolCreditPerHour = poolBlocksPerHour * BLOCK_REWARD * (1 - POOL_FEE);
@@ -892,127 +939,170 @@ async function refresh() {
         myHash = poolHash * myShare;
       }
     }
-    // Fallback to worker list if any
     if (myHash === 0) {
       for (const w of workers) myHash += (w.hashrate || w.hash_rate || 0);
       myShare = poolHash > 0 ? (myHash / poolHash) : 0;
     }
 
-    // Top stats
+    // ===== Top stats =====
     setText("stat-hashrate", fmtHash(myHash));
     setText("stat-share", (myShare * 100).toFixed(3));
     setText("stat-workers", workers.length);
     setText("stat-pending", fmtNum(pendingBalance, 4));
 
-    // Pool stats
     setText("pool-hash", fmtHash(poolHash));
     setText("pool-accounts", fmtNum(stats.total_accounts || 0, 0));
     setText("pool-total-workers", fmtNum(stats.total_workers || 0, 0));
     setText("my-share", (myShare * 100).toFixed(3) + "%");
 
-    // Network
     setText("net-hash", fmtHash(chain.networkhashps || 0));
     setText("net-blocks", chain.blocks ? fmtNum(chain.blocks, 0) : "—");
     setText("net-supply", chain.supply ? fmtNum(chain.supply, 0) + " PRL" : "—");
     setText("net-difficulty", chain.difficulty ? fmtNum(chain.difficulty, 2) : "—");
     setText("net-blocktime", chain.avg_block_time_s ? Math.round(chain.avg_block_time_s) + "s" : "—");
 
-    // Wallet
     setText("w-pending", fmtNum(pendingBalance, 4) + " PRL");
     setText("w-total-paid", fmtNum(totalPaidAllTime, 2) + " PRL");
     setText("w-last-epoch", lastEpochTs ? fmtAge(lastEpochTs) : "—");
-    const isActive = (now - lastEpochTs < 7200) || workers.length > 0;
-    setText("w-status", isActive ? t("online_status") : t("offline_status"));
+    const isAct = (now - lastEpochTs < 7200) || workers.length > 0;
+    setText("w-status", isAct ? t("online_status") : t("offline_status"));
 
-    // Compute P/L
+    // ===== Compute P/L per bucket =====
     let totalRev = 0, totalCost = 0, totalPL = 0;
-    let activeHours = 0;
-    let bestPL = -Infinity, bestHour = "—";
-    let worstPL = Infinity, worstHour = "—";
-    let lastHourPL = 0, lastHourCredit = 0;
+    let activeBuckets = 0;
+    let bestPL = -Infinity, bestLabel = "—";
+    let worstPL = Infinity, worstLabel = "—";
+    let lastPL = 0, lastCredit = 0, lastEpochCount = 0;
 
     for (const b of buckets) {
-      const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
-      const isCurrent = (now >= b.hour_start && now < b.hour_end);
+      const isCurrent = (now >= b.start && now < b.end);
+      const costEnd = Math.min(b.end, now);
+      const isPast = costEnd > b.start;
+      // Mining signal: only charge cost on buckets with epoch credits.
+      // Idle buckets (machine off / not yet running) → no false losses.
+      const hasMining = b.credit_prl > 0;
+      const isActive = isPast && hasMining;
+      const c = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       const rev = b.credit_prl * prlPrice;
-      // Always charge cost for elapsed hours — machine runs 24/7, Vast bills flat per hour.
-      // 0 blocks in an hour = unlucky, not offline.
-      const c = hoursElapsed > 0 ? costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost) : 0;
-      b.is_active = hoursElapsed > 0;
       const pl = rev - c;
+      b.is_active = isActive;
       b.revenue = rev;
       b.cost_value = c;
       b.pl = pl;
 
-      if (b.hour_start < now) {
+      if (isActive) {
         totalRev += rev;
         totalCost += c;
         totalPL += pl;
-        if (b.is_active) activeHours++;
-        if (pl > bestPL && b.is_active) { bestPL = pl; bestHour = fmtHourLabel(b.hour_start); }
-        if (pl < worstPL && b.is_active) { worstPL = pl; worstHour = fmtHourLabel(b.hour_start); }
+        activeBuckets++;
       }
-      if (isCurrent) { lastHourPL = pl; lastHourCredit = b.credit_prl; }
+      const isCompleted = now >= b.end;
+      if (isCompleted) {
+        if (pl > bestPL) { bestPL = pl; bestLabel = b.label; }
+        if (pl < worstPL) { worstPL = pl; worstLabel = b.label; }
+      }
+      if (isCurrent) { lastPL = pl; lastCredit = b.credit_prl; lastEpochCount = b.epoch_count; }
     }
-    if (bestPL === -Infinity) bestHour = "—";
-    if (worstPL === Infinity) worstHour = "—";
+    if (bestPL === -Infinity) bestLabel = "—";
+    if (worstPL === Infinity) worstLabel = "—";
 
-    // P/L panel — show explicit + or − sign
+    // ===== Period labels =====
+    setText("period-main-label", t(`period_${currentPeriod}`));
+    setText("period-recent-label", t(`period_recent_${currentPeriod}`));
+    setText("chart-title", t(`chart_title_${currentPeriod}`));
+    setText("chart-axis-start", t(`chart_axis_${currentPeriod}`));
+    setText("table-title", t(`table_title_${currentPeriod}`));
+    setText("table-total-label", t(`total_label_${currentPeriod}`));
+    setText("th-period", t(`th_hour_${currentPeriod}`));
+
+    // Hide epoch column for non-1d periods (epoch is hourly-only granularity)
+    const epochTh = document.getElementById("th-epoch");
+    if (epochTh) epochTh.style.display = currentPeriod === "1d" ? "" : "none";
+
+    // ===== P/L panel =====
     const pl24El = document.getElementById("actual-pl-24h");
     pl24El.className = "text-3xl font-bold font-mono-num " + (totalPL >= 0 ? "profit" : "loss");
     pl24El.textContent = fmtPL(totalPL);
-    setText("actual-pl-24h-detail", `$${totalRev.toFixed(2)} rev · $${totalCost.toFixed(2)} cost`);
+    const unit = skeleton.granularity === "hour" ? "h" : skeleton.granularity === "day" ? "d" : "mo";
+    setText("actual-pl-24h-detail", `${activeBuckets}${unit} · $${totalRev.toFixed(2)} rev · $${totalCost.toFixed(2)} cost`);
 
     const pl1hEl = document.getElementById("actual-pl-1h");
-    pl1hEl.className = "text-3xl font-bold font-mono-num " + (lastHourPL >= 0 ? "profit" : "loss");
-    pl1hEl.textContent = fmtPL(lastHourPL);
-    setText("actual-pl-1h-detail", `${lastHourCredit.toFixed(4)} PRL credit`);
+    pl1hEl.className = "text-3xl font-bold font-mono-num " + (lastPL >= 0 ? "profit" : "loss");
+    pl1hEl.textContent = fmtPL(lastPL);
+    setText("actual-pl-1h-detail", `${lastCredit.toFixed(4)} PRL credit`);
 
-    // Insight
-    setText("best-hour", bestPL !== -Infinity ? `${bestHour} (${fmtPL(bestPL)})` : "—");
-    setText("worst-hour", worstPL !== Infinity ? `${worstHour} (${fmtPL(worstPL)})` : "—");
-    setText("hours-hit", `${activeHours}/24`);
-    setText("total-credits", fmtNum(totalCredits24h, 4) + " PRL");
+    // ===== Insight =====
+    setText("best-hour", bestPL !== -Infinity ? `${bestLabel} (${fmtPL(bestPL)})` : "—");
+    setText("worst-hour", worstPL !== Infinity ? `${worstLabel} (${fmtPL(worstPL)})` : "—");
+    setText("hours-hit", `${activeBuckets}/${buckets.length}`);
+    setText("total-credits", fmtNum(totalCreditsPeriod, 4) + " PRL");
 
-    // Hourly chart
+    // ===== Chart =====
     const maxAbs = Math.max(...buckets.map(b => Math.abs(b.pl || 0)), 1);
     document.getElementById("hour-chart").innerHTML = buckets.map(b => {
-      const isFuture = b.hour_start > now;
+      const isFuture = !b.is_active;
       const height = Math.min(100, Math.abs(b.pl || 0) / maxAbs * 100);
       const cls = isFuture ? "future-cell" : (b.pl >= 0 ? "profit-cell" : "loss-cell");
-      const tooltip = isFuture ? "future" : `${fmtHourLabel(b.hour_start)} · ${fmtPL(b.pl)}`;
+      const tooltip = isFuture ? "future" : `${b.label} · ${fmtPL(b.pl)}`;
       return `<div class="hour-cell ${cls}" style="height:${Math.max(4, height)}%" title="${tooltip}"></div>`;
     }).join("");
 
-    // Hourly table (latest first)
-    const hourlyBody = document.getElementById("hourly-body");
-    const sortedBuckets = [...buckets].reverse();
-    if (totalCredits24h === 0) {
-      hourlyBody.innerHTML = `<tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_credits")}</td></tr>`;
-    } else {
-      hourlyBody.innerHTML = sortedBuckets.map(b => {
-        const isCurrent = (now >= b.hour_start && now < b.hour_end);
-        const isFuture = b.hour_start > now;
-        const offlineCls = !b.is_active && !isFuture ? "opacity-50" : "";
-        const plCls = b.pl >= 0 ? "profit" : "loss";
-        const plLabel = isFuture ? "—" : fmtPL(b.pl);
-        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-purple-950/20" : ""} ${offlineCls}">
-          <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-purple-400" : "text-slate-300"} font-mono-num">${fmtHourLabel(b.hour_start)}${isCurrent ? " ◀" : ""}</td>
-          <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.epoch_label || "—"}</td>
-          <td class="px-3 py-2.5 text-xs text-purple-300 font-mono-num text-right">${b.credit_prl > 0.0001 ? fmtNum(b.credit_prl, 4) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${b.revenue > 0.01 ? "text-cyan-400" : "text-slate-600"} font-mono-num text-right">${b.revenue > 0.01 ? "$" + b.revenue.toFixed(2) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${b.is_active ? "text-red-400" : "text-slate-600"} font-mono-num text-right">${b.is_active ? "$" + b.cost_value.toFixed(2) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${plCls} font-mono-num text-right font-semibold">${plLabel}</td>
-        </tr>`;
-      }).join("");
+    // ===== Table (newest first) — paginated =====
+    const PAGE_SIZE = 10;
+    const allRows = [...buckets].reverse();
+    
+    function renderTable(page) {
+      const hourlyBody = document.getElementById("hourly-body");
+      const pag = Period.paginate(allRows, page, PAGE_SIZE);
+      const usePagination = currentPeriod !== "1d" && pag.totalPages > 1;
+      const rowsToShow = usePagination ? pag.items : allRows;
+      
+      if (totalCreditsPeriod === 0 && currentPeriod === "1d") {
+        hourlyBody.innerHTML = `<tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_credits")}</td></tr>`;
+      } else {
+        const hideEpoch = currentPeriod !== "1d";
+        hourlyBody.innerHTML = rowsToShow.map(b => {
+          const isCurrent = (now >= b.start && now < b.end);
+          const isFuture = !b.is_active;
+          const offlineCls = isFuture ? "opacity-50" : "";
+          const plCls = b.pl >= 0 ? "profit" : "loss";
+          const plLabel = isFuture ? "—" : fmtPL(b.pl);
+          const epochCell = hideEpoch ? "" : `<td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.epoch_label || (b.epoch_count > 0 ? b.epoch_count + "x" : "—")}</td>`;
+          return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-purple-950/20" : ""} ${offlineCls}">
+            <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-purple-400" : "text-slate-300"} font-mono-num">${b.label}${isCurrent ? " ◀" : ""}</td>
+            ${epochCell}
+            <td class="px-3 py-2.5 text-xs text-purple-300 font-mono-num text-right">${b.credit_prl > 0.0001 ? fmtNum(b.credit_prl, 4) : "—"}</td>
+            <td class="px-3 py-2.5 text-xs ${b.revenue > 0.01 ? "text-cyan-400" : "text-slate-600"} font-mono-num text-right">${b.revenue > 0.01 ? "$" + b.revenue.toFixed(2) : "—"}</td>
+            <td class="px-3 py-2.5 text-xs ${b.is_active ? "text-red-400" : "text-slate-600"} font-mono-num text-right">${b.is_active ? "$" + b.cost_value.toFixed(2) : "—"}</td>
+            <td class="px-3 py-2.5 text-xs ${plCls} font-mono-num text-right font-semibold">${plLabel}</td>
+          </tr>`;
+        }).join("");
+      }
+      
+      const pagBox = document.getElementById("hourly-pagination");
+      if (pagBox) {
+        if (usePagination) {
+          pagBox.innerHTML = Period.renderPagination(pag.page, pag.totalPages);
+          pagBox.querySelectorAll(".page-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+              const p = parseInt(btn.getAttribute("data-page")) || 1;
+              window._pearlhashPage = p;
+              renderTable(p);
+            });
+          });
+        } else {
+          pagBox.innerHTML = "";
+        }
+      }
     }
+    renderTable(window._pearlhashPage || 1);
 
     setText("hourly-total-pl", fmtPL(totalPL));
     document.getElementById("hourly-total-pl").className = "font-mono-num font-semibold " + (totalPL >= 0 ? "profit" : "loss");
     setText("hourly-total-rev", "$" + totalRev.toFixed(2));
     setText("hourly-total-cost", "$" + totalCost.toFixed(2));
 
-    // Workers
+    // ===== Workers (live, not period-aware) =====
     const wbody = document.getElementById("workers-body");
     document.getElementById("workers-count").innerHTML = `${workers.length} <span data-i18n="connected">${t("connected")}</span>`;
     if (workers.length === 0) {
@@ -1027,10 +1117,12 @@ async function refresh() {
 
     setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
     document.getElementById("last-update").textContent = "updated " + new Date().toLocaleTimeString();
+    document.getElementById("period-loading").classList.add("hidden");
   } catch (e) {
     console.error("[refresh] ERROR:", e);
     showError(t("error_prefix") + e.message);
     setStatus(t("error_prefix") + e.message);
+    document.getElementById("period-loading").classList.add("hidden");
   }
 }
 
@@ -1090,6 +1182,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Refresh button
   document.getElementById("refresh-btn").addEventListener("click", refresh);
+
+  // Period selector
+  const savedPeriod = localStorage.getItem("pearlhash_period");
+  if (savedPeriod && PERIODS.includes(savedPeriod)) currentPeriod = savedPeriod;
+  function applyPeriod() {
+    document.querySelectorAll("#period-selector .period-btn").forEach(b => {
+      b.classList.toggle("active", b.getAttribute("data-period") === currentPeriod);
+    });
+  }
+  applyPeriod();
+  document.querySelectorAll("#period-selector .period-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const p = btn.getAttribute("data-period");
+      if (!PERIODS.includes(p) || p === currentPeriod) return;
+      currentPeriod = p;
+      localStorage.setItem("pearlhash_period", p);
+      window._pearlhashPage = 1;
+      applyPeriod();
+      if (document.getElementById("wallet").value.trim()) refresh();
+    });
+  });
 
   // Cost advanced panel
   document.getElementById("cost-adv-btn").addEventListener("click", toggleCostAdv);

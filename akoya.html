@@ -38,6 +38,15 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .hour-cell.loss-cell { background:#f87171; }
 .hour-cell.future-cell { background:#475569; }
 
+/* Period selector tabs */
+.period-btn {
+  color: #64748b; transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer; border: none; background: transparent;
+}
+.period-btn:hover { color: #cbd5e1; }
+.period-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
+
 /* Pool switching overlay */
 #switch-overlay {
   position: fixed; inset: 0; background: rgba(8, 11, 20, 0.98);
@@ -68,6 +77,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 }
 </style>
 <script src="assets/cost-adv.js?v=1"></script>
+<script src="assets/period.js?v=1"></script>
 </head>
 <body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
 
@@ -212,20 +222,29 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 
 <!-- HYBRID P/L PANEL -->
 <div class="rounded-lg p-5 card-glow bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border-cyan-900/30 mb-6">
-  <div class="flex items-center justify-between mb-3">
+  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
     <p class="text-[11px] text-cyan-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
+    <div id="period-selector" class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
+      <button data-period="1d"  class="period-btn active text-[11px] px-3 py-1 rounded">1D</button>
+      <button data-period="7d"  class="period-btn text-[11px] px-3 py-1 rounded">7D</button>
+      <button data-period="30d" class="period-btn text-[11px] px-3 py-1 rounded">30D</button>
+      <button data-period="all" class="period-btn text-[11px] px-3 py-1 rounded">ALL</button>
+    </div>
+  </div>
+  <div class="flex items-center justify-between mb-3">
     <span class="text-[10px] text-slate-600" data-i18n="prl_minus_cost">PRL paid − cost</span>
+    <span id="period-loading" class="text-[10px] text-cyan-500 hidden">loading…</span>
   </div>
   <div class="grid grid-cols-2 gap-4">
     <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_24h">24 Hours</p>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-main-label" data-i18n="last_24h">24 Hours</span></p>
       <div class="flex items-baseline gap-1 mt-1">
         <span id="actual-pl-24h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
       </div>
       <p id="actual-pl-24h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
     </div>
     <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="last_hour">Last Hour</p>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-recent-label" data-i18n="last_hour">Last Hour</span></p>
       <div class="flex items-baseline gap-1 mt-1">
         <span id="actual-pl-1h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
       </div>
@@ -260,7 +279,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 <!-- Hourly chart visualization -->
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-6 card-glow">
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · Actual P/L Per Hour</h2>
+    <h2 id="chart-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · Actual P/L Per Hour</h2>
     <div class="flex items-center gap-3 text-[10px] text-slate-600">
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-cyan-400"></span><span data-i18n="profit">Profit</span></span>
       <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
@@ -269,7 +288,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   </div>
   <div id="hour-chart" class="hour-bar"></div>
   <div class="flex justify-between text-[10px] text-slate-600 mt-1">
-    <span data-i18n="ago_24h">24h ago</span>
+    <span id="chart-axis-start" data-i18n="ago_24h">24h ago</span>
     <span data-i18n="now">now</span>
   </div>
 </div>
@@ -289,9 +308,9 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 <!-- Hourly table -->
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
   <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown · Latest First</h2>
+    <h2 id="table-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown · Latest First</h2>
     <div class="flex items-center gap-3 text-[11px]">
-      <span class="text-slate-600 uppercase tracking-wider" data-i18n="total_24h_label">Total 24h:</span>
+      <span id="table-total-label" class="text-slate-600 uppercase tracking-wider" data-i18n="total_24h_label">Total 24h:</span>
       <span id="table-total-pl" class="text-base font-mono-num font-bold text-slate-500">—</span>
       <span id="table-total-detail" class="text-[10px] text-slate-600">—</span>
     </div>
@@ -300,7 +319,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
     <table class="w-full text-sm">
       <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
         <tr>
-          <th class="px-3 py-2.5 text-left" data-i18n="th_hour">Hour (WIB)</th>
+          <th id="th-period" class="px-3 py-2.5 text-left" data-i18n="th_hour">Hour (WIB)</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_hr">HR</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_pool_blk">Pool Blk</th>
           <th class="px-3 py-2.5 text-right" data-i18n="th_prl_paid">PRL Paid</th>
@@ -314,6 +333,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
       </tbody>
     </table>
   </div>
+  <div id="hourly-pagination"></div>
 </div>
 
 <!-- Pool + Wallet -->
@@ -494,6 +514,35 @@ const I18N = {
     pool_label: "Pool",
     invalid_wallet: "Wallet must start with 'prl1'",
     switching: "Switching to",
+    // period selector
+    period_1d: "24 Hours",
+    period_7d: "7 Days",
+    period_30d: "30 Days",
+    period_all: "All-Time",
+    period_recent_1d: "Last Hour",
+    period_recent_7d: "Today",
+    period_recent_30d: "Today",
+    period_recent_all: "Today",
+    chart_title_1d: "Last 24h · Actual P/L Per Hour",
+    chart_title_7d: "Last 7 Days · P/L Per Day",
+    chart_title_30d: "Last 30 Days · P/L Per Day",
+    chart_title_all: "All-Time · P/L Per Month",
+    table_title_1d: "Hourly Breakdown · Latest First",
+    table_title_7d: "Daily Breakdown · Latest First",
+    table_title_30d: "Daily Breakdown · Latest First",
+    table_title_all: "Monthly Breakdown · Latest First",
+    th_hour_1d: "Hour (WIB)",
+    th_hour_7d: "Date",
+    th_hour_30d: "Date",
+    th_hour_all: "Month",
+    chart_axis_1d: "24h ago",
+    chart_axis_7d: "7d ago",
+    chart_axis_30d: "30d ago",
+    chart_axis_all: "start",
+    total_label_1d: "Total 24h:",
+    total_label_7d: "Total 7d:",
+    total_label_30d: "Total 30d:",
+    total_label_all: "All-time:",
   },
   id: {
     app_title: "⛏ Hitung Pool Kamu — Akoya",
@@ -585,6 +634,34 @@ const I18N = {
     pool_label: "Pool",
     invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
     switching: "Pindah ke",
+    period_1d: "24 Jam",
+    period_7d: "7 Hari",
+    period_30d: "30 Hari",
+    period_all: "Sepanjang Waktu",
+    period_recent_1d: "Jam Terakhir",
+    period_recent_7d: "Hari Ini",
+    period_recent_30d: "Hari Ini",
+    period_recent_all: "Hari Ini",
+    chart_title_1d: "24 Jam Terakhir · P/L Aktual Per Jam",
+    chart_title_7d: "7 Hari Terakhir · P/L Per Hari",
+    chart_title_30d: "30 Hari Terakhir · P/L Per Hari",
+    chart_title_all: "Sepanjang Waktu · P/L Per Bulan",
+    table_title_1d: "Breakdown Per Jam · Terbaru Dulu",
+    table_title_7d: "Breakdown Per Hari · Terbaru Dulu",
+    table_title_30d: "Breakdown Per Hari · Terbaru Dulu",
+    table_title_all: "Breakdown Per Bulan · Terbaru Dulu",
+    th_hour_1d: "Jam (WIB)",
+    th_hour_7d: "Tanggal",
+    th_hour_30d: "Tanggal",
+    th_hour_all: "Bulan",
+    chart_axis_1d: "24j lalu",
+    chart_axis_7d: "7h lalu",
+    chart_axis_30d: "30h lalu",
+    chart_axis_all: "mulai",
+    total_label_1d: "Total 24j:",
+    total_label_7d: "Total 7h:",
+    total_label_30d: "Total 30h:",
+    total_label_all: "Sepanjang waktu:",
   },
   zh: {
     app_title: "⛏ 计算你的矿池 — Akoya",
@@ -676,6 +753,34 @@ const I18N = {
     pool_label: "矿池",
     invalid_wallet: "钱包必须以 'prl1' 开头",
     switching: "切换到",
+    period_1d: "24 小时",
+    period_7d: "7 天",
+    period_30d: "30 天",
+    period_all: "全部时间",
+    period_recent_1d: "最后一小时",
+    period_recent_7d: "今日",
+    period_recent_30d: "今日",
+    period_recent_all: "今日",
+    chart_title_1d: "过去24小时 · 每小时实际盈亏",
+    chart_title_7d: "过去7天 · 每日盈亏",
+    chart_title_30d: "过去30天 · 每日盈亏",
+    chart_title_all: "全部时间 · 每月盈亏",
+    table_title_1d: "按小时分解 · 最新优先",
+    table_title_7d: "按日分解 · 最新优先",
+    table_title_30d: "按日分解 · 最新优先",
+    table_title_all: "按月分解 · 最新优先",
+    th_hour_1d: "小时 (WIB)",
+    th_hour_7d: "日期",
+    th_hour_30d: "日期",
+    th_hour_all: "月份",
+    chart_axis_1d: "24小时前",
+    chart_axis_7d: "7天前",
+    chart_axis_30d: "30天前",
+    chart_axis_all: "开始",
+    total_label_1d: "24小时总计:",
+    total_label_7d: "7天总计:",
+    total_label_30d: "30天总计:",
+    total_label_all: "全部时间:",
   },
 };
 
@@ -919,116 +1024,93 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-async function fetchPayouts(wallet) {
-  const r = await fetchJSON(`${API}/miners/${wallet}/payouts?page_size=200`);
-  return (r.data || []).map(p => ({
-    ts: p.created_at,
-    amount: p.amount,
-    fee: p.fee_amount,
-    status: p.status,
-    tx: p.tx_id,
-  }));
-}
+// ============ PERIOD CONFIG ============
+const PERIODS = Period.PERIODS;
+let currentPeriod = "1d";
 
-async function fetchHashrateHistory(wallet) {
-  const r = await fetchJSON(`${API}/miners/${wallet}/hashrate_history`);
-  return (r.data && r.data.samples) || [];
-}
+function fmtHourLabel(ts) { return Period.fmtHour(ts); }
 
-function bucketHashrateByHour(samples) {
-  const now = Math.floor(Date.now()/1000);
-  const currentHourStart = Math.floor(now / 3600) * 3600;
-  const buckets = [];
-  for (let i = 23; i >= 0; i--) {
-    const hourStart = currentHourStart - (i * 3600);
-    buckets.push({
-      hour_start: hourStart,
-      hour_end: hourStart + 3600,
-      hashrate_avg: 0,
-      hashrate_max: 0,
-      samples: 0,
-    });
-  }
-  for (const s of samples) {
-    const idx = buckets.findIndex(h => s.timestamp >= h.hour_start && s.timestamp < h.hour_end);
-    if (idx === -1) continue;
-    buckets[idx].hashrate_avg += s.hash_rate;
-    buckets[idx].hashrate_max = Math.max(buckets[idx].hashrate_max, s.hash_rate);
-    buckets[idx].samples++;
-  }
-  for (const b of buckets) {
-    if (b.samples > 0) b.hashrate_avg /= b.samples;
-  }
-  return buckets;
-}
-
-function bucketPayoutsByHour(payouts) {
-  const now = Math.floor(Date.now()/1000);
-  const currentHourStart = Math.floor(now / 3600) * 3600;
-  const buckets = [];
-  for (let i = 23; i >= 0; i--) {
-    const hourStart = currentHourStart - (i * 3600);
-    buckets.push({
-      hour_start: hourStart,
-      hour_end: hourStart + 3600,
-      payouts: 0,
-      amount: 0,
-    });
-  }
-  for (const p of payouts) {
-    if (!p.ts) continue;
-    const idx = buckets.findIndex(h => p.ts >= h.hour_start && p.ts < h.hour_end);
-    if (idx === -1) continue;
-    buckets[idx].payouts++;
-    buckets[idx].amount += (p.amount || 0);
-  }
-  return buckets;
-}
-
-async function fetchAllBlocks24h() {
-  const cutoff = Math.floor(Date.now()/1000) - 86400;
+// ============ FETCHERS ============
+async function fetchPayoutsSince(wallet, sinceTs) {
   const all = [];
-  for (let page = 1; page <= 5; page++) {
+  for (let page = 1; page <= 50; page++) {
+    const r = await fetchJSON(`${API}/miners/${wallet}/payouts?page=${page}&page_size=200`);
+    const items = r.data || [];
+    if (!items.length) break;
+    all.push(...items);
+    const oldest = items[items.length - 1].created_at || 0;
+    if (oldest < sinceTs) break;
+  }
+  return all
+    .filter(p => p.created_at && p.created_at >= sinceTs)
+    .map(p => ({
+      ts: p.created_at,
+      amount: p.amount,
+      fee: p.fee_amount,
+      status: p.status,
+      tx: p.tx_id,
+    }));
+}
+
+async function fetchBlocksSince(sinceTs) {
+  const all = [];
+  for (let page = 1; page <= 80; page++) {
     const r = await fetchJSON(`${API}/pool/blocks?page=${page}&page_size=100`);
     const blocks = r.data || [];
     if (!blocks.length) break;
     all.push(...blocks);
-    if (blocks[blocks.length-1].found_at < cutoff) break;
+    const oldest = blocks[blocks.length - 1].found_at || 0;
+    if (oldest < sinceTs) break;
   }
-  return all.filter(b => b.found_at >= cutoff);
+  return all.filter(b => b.found_at >= sinceTs);
 }
 
-function bucketByHour(blocks, wallet) {
-  const now = Math.floor(Date.now()/1000);
-  const currentHourStart = Math.floor(now / 3600) * 3600;
-  const buckets = [];
-  for (let i = 23; i >= 0; i--) {
-    const hourStart = currentHourStart - (i * 3600);
-    buckets.push({
-      hour_start: hourStart,
-      hour_end: hourStart + 3600,
-      my_blocks: 0,
-      my_reward: 0,
-      pool_blocks: 0,
-    });
-  }
-  for (const b of blocks) {
-    const idx = buckets.findIndex(h => b.found_at >= h.hour_start && b.found_at < h.hour_end);
+async function fetchHashrateHistory(wallet) {
+  // API only returns last 24h; only used for 1d period
+  const r = await fetchJSON(`${API}/miners/${wallet}/hashrate_history`);
+  return (r.data && r.data.samples) || [];
+}
+
+// ============ BUCKETING ============
+function bucketPayouts(skeleton, payouts) {
+  const out = skeleton.buckets.map(b => ({ ...b, payouts: 0, amount: 0 }));
+  for (const p of payouts) {
+    if (!p.ts) continue;
+    const idx = Period.findIdx(out, p.ts);
     if (idx === -1) continue;
-    buckets[idx].pool_blocks++;
+    out[idx].payouts++;
+    out[idx].amount += (p.amount || 0);
+  }
+  return out;
+}
+
+function bucketBlocks(skeleton, blocks, wallet) {
+  const out = skeleton.buckets.map(b => ({ ...b, my_blocks: 0, my_reward: 0, pool_blocks: 0 }));
+  for (const b of blocks) {
+    const idx = Period.findIdx(out, b.found_at);
+    if (idx === -1) continue;
+    out[idx].pool_blocks++;
     if (b.found_by === wallet) {
-      buckets[idx].my_blocks++;
-      buckets[idx].my_reward += (b.reward || 0);
+      out[idx].my_blocks++;
+      out[idx].my_reward += (b.reward || 0);
     }
   }
-  return buckets;
+  return out;
 }
 
-function fmtHourLabel(ts) {
-  // Convert UTC ts to WIB (UTC+7)
-  const d = new Date(ts * 1000);
-  const wibHours = (d.getUTCHours() + 7) % 24;
-  return String(wibHours).padStart(2, "0") + ":00";
+function bucketHashrate(skeleton, samples) {
+  const out = skeleton.buckets.map(b => ({ ...b, hashrate_avg: 0, hashrate_max: 0, samples: 0 }));
+  for (const s of samples) {
+    const idx = Period.findIdx(out, s.timestamp);
+    if (idx === -1) continue;
+    out[idx].hashrate_avg += s.hash_rate;
+    out[idx].hashrate_max = Math.max(out[idx].hashrate_max, s.hash_rate);
+    out[idx].samples++;
+  }
+  for (const b of out) {
+    if (b.samples > 0) b.hashrate_avg /= b.samples;
+  }
+  return out;
 }
 
 // ============ COST ADV ============
@@ -1065,23 +1147,35 @@ async function refresh() {
   saveSettings();
   setStatus(t("fetching"));
   window._lastWallet = wallet;
+  document.getElementById("period-loading").classList.remove("hidden");
   
   try {
-    const [miner, poolStats, poolLuck, allBlocks, payouts, hashHistory] = await Promise.all([
+    // First fetch miner + pool meta — needed to know created_at for all-time period
+    const [miner, poolStats, poolLuck] = await Promise.all([
       fetchJSON(`${API}/miners/${wallet}`),
       fetchJSON(`${API}/pool/stats`),
       fetchJSON(`${API}/pool/luck`),
-      fetchAllBlocks24h(),
-      fetchPayouts(wallet).catch(() => []),
-      fetchHashrateHistory(wallet).catch(() => []),
     ]);
-    
     const m = miner.data || {};
     const ps = poolStats.data || {};
     const pl = poolLuck.data || {};
+    
+    // Period-aware fetch range
+    const now = Math.floor(Date.now() / 1000);
+    const minerCreatedAt = m.created_at || (now - 86400 * 90);
+    const skeleton = Period.buildSkeleton(currentPeriod, minerCreatedAt);
+    const sinceTs = skeleton.periodStart;
+    
+    // Fetch period-scoped data
+    const [allBlocks, payouts, hashHistory] = await Promise.all([
+      fetchBlocksSince(sinceTs).catch(() => []),
+      fetchPayoutsSince(wallet, sinceTs).catch(() => []),
+      // hashrate history is only useful for 1d (API caps to 24h)
+      currentPeriod === "1d" ? fetchHashrateHistory(wallet).catch(() => []) : Promise.resolve([]),
+    ]);
     const blocks = Array.isArray(allBlocks) ? allBlocks : [];
     
-    // Top stats
+    // ============ TOP STATS (always live) ============
     const myHash = m.total_hashrate || 0;
     const poolHash = ps.total_hashrate || 0;
     const myShare = poolHash > 0 ? (myHash / poolHash) : 0;
@@ -1096,7 +1190,6 @@ async function refresh() {
     const poolBlocks24h = ps.blocks_found24_h || 0;
     const fee = (ps.pool_fee_percent || 5) / 100;
     
-    // Compute avg reward from recent blocks
     const recentRewards = blocks.slice(0, 20).map(b => b.reward || 0).filter(r => r > 0);
     const avgReward = recentRewards.length > 0 ? recentRewards.reduce((a,b)=>a+b, 0) / recentRewards.length : 2715;
     
@@ -1114,139 +1207,159 @@ async function refresh() {
     setText("w-status", m.is_online ? t("online_status") : t("offline_status"));
     setText("w-shares", `${fmtNum(m.accepted_shares24_h || 0, 0)} / ${fmtNum(m.total_shares24_h || 0, 0)}`);
     
-    // ============ HYBRID P/L COMPUTATION (PAYOUT-BASED + HASHRATE-AWARE COST) ============
-    const payoutBuckets = bucketPayoutsByHour(payouts);
-    const blockBuckets = bucketByHour(blocks, wallet);
-    const hashBuckets = bucketHashrateByHour(hashHistory);
+    // ============ PERIOD-AWARE P/L COMPUTATION ============
+    const payoutBuckets = bucketPayouts(skeleton, payouts);
+    const blockBuckets = bucketBlocks(skeleton, blocks, wallet);
+    const hashBuckets = currentPeriod === "1d"
+      ? bucketHashrate(skeleton, hashHistory)
+      : skeleton.buckets.map(() => ({ hashrate_avg: 0, samples: 0 }));
     
-    // Find peak hashrate across 24h (defines what cost=$11/h corresponds to)
-    const peakHashrate = Math.max(...hashBuckets.map(h => h.hashrate_avg), myHash, 1);
-    
+    // For 1d we have per-hour hashrate; otherwise treat as unknown but assume rig active during bucket
     const buckets = payoutBuckets.map((pb, i) => ({
       ...pb,
       pool_blocks: blockBuckets[i].pool_blocks,
       my_blocks: blockBuckets[i].my_blocks,
       my_reward: blockBuckets[i].my_reward,
       hashrate: hashBuckets[i].hashrate_avg,
-      hashrate_ratio: hashBuckets[i].hashrate_avg / peakHashrate,
     }));
-    const now = Math.floor(Date.now()/1000);
     
-    let actualPL24h = 0;
-    let totalPRL24h = 0;
-    let totalPayouts24h = 0;
-    let totalMyBlocks = 0;
-    let totalCost24h = 0;
-    let activeHours = 0;
+    let totalPL = 0;
+    let totalPRL = 0;
+    let totalCost = 0;
+    let activeBuckets = 0;
+    let bucketsWithPayout = 0;
     let bestPL = -Infinity, bestLabel = "";
     let worstPL = Infinity, worstLabel = "";
-    let hoursWithPayout = 0;
-    
-    // Always charge cost for elapsed hours — Vast bills flat per hour regardless of blocks found.
-    // Machine is always on; 0 blocks in an hour ≠ machine off, just unlucky.
     
     for (const b of buckets) {
-      const hoursElapsed = Math.min(1, Math.max(0, (now - b.hour_start) / 3600));
-      const isActive = hoursElapsed > 0;
-      // Cost from timeline — overrides flat rate, supports per-hour pricing changes
-      const fractionalCost = isActive ? costAdv.costInRange(b.hour_start, Math.min(b.hour_end, now), cost) : 0;
-      
+      // Mining signal: only charge cost if bucket has evidence of mining.
+      // Idle buckets (machine off / not yet running) → cost = 0, no false losses.
+      const hasMining = (b.hashrate > 0) || (b.my_blocks > 0) || (b.payouts > 0);
+      const costEnd = Math.min(b.end, now);
+      const isPast = costEnd > b.start;
+      const isActive = isPast && hasMining;
+      const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       const revenue = (b.amount || 0) * prlPrice;
       
       b.actual_revenue = revenue;
-      b.cost = fractionalCost;
-      b.actual_pl = revenue - fractionalCost;
-      b.reward_net = b.amount;
+      b.cost = bucketCost;
+      b.actual_pl = revenue - bucketCost;
       b.is_active = isActive;
       
-      // Expected PPS forecast (only when active)
-      const expectedPoolBlocksThisHour = (poolBlocks24h / 24) * hoursElapsed;
-      const myShareThisHour = b.hashrate / poolHash;
-      const expectedMyRewardThisHour = expectedPoolBlocksThisHour * myShareThisHour * avgReward * (1 - fee);
-      b.expected_revenue = expectedMyRewardThisHour * prlPrice;
-      b.expected_pl = b.expected_revenue - fractionalCost;
+      totalPL += b.actual_pl;
+      totalPRL += (b.amount || 0);
+      totalCost += bucketCost;
+      if (isActive) activeBuckets++;
       
-      actualPL24h += b.actual_pl;
-      totalPRL24h += (b.amount || 0);
-      totalPayouts24h += b.payouts;
-      totalMyBlocks += b.my_blocks;
-      totalCost24h += fractionalCost;
-      if (isActive) activeHours++;
-      
-      if (hoursElapsed > 0.5 && isActive) {
-        if (b.actual_pl > bestPL) { bestPL = b.actual_pl; bestLabel = fmtHourLabel(b.hour_start); }
-        if (b.actual_pl < worstPL) { worstPL = b.actual_pl; worstLabel = fmtHourLabel(b.hour_start); }
-        if (b.payouts > 0) hoursWithPayout++;
+      // Best/worst across non-current, completed buckets
+      const isCompleted = now >= b.end;
+      if (isCompleted) {
+        if (b.actual_pl > bestPL) { bestPL = b.actual_pl; bestLabel = b.label; }
+        if (b.actual_pl < worstPL) { worstPL = b.actual_pl; worstLabel = b.label; }
+        if (b.payouts > 0) bucketsWithPayout++;
       }
     }
     
-    // Expected 24h smooth
-    const expectedDailyPRL = poolBlocks24h * myShare * avgReward * (1 - fee);
-    const expectedDailyRev = expectedDailyPRL * prlPrice;
-    const expectedDailyCost = cost * 24;
-    const expectedPL24h = expectedDailyRev - expectedDailyCost;
-    const expectedHourlyPRL = expectedDailyPRL / 24;
-    const expectedHourlyPL = (expectedHourlyPRL * prlPrice) - cost;
-    
-    // Last hour actual
     const lastBucket = buckets[buckets.length - 1];
     
-    // Display
-    setText("actual-pl-24h", fmtPL(actualPL24h));
-    setClass("actual-pl-24h", actualPL24h > 0.01 ? "profit" : actualPL24h < -0.01 ? "loss" : "neutral");
-    setText("actual-pl-24h-detail", `${activeHours}h active · ${fmtNum(totalPRL24h, 1)} PRL · cost $${fmtNum(totalCost24h, 0)}`);
+    // ============ DISPLAY ============
+    // Period labels
+    setText("period-main-label", t(`period_${currentPeriod}`));
+    setText("period-recent-label", t(`period_recent_${currentPeriod}`));
+    setText("chart-title", t(`chart_title_${currentPeriod}`));
+    setText("chart-axis-start", t(`chart_axis_${currentPeriod}`));
+    setText("table-title", t(`table_title_${currentPeriod}`));
+    setText("table-total-label", t(`total_label_${currentPeriod}`));
+    setText("th-period", t(`th_hour_${currentPeriod}`));
     
-    // Header total in hourly table
-    setText("table-total-pl", fmtPL(actualPL24h));
-    setClass("table-total-pl", actualPL24h > 0.01 ? "profit" : actualPL24h < -0.01 ? "loss" : "neutral");
-    const revHtml = `<span class="text-cyan-400">rev $${fmtNum(totalPRL24h * prlPrice, 0)}</span> − <span class="text-red-400">cost $${fmtNum(totalCost24h, 0)}</span>`;
-    document.getElementById("table-total-detail").innerHTML = revHtml;
+    // Main P/L card
+    setText("actual-pl-24h", fmtPL(totalPL));
+    setClass("actual-pl-24h", totalPL > 0.01 ? "profit" : totalPL < -0.01 ? "loss" : "neutral");
+    const unit = skeleton.granularity === "hour" ? "h" : skeleton.granularity === "day" ? "d" : "mo";
+    setText("actual-pl-24h-detail", `${activeBuckets}${unit} active · ${fmtNum(totalPRL, 1)} PRL · cost $${fmtNum(totalCost, 0)}`);
     
+    // Header total
+    setText("table-total-pl", fmtPL(totalPL));
+    setClass("table-total-pl", totalPL > 0.01 ? "profit" : totalPL < -0.01 ? "loss" : "neutral");
+    document.getElementById("table-total-detail").innerHTML =
+      `<span class="text-cyan-400">rev $${fmtNum(totalPRL * prlPrice, 0)}</span> − <span class="text-red-400">cost $${fmtNum(totalCost, 0)}</span>`;
+    
+    // Recent bucket card
     setText("actual-pl-1h", fmtPL(lastBucket.actual_pl));
     setClass("actual-pl-1h", lastBucket.actual_pl > 0.01 ? "profit" : lastBucket.actual_pl < -0.01 ? "loss" : "neutral");
     setText("actual-pl-1h-detail", `${lastBucket.payouts} payouts · ${fmtNum(lastBucket.amount || 0, 2)} PRL`);
     
-    // Variance
+    // Variance breakdown
     setText("best-hour", isFinite(bestPL) ? fmtPL(bestPL) + " @ " + bestLabel : "—");
     setText("worst-hour", isFinite(worstPL) ? fmtPL(worstPL) + " @ " + worstLabel : "—");
-    setText("hours-hit", `${hoursWithPayout} / 24`);
-    setText("luck-actual", fmtNum(totalPRL24h, 1) + " PRL");
+    setText("hours-hit", `${bucketsWithPayout} / ${buckets.length}`);
+    setText("luck-actual", fmtNum(totalPRL, 1) + " PRL");
     
-    // Hourly chart (actual)
+    // Chart
     const chart = document.getElementById("hour-chart");
     const maxAbs = Math.max(...buckets.map(b => Math.abs(b.actual_pl || 0)), 1);
     chart.innerHTML = buckets.map(b => {
       const pl = b.actual_pl || 0;
       const heightPct = Math.abs(pl) / maxAbs * 100;
-      const elapsed = (now - b.hour_start) / 3600;
       let cls;
-      if (elapsed < 0) cls = "future-cell";
+      if (!b.is_active) cls = "future-cell";
       else if (pl > 0.01) cls = "profit-cell";
       else if (pl < -0.01) cls = "loss-cell";
       else cls = "future-cell";
-      const tooltip = `${fmtHourLabel(b.hour_start)} · ${b.my_blocks} blk · ${fmtPL(pl)}`;
+      const tooltip = `${b.label} · ${b.my_blocks} blk · ${fmtPL(pl)}`;
       return `<div class="hour-cell ${cls}" style="height:${Math.max(heightPct, 4)}%" title="${tooltip}"></div>`;
     }).join("");
     
-    // Hourly table (newest first)
-    const hbody = document.getElementById("hourly-body");
-    hbody.innerHTML = buckets.slice().reverse().map(b => {
-      const isCurrent = (now >= b.hour_start && now < b.hour_end);
-      const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
-      const dot = b.payouts > 0 ? `<span class="text-cyan-400">●</span>` : "";
-      const hrColor = b.is_active ? "text-emerald-400" : "text-slate-700";
-      const hrText = b.hashrate > 0 ? fmtHash(b.hashrate) : "off";
-      const offlineRowCls = !b.is_active ? "opacity-50" : "";
-      return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-cyan-950/20" : ""} ${offlineRowCls}">
-        <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-cyan-400" : "text-slate-300"} font-mono-num">${fmtHourLabel(b.hour_start)}${isCurrent ? " ◀" : ""}</td>
-        <td class="px-3 py-2.5 text-xs ${hrColor} font-mono-num text-right">${hrText}</td>
-        <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.pool_blocks}</td>
-        <td class="px-3 py-2.5 text-xs ${b.payouts > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${b.payouts > 0 ? fmtNum(b.amount, 1) + " " + dot : "—"}</td>
-        <td class="px-3 py-2.5 text-xs ${b.actual_revenue > 0.01 ? "text-cyan-400" : "text-slate-700"} font-mono-num text-right">${b.actual_revenue > 0.01 ? "$" + b.actual_revenue.toFixed(2) : "—"}</td>
-        <td class="px-3 py-2.5 text-xs ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
-        <td class="px-3 py-2.5 text-sm ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
-      </tr>`;
-    }).join("");
+    // Table (newest first) — paginated
+    const PAGE_SIZE = 10;
+    const allRows = buckets.slice().reverse();
+    window._akoyaRows = allRows; // stash for pagination handler
+    
+    function renderHourlyTable(page) {
+      const hbody = document.getElementById("hourly-body");
+      const pag = Period.paginate(allRows, page, PAGE_SIZE);
+      // For 1d, no pagination needed (24 buckets fit). Skip controls.
+      const usePagination = currentPeriod !== "1d" && pag.totalPages > 1;
+      const rowsToShow = usePagination ? pag.items : allRows;
+      
+      hbody.innerHTML = rowsToShow.map(b => {
+        const isCurrent = (now >= b.start && now < b.end);
+        const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
+        const dot = b.payouts > 0 ? `<span class="text-cyan-400">●</span>` : "";
+        const hrColor = b.is_active && b.hashrate > 0 ? "text-emerald-400" : "text-slate-700";
+        let hrText;
+        if (currentPeriod === "1d") {
+          hrText = b.hashrate > 0 ? fmtHash(b.hashrate) : (b.is_active ? "off" : "—");
+        } else {
+          hrText = "—";
+        }
+        const offlineRowCls = !b.is_active ? "opacity-50" : "";
+        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-cyan-950/20" : ""} ${offlineRowCls}">
+          <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-cyan-400" : "text-slate-300"} font-mono-num">${b.label}${isCurrent ? " ◀" : ""}</td>
+          <td class="px-3 py-2.5 text-xs ${hrColor} font-mono-num text-right">${hrText}</td>
+          <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.pool_blocks}</td>
+          <td class="px-3 py-2.5 text-xs ${b.payouts > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${b.payouts > 0 ? fmtNum(b.amount, 1) + " " + dot : "—"}</td>
+          <td class="px-3 py-2.5 text-xs ${b.actual_revenue > 0.01 ? "text-cyan-400" : "text-slate-700"} font-mono-num text-right">${b.actual_revenue > 0.01 ? "$" + b.actual_revenue.toFixed(2) : "—"}</td>
+          <td class="px-3 py-2.5 text-xs ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
+          <td class="px-3 py-2.5 text-sm ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
+        </tr>`;
+      }).join("");
+      
+      const pagBox = document.getElementById("hourly-pagination");
+      if (usePagination) {
+        pagBox.innerHTML = Period.renderPagination(pag.page, pag.totalPages);
+        pagBox.querySelectorAll(".page-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const p = parseInt(btn.getAttribute("data-page")) || 1;
+            window._akoyaPage = p;
+            renderHourlyTable(p);
+          });
+        });
+      } else {
+        pagBox.innerHTML = "";
+      }
+    }
+    renderHourlyTable(window._akoyaPage || 1);
     
     // Workers
     const wbody = document.getElementById("workers-body");
@@ -1273,11 +1386,13 @@ async function refresh() {
     
     setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
     document.getElementById("last-update").textContent = "updated " + new Date().toLocaleTimeString();
+    document.getElementById("period-loading").classList.add("hidden");
     
   } catch (e) {
     console.error("[refresh] ERROR:", e);
     showError(t("error_prefix") + e.message);
     setStatus(t("error_prefix") + e.message);
+    document.getElementById("period-loading").classList.add("hidden");
   }
 }
 
@@ -1293,6 +1408,28 @@ document.getElementById("refresh").addEventListener("click", refresh);
 document.getElementById("wallet").addEventListener("keydown", e => { if (e.key === "Enter") refresh(); });
 document.getElementById("cost").addEventListener("change", refresh);
 document.getElementById("prl-price").addEventListener("change", refresh);
+
+// Period selector — restore last choice from storage
+const savedPeriod = localStorage.getItem("akoya_period");
+if (savedPeriod && PERIODS.includes(savedPeriod)) currentPeriod = savedPeriod;
+function applyPeriod() {
+  document.querySelectorAll("#period-selector .period-btn").forEach(b => {
+    b.classList.toggle("active", b.getAttribute("data-period") === currentPeriod);
+  });
+}
+applyPeriod();
+document.querySelectorAll("#period-selector .period-btn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const p = btn.getAttribute("data-period");
+    if (!PERIODS.includes(p) || p === currentPeriod) return;
+    currentPeriod = p;
+    localStorage.setItem("akoya_period", p);
+    window._akoyaPage = 1; // reset pagination on period switch
+    applyPeriod();
+    if (document.getElementById("wallet").value.trim()) refresh();
+  });
+});
 
 // Cost advanced panel
 document.getElementById("cost-adv-btn").addEventListener("click", toggleCostAdv);
