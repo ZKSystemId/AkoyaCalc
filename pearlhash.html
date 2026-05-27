@@ -978,10 +978,13 @@ async function refresh() {
       const isCurrent = (now >= b.start && now < b.end);
       const costEnd = Math.min(b.end, now);
       const isPast = costEnd > b.start;
-      // Mining signal: only charge cost on buckets with epoch credits.
-      // Idle buckets (machine off / not yet running) → no false losses.
+      // Mining signal gating only on multi-day periods.
+      // 1D: charge cost for ALL elapsed hours (machine runs 24/7).
+      // 7D/30D/ALL: only charge buckets with epoch credits (skip pre-mining history).
       const hasMining = b.credit_prl > 0;
-      const isActive = isPast && hasMining;
+      const isActive = currentPeriod === "1d"
+        ? isPast
+        : (isPast && hasMining);
       const c = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       const rev = b.credit_prl * prlPrice;
       const pl = rev - c;

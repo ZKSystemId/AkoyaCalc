@@ -1232,12 +1232,16 @@ async function refresh() {
     let worstPL = Infinity, worstLabel = "";
     
     for (const b of buckets) {
-      // Mining signal: only charge cost if bucket has evidence of mining.
-      // Idle buckets (machine off / not yet running) → cost = 0, no false losses.
+      // Mining signal gating only on multi-day periods.
+      // 1D: charge cost for ALL elapsed hours (machine runs 24/7, 0 blocks = unlucky not offline).
+      // 7D/30D/ALL: only charge buckets with mining signal (so days/months before machine
+      //             was ever running don't show false losses).
       const hasMining = (b.hashrate > 0) || (b.my_blocks > 0) || (b.payouts > 0);
       const costEnd = Math.min(b.end, now);
       const isPast = costEnd > b.start;
-      const isActive = isPast && hasMining;
+      const isActive = currentPeriod === "1d"
+        ? isPast
+        : (isPast && hasMining);
       const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       const revenue = (b.amount || 0) * prlPrice;
       
