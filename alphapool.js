@@ -835,9 +835,10 @@ async function refresh() {
     for (const b of buckets) {
       const costEnd = Math.min(b.end, now);
       const isPast = costEnd > b.start;
-      // Alphapool: charge cost only if bucket has mining signal (block found).
-      // No block = rig off = no cost (avoids charging idle hours).
-      const hasMining = (b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0;
+      // Alphapool: charge cost when rig is mining (has hashrate signal).
+      // Block found is luck-based — 1 jam luck jelek bisa 0 block tapi rig tetep nyala.
+      // Hashrate > 0 = mining active = charge cost. No hashrate = rig off = no cost.
+      const hasMining = (b.hashrate || 0) > 0 || (b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0;
       const isActive = isPast && hasMining;
       const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       // Alphapool: revenue from miner block share (my_reward = my_share_grain/1e8)

@@ -841,9 +841,12 @@ async function refresh() {
     for (const b of buckets) {
       const costEnd = Math.min(b.end, now);
       const isPast = costEnd > b.start;
-      // Pearlhash: charge cost only if bucket has mining signal (epoch credit).
-      // No credit = rig off = no cost (avoids charging idle hours).
-      const hasMining = (b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0;
+      // Pearlhash: charge cost when mining session active.
+      // Epoch credit is luck-based (1 jam bisa 0 credit tapi rig tetep nyala).
+      // Mining signal: connected_workers > 0 sekarang = rig active = charge SEMUA past buckets.
+      // No workers + no credit di bucket = idle = no cost.
+      const hasActiveWorkers = (account?.connected_workers || []).length > 0;
+      const hasMining = hasActiveWorkers || (b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0;
       const isActive = isPast && hasMining;
       const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       // Pearlhash: revenue from epoch credit (my_reward)
