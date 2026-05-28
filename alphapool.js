@@ -639,10 +639,13 @@ function bucketBlocks(skeleton, blocks, wallet) {
 function bucketHashrate(skeleton, samples) {
   const out = skeleton.buckets.map(b => ({ ...b, hashrate_avg: 0, hashrate_max: 0, samples: 0 }));
   for (const s of samples) {
-    const idx = Period.findIdx(out, s.timestamp);
+    // Alphapool API: { ts (utc-sec), hashrate (H/s) } — Period.findIdx uses utc-sec
+    const ts = s.timestamp || s.ts || 0;
+    const hr = s.hash_rate || s.hashrate || 0;
+    const idx = Period.findIdx(out, ts);
     if (idx === -1) continue;
-    out[idx].hashrate_avg += s.hash_rate;
-    out[idx].hashrate_max = Math.max(out[idx].hashrate_max, s.hash_rate);
+    out[idx].hashrate_avg += hr;
+    out[idx].hashrate_max = Math.max(out[idx].hashrate_max, hr);
     out[idx].samples++;
   }
   for (const b of out) if (b.samples > 0) b.hashrate_avg /= b.samples;
@@ -816,7 +819,7 @@ async function refresh() {
 
     const payoutBuckets = bucketPayouts(skeleton, periodPayouts);
     const blockBuckets = bucketBlocks(skeleton, periodBlocks, wallet);
-    const hashBuckets = bucketHashrate(skeleton, []);
+    const hashBuckets = bucketHashrate(skeleton, miner?.hashrate_series || []);
 
     const buckets = payoutBuckets.map((pb, i) => ({
       ...pb,
