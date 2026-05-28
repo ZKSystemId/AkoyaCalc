@@ -33,7 +33,7 @@ const I18N = {
     profit_loss: "📦 Profit / Loss", prl_minus_cost: "PRL paid − cost",
     total_pl_label: "Total Profit / Loss", revenue: "Revenue",
     period_1h: "over 1 hour", period_6h: "over 6 hours", period_12h: "over 12 hours", period_24h: "over 24 hours",
-    insight: "📊 Insight", best_hour: "Best Hour", worst_hour: "Worst Hour", hours_payout: "Hours w/ Payout", total_prl_24h: "Total PRL",
+    insight: "📊 Insight", best_hour: "Best Hour", worst_hour: "Worst Hour", hours_payout: "Hours w/ Payout", total_prl_24h: "Total PRL", total_blocks_period: "Total Block", total_blocks_period: "Total Blocks",
     hourly_breakdown: "Hourly Breakdown",
     chart_label: "Visualization",
     profit: "Profit", loss: "Loss", future: "Future",
@@ -151,7 +151,7 @@ const I18N = {
     profit_loss: "📦 盈亏", prl_minus_cost: "PRL支付 − 成本",
     total_pl_label: "总盈亏", revenue: "收入",
     period_1h: "过去1小时", period_6h: "过去6小时", period_12h: "过去12小时", period_24h: "过去24小时",
-    insight: "📊 分析", best_hour: "最佳小时", worst_hour: "最差小时", hours_payout: "有支付的小时", total_prl_24h: "总PRL",
+    insight: "📊 分析", best_hour: "最佳小时", worst_hour: "最差小时", hours_payout: "有支付的小时", total_prl_24h: "总PRL", total_blocks_period: "总区块",
     hourly_breakdown: "按小时分解",
     chart_label: "可视化",
     profit: "盈利", loss: "亏损", future: "未来",
@@ -881,6 +881,9 @@ async function refresh() {
     setText("hours-hit", `${bucketsWithPayout} / ${buckets.length}`);
     setText("total-prl", fmtNum(totalPRL, 1) + " PRL");
     setText("luck-actual", fmtNum(totalPRL, 1) + " PRL");
+
+    const totalBlocks = buckets.reduce((s, b) => s + (b.my_blocks || 0), 0);
+    setText("total-blocks-period", totalBlocks + " " + (totalBlocks === 1 ? "block" : "blocks"));
 
     // Modern SVG chart
     renderModernChart(buckets);
