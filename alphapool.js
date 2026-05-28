@@ -874,6 +874,7 @@ async function refresh() {
     setText("best-hour", isFinite(bestPL) ? fmtPL(bestPL) + " @ " + bestLabel : "—");
     setText("worst-hour", isFinite(worstPL) ? fmtPL(worstPL) + " @ " + worstLabel : "—");
     setText("hours-hit", `${bucketsWithPayout} / ${buckets.length}`);
+    setText("total-prl", fmtNum(totalPRL, 1) + " PRL");
     setText("luck-actual", fmtNum(totalPRL, 1) + " PRL");
 
     // Modern SVG chart
