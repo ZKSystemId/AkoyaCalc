@@ -8,9 +8,10 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💎%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 body { font-family: 'Inter', sans-serif; }
 .font-mono-num { font-family: 'JetBrains Mono', monospace; }
+.font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
 .card-glow {
   box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 4px 24px rgba(0,0,0,0.4);
   border: 1px solid #162032;
@@ -20,9 +21,9 @@ body { font-family: 'Inter', sans-serif; }
   0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,211,238,0.7); }
   50% { opacity:.6; box-shadow: 0 0 0 6px rgba(34,211,238,0); }
 }
-  .pool-btn { color: #cbd5e1; }
-  .pool-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
-  .lang-btn { color: #cbd5e1; }
+.pool-btn { color: #cbd5e1; }
+.pool-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
+.lang-btn { color: #cbd5e1; }
 .lang-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
 
 input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monospace; }
@@ -31,12 +32,90 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .neutral { color: #94a3b8 !important; }
 .expected { color: #a78bfa !important; }
 
-.hour-bar { display:flex; align-items:flex-end; gap:2px; height:80px; padding:8px 0; }
-.hour-cell { flex:1; min-width:6px; border-radius:2px; transition:opacity .2s; cursor:pointer; }
-.hour-cell:hover { opacity:.7; }
-.hour-cell.profit-cell { background:#22d3ee; }
-.hour-cell.loss-cell { background:#f87171; }
-.hour-cell.future-cell { background:#475569; }
+/* ============ MODERN CHART ============ */
+.modern-chart-wrap { position: relative; width: 100%; height: 240px; }
+.modern-chart-wrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.chart-grid-line { stroke: rgba(34, 211, 238, 0.06); stroke-width: 1; stroke-dasharray: 2 4; }
+.chart-zero-line { stroke: rgba(34, 211, 238, 0.18); stroke-width: 1; }
+.chart-cursor {
+  stroke: rgba(167, 139, 250, 0.55);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.chart-cursor-dot {
+  stroke: #0a0f1a;
+  stroke-width: 2;
+  pointer-events: none;
+  transition: opacity 0.2s ease, cx 0.12s ease-out, cy 0.12s ease-out;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+.chart-hit { cursor: crosshair; }
+.chart-line {
+  fill: none;
+  stroke: url(#line-gradient);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.55));
+  stroke-dasharray: 2200;
+  stroke-dashoffset: 2200;
+  animation: drawLine 1.5s cubic-bezier(0.65, 0, 0.35, 1) 0.2s forwards;
+  pointer-events: none;
+}
+@keyframes drawLine { to { stroke-dashoffset: 0; } }
+.chart-area {
+  fill: url(#area-gradient);
+  opacity: 0;
+  animation: fadeIn 0.9s ease-out 0.5s forwards;
+  pointer-events: none;
+}
+.chart-dot {
+  fill: #0a0f1a;
+  stroke-width: 2;
+  opacity: 0;
+  animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  pointer-events: none;
+}
+.chart-dot.dot-profit { stroke: #22d3ee; filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.6)); }
+.chart-dot.dot-loss   { stroke: #f87171; filter: drop-shadow(0 0 5px rgba(248, 113, 113, 0.6)); }
+.chart-dot.dot-neutral { stroke: #94a3b8; }
+.chart-axis-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  fill: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(15, 20, 32, 0.97) 0%, rgba(20, 27, 45, 0.97) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  z-index: 50;
+  width: 140px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(34, 211, 238, 0.1);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.chart-tooltip.visible { opacity: 1; transform: translateY(0); }
+.chart-tooltip .tt-time { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.chart-tooltip .tt-pl { font-weight: 700; font-size: 14px; font-family: 'JetBrains Mono', monospace; margin-bottom: 5px; }
+.chart-tooltip .tt-pl.profit { color: #22d3ee; }
+.chart-tooltip .tt-pl.loss { color: #f87171; }
+.chart-tooltip .tt-pl.neutral { color: #64748b; }
+.chart-tooltip .tt-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #94a3b8; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.chart-tooltip .tt-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
 /* Period selector tabs */
 .period-btn {
@@ -46,6 +125,79 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 }
 .period-btn:hover { color: #cbd5e1; }
 .period-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
+
+/* Bottom nav (Android-style) */
+#bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(10, 15, 26, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(34, 211, 238, 0.08);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+}
+.nav-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px;
+  padding: 8px 6px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  transition: color 0.18s, transform 0.18s;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  position: relative;
+  min-width: 0;
+}
+.nav-btn .nav-ic {
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-btn .nav-ic svg { width: 100%; height: 100%; }
+.nav-btn:hover { color: #cbd5e1; }
+.nav-btn:active { transform: scale(0.94); }
+.nav-btn.active { color: #67e8f9; }
+.nav-btn.active::before {
+  content: ''; position: absolute; top: 0;
+  left: 50%; transform: translateX(-50%);
+  width: 28px; height: 2.5px;
+  background: linear-gradient(90deg, #22d3ee, #67e8f9);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+}
+.nav-btn .nav-label { line-height: 1; }
+/* Body padding so content doesn't sit under nav */
+body { padding-bottom: 76px; }
+
+/* Reward tabs (Pending / Claimed) */
+.reward-tab {
+  flex: 1; padding: 10px 16px;
+  background: transparent;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 6px;
+}
+.reward-tab.active {
+  background: #0c4a6e;
+  color: #67e8f9;
+  font-weight: 600;
+}
+
+/* Hero */
+.hero-title {
+  background: linear-gradient(120deg, #67e8f9 0%, #a78bfa 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
 /* Pool switching overlay */
 #switch-overlay {
@@ -75,9 +227,105 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; }
   75% { content: '...'; } 100% { content: ''; }
 }
+
+/* Setup screen */
+#setup-screen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+/* Tailwind .hidden loses to ID selector — force override */
+#setup-screen.hidden, #app-shell.hidden { display: none !important; }
+.setup-card {
+  width: 100%; max-width: 540px;
+  background: linear-gradient(160deg, #0f1420 0%, #0a0f1a 100%);
+  border: 1px solid #162032;
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+/* Refresh icon button */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 32px;
+  background: #0f1420;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.icon-btn:hover { color: #67e8f9; border-color: rgba(34, 211, 238, 0.4); }
+.icon-btn:active { background: rgba(8, 47, 73, 0.5); transform: scale(0.92); }
+.icon-btn.spinning svg { animation: spin 0.8s linear infinite; }
+
+/* ============ SMOOTH ANIMATIONS ============ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Page enter animation */
+.spa-page {
+  animation: fadeInUp 0.35s ease-out;
+}
+/* Card glow + lift on hover */
+.card-glow { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
+.card-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px rgba(34,211,238,0.08), 0 8px 32px rgba(0,0,0,0.5);
+  border-color: rgba(34, 211, 238, 0.15);
+}
+/* Stat numbers pulse on update */
+@keyframes valueFlash {
+  0%   { color: #67e8f9; text-shadow: 0 0 12px rgba(34,211,238,0.4); }
+  100% { color: inherit; text-shadow: none; }
+}
+.value-flash { animation: valueFlash 0.6s ease-out; }
+
+/* Smooth transitions for interactive elements */
+button, a, input, .nav-btn, .period-btn, .pool-btn, .lang-btn, .reward-tab {
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.15s ease, opacity 0.18s ease;
+}
+button:active:not(:disabled) { transform: scale(0.97); }
+
+/* Bottom nav button bounce on tap */
+.nav-btn.active .nav-ic { animation: scaleIn 0.3s ease-out; }
+
+/* Pool/Lang dropdown slide-in */
+#pool-menu:not(.hidden), #lang-menu:not(.hidden) {
+  animation: slideInRight 0.18s ease-out;
+}
+
+/* Status bar fade */
+#status, #error { transition: opacity 0.25s ease; }
+
+/* Chart bar entrance stagger */
+.chart-bar { animation: barRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards; transform-origin: bottom; }
+@keyframes barRise { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+
+/* Table row stagger */
+tbody tr { animation: fadeIn 0.3s ease-out backwards; }
+
+/* Hero brand smaller */
+.hero-title { line-height: 1; }
 </style>
-<script src="assets/cost-adv.js?v=1"></script>
-<script src="assets/period.js?v=1"></script>
+<script src="assets/period.js?v=29"></script>
+<script src="assets/cost-adv.js?v=29"></script>
+<script src="assets/spa.js?v=29"></script>
 </head>
 <body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
 
@@ -91,104 +339,135 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   </div>
 </div>
 
+<!-- ============================ SETUP SCREEN ============================ -->
+<div id="setup-screen" class="hidden">
+  <div class="setup-card">
+    <div class="flex items-center gap-3 mb-1">
+      <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 pulse-dot"></span>
+      <p class="text-[11px] text-cyan-400 uppercase tracking-widest font-semibold" data-i18n="setup_kicker">Welcome</p>
+    </div>
+    <h1 class="text-3xl lg:text-4xl font-display font-bold hero-title mb-2" data-i18n="setup_title">Calc Your Pool</h1>
+    <p class="text-sm text-slate-400 mb-7" data-i18n="setup_subtitle">Enter your mining setup to start tracking real-time profit/loss.</p>
+
+    <form id="setup-form" class="space-y-4">
+      <div>
+        <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="wallet_address">Wallet Address</label>
+        <input id="setup-wallet" type="text" placeholder="prl1..."
+          class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="cost_per_hr">Cost $/hr</label>
+          <input id="setup-cost" type="number" step="0.01" min="0" value="11"
+            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
+        </div>
+        <div>
+          <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="prl_price">PRL Price $</label>
+          <input id="setup-price" type="number" step="0.001" min="0" value="0.40"
+            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
+        </div>
+      </div>
+      <div id="setup-error" class="hidden text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
+      <button id="setup-save" type="submit"
+        class="w-full mt-2 px-4 py-3 text-sm font-semibold bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-cyan-50 rounded-md transition shadow-lg shadow-cyan-900/30">
+        <span data-i18n="setup_save">Save & Start Tracking</span>
+      </button>
+    </form>
+
+    <p class="text-[10px] text-slate-600 mt-6 text-center leading-relaxed">
+      <span data-i18n="setup_footnote">All settings stored locally in your browser. No account, no signup.</span>
+    </p>
+  </div>
+</div>
+
+<!-- ============================ APP SHELL ============================ -->
+<div id="app-shell" class="hidden">
 <div class="max-w-6xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
 
-<header class="mb-8 flex items-start justify-between gap-3">
+<!-- Hero header -->
+<header class="mb-6 flex items-start justify-between gap-3">
   <div class="flex items-center gap-3 min-w-0 flex-1">
-    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 pulse-dot flex-shrink-0"></span>
+    <!-- Logo: real Akoya pearl SVG -->
+    <div class="relative flex-shrink-0">
+      <div class="w-11 h-11 rounded-xl bg-[#1a1410] flex items-center justify-center shadow-lg shadow-amber-900/30 border border-amber-700/30 overflow-hidden">
+        <img src="assets/icons/akoya.svg" alt="Akoya" class="w-9 h-9" />
+      </div>
+      <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 pulse-dot ring-2 ring-[#080b14]"></span>
+    </div>
     <div class="min-w-0">
-      <h1 class="text-base lg:text-2xl font-semibold text-slate-100 truncate" data-i18n="app_title">⛏ Calc Your Pool — Akoya</h1>
-      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate" data-i18n="app_subtitle">PPS · Per-Block · Hashrate-aware</p>
+      <h1 class="font-display font-bold leading-none flex items-baseline gap-2 flex-wrap">
+        <span class="text-lg lg:text-xl hero-title" data-i18n="hero_brand">Akoya</span>
+        <span class="text-[10px] lg:text-xs font-medium text-slate-500 uppercase tracking-[0.18em]" data-i18n="hero_suffix">Tracker</span>
+      </h1>
+      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate mt-1.5" data-i18n="app_subtitle">PPS · Per-Block · Hashrate-aware</p>
     </div>
   </div>
-  <div class="flex items-center gap-2 flex-shrink-0">
-    <div class="relative">
-      <button id="pool-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-cyan-700/40 active:bg-cyan-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
-        <span class="text-cyan-400">⛏</span>
-        <span id="pool-current">Akoya</span>
-        <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-      </button>
-      <div id="pool-menu" class="hidden absolute right-0 top-full mt-1 w-44 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
-        <button data-pool="akoya" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition select-none">⛏ Akoya</button>
-        <button data-pool="pearlhash" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🦪 Pearlhash</button>
-        <button data-pool="alphapool" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">⛏ AlphaPool</button>
-        <a href="index.html?pick=1" class="block w-full px-3 py-2.5 text-[12px] text-left text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition border-t border-[#1f2937] select-none">↺ Choose pool…</a>
+  <div class="flex flex-col items-end gap-2 flex-shrink-0">
+    <div class="flex items-center gap-2">
+      <div class="relative">
+        <button id="pool-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-cyan-700/40 active:bg-cyan-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+          <span class="text-cyan-400">⛏</span>
+          <span id="pool-current">Akoya</span>
+          <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="pool-menu" class="hidden absolute right-0 top-full mt-1 w-44 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
+          <button data-pool="akoya" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition select-none">⛏ Akoya</button>
+          <button data-pool="pearlhash" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🦪 Pearlhash</button>
+          <button data-pool="alphapool" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">⛏ AlphaPool</button>
+          <a href="index.html?pick=1" class="block w-full px-3 py-2.5 text-[12px] text-left text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition border-t border-[#1f2937] select-none">↺ Choose pool…</a>
+        </div>
       </div>
-    </div>
-    <div class="relative">
-      <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-cyan-700/40 active:bg-cyan-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
-        <span id="lang-current">🇬🇧 EN</span>
-        <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
-      </button>
-      <div id="lang-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
-        <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition select-none">🇬🇧 English</button>
-        <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
-        <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
+      <div class="relative">
+        <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-cyan-700/40 active:bg-cyan-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+          <span id="lang-current">🇬🇧 EN</span>
+          <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="lang-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
+          <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition select-none">🇬🇧 English</button>
+          <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
+          <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
+        </div>
       </div>
     </div>
   </div>
 </header>
-<div class="flex justify-end mb-3 -mt-4">
-  <div id="last-update" class="text-[9px] text-slate-600 uppercase tracking-wider" data-i18n="never">never</div>
-</div>
 
-<!-- Input panel -->
-<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-6 card-glow">
-  <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="your_setup">Your Setup</h2>
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-    <div class="lg:col-span-7">
-      <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="wallet_address">Wallet Address</label>
-      <input id="wallet" type="text" placeholder="prl1..."
-        class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60">
-    </div>
-    <div class="lg:col-span-2">
-      <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="cost_per_hr">Cost $/hr</label>
-      <input id="cost" type="number" step="0.01" min="0" value="11"
-        class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60">
-    </div>
-    <div class="lg:col-span-2">
-      <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="prl_price">PRL Price $</label>
-      <input id="prl-price" type="number" step="0.001" min="0" value="0.40"
-        class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60">
-    </div>
-    <div class="lg:col-span-1 flex items-end">
-      <button id="refresh" class="w-full px-4 py-2 text-xs bg-cyan-600/20 border border-cyan-700/40 text-cyan-300 hover:bg-cyan-600/30 rounded-md font-medium" data-i18n="refresh">Refresh</button>
-    </div>
-  </div>
-  <div id="error" class="hidden mt-3 text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
-  <div class="flex items-center justify-between mt-3 gap-2">
-    <div id="status" class="text-[11px] text-slate-600 flex-1" data-i18n="status_ready">Ready. Enter wallet to begin.</div>
-    <button id="cost-adv-btn" type="button" class="bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-700/40 text-cyan-300 text-xs px-3 py-1.5 rounded transition flex items-center gap-1 flex-shrink-0" title="Cost advanced">
-      <span>📊</span><span data-i18n="cost_adv">Cost adv</span>
+<!-- Bottom Tab Nav (Android-style) -->
+<nav id="bottom-nav">
+  <div class="max-w-6xl mx-auto flex items-stretch">
+    <button class="nav-btn active" data-tab="dashboard">
+      <span class="nav-ic"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></span>
+      <span class="nav-label" data-i18n="nav_dashboard">Dashboard</span>
+    </button>
+    <button class="nav-btn" data-tab="workers">
+      <span class="nav-ic"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <span class="nav-label" data-i18n="nav_workers">Workers</span>
+    </button>
+    <button class="nav-btn" data-tab="rewards">
+      <span class="nav-ic"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg></span>
+      <span class="nav-label" data-i18n="nav_rewards">Rewards</span>
+    </button>
+    <button class="nav-btn" data-tab="blocks">
+      <span class="nav-ic"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></span>
+      <span class="nav-label" data-i18n="nav_blocks">Blocks</span>
+    </button>
+    <button class="nav-btn" data-tab="settings">
+      <span class="nav-ic"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <span class="nav-label" data-i18n="nav_settings">Settings</span>
     </button>
   </div>
-    <!-- Cost advanced (range overrides) panel -->
-  <div id="cost-adv-panel" class="hidden mt-4 pt-4 border-t border-[#1a2235]">
-    <div class="flex items-center justify-between mb-2">
-      <p class="text-[11px] text-slate-400 uppercase tracking-wider font-medium" data-i18n="cost_adv_title">⚙️ Cost Advanced</p>
-      <span class="text-[10px] text-slate-600" data-i18n="cost_adv_hint">Override cost for specific time ranges</span>
-    </div>
-    <div id="cost-adv-list" class="bg-[#080b14] border border-[#162032] rounded mb-3 max-h-60 overflow-y-auto"></div>
-    <div class="grid grid-cols-12 gap-2 items-end">
-      <div class="col-span-5">
-        <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="from_label">From</label>
-        <input id="cost-adv-from" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
-      </div>
-      <div class="col-span-5">
-        <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="to_label">To</label>
-        <input id="cost-adv-to" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
-      </div>
-      <div class="col-span-2">
-        <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="cost_label">$ /hr</label>
-        <input id="cost-adv-amount" type="number" step="0.01" placeholder="15.00" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
-      </div>
-    </div>
-    <div class="mt-2 flex justify-end">
-      <button id="cost-adv-add-btn" type="button" class="bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-700/40 text-cyan-200 text-xs px-4 py-1.5 rounded transition" data-i18n="add_range">+ Add range</button>
-    </div>
-  </div>
-  </div>
+</nav>
+
+<div class="flex items-center gap-2 mb-3">
+  <div id="status" class="text-[10px] text-slate-600 uppercase tracking-wider flex-1 min-w-0 truncate" data-i18n="status_ready">Ready.</div>
+  <button id="refresh-btn" class="icon-btn flex-shrink-0" title="Refresh">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+  </button>
 </div>
+<div id="error" class="hidden mb-3 text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
+
+<!-- ============================ DASHBOARD ============================ -->
+<div class="spa-page" data-page="dashboard">
 
 <!-- Top stats -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
@@ -220,76 +499,87 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   </div>
 </div>
 
-<!-- HYBRID P/L PANEL -->
-<div class="rounded-lg p-5 card-glow bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border-cyan-900/30 mb-6">
-  <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-    <p class="text-[11px] text-cyan-400 uppercase tracking-wider font-semibold" data-i18n="profit_loss">📦 Profit / Loss</p>
+<!-- Insight -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-4 mb-3 card-glow">
+  <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-3" data-i18n="insight">📊 Insight</p>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
+    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="best_hour">Best Hour</span><span id="best-hour" class="font-mono-num text-cyan-400 mt-1">—</span></div>
+    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="worst_hour">Worst Hour</span><span id="worst-hour" class="font-mono-num text-red-400 mt-1">—</span></div>
+    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="hours_payout">Hours w/ Payout</span><span id="hours-hit" class="font-mono-num text-slate-300 mt-1">—</span></div>
+    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="total_prl_24h">Total PRL</span><span id="luck-actual" class="font-mono-num text-purple-400 mt-1">—</span></div>
+  </div>
+</div>
+
+<!-- Total Profit/Loss (compact) -->
+<div class="bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border border-cyan-900/30 rounded-lg p-4 mb-3 card-glow">
+  <div class="flex items-end justify-between gap-3 flex-wrap">
+    <div>
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="total_pl_label">Total Profit / Loss</p>
+      <div id="total-pl-big" class="text-2xl lg:text-3xl font-bold font-display font-mono-num leading-none text-slate-500">—</div>
+      <div id="total-pl-period" class="text-[10px] text-slate-600 uppercase tracking-wider mt-1.5" data-i18n="period_24h">over 24 hours</div>
+    </div>
+    <div class="flex items-center gap-5 text-right">
+      <div>
+        <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="revenue">Revenue</p>
+        <p id="total-revenue" class="text-sm font-semibold font-mono-num text-cyan-400 mt-0.5">—</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="th_cost">Cost</p>
+        <p id="total-cost" class="text-sm font-semibold font-mono-num text-red-400 mt-0.5">—</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hourly Breakdown (table first, then chart) -->
+<div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
+  <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
+    <div class="flex items-center gap-3">
+      <h2 id="chart-title" class="text-xs font-medium text-slate-300 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown</h2>
+      <span id="period-loading" class="text-[10px] text-cyan-500 hidden">loading…</span>
+    </div>
     <div id="period-selector" class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
-      <button data-period="1d"  class="period-btn active text-[11px] px-3 py-1 rounded">1D</button>
-      <button data-period="7d"  class="period-btn text-[11px] px-3 py-1 rounded">7D</button>
-      <button data-period="30d" class="period-btn text-[11px] px-3 py-1 rounded">30D</button>
-      <button data-period="all" class="period-btn text-[11px] px-3 py-1 rounded">ALL</button>
+      <button data-period="1h"  class="period-btn text-[11px] px-2.5 py-1 rounded">1H</button>
+      <button data-period="6h"  class="period-btn text-[11px] px-2.5 py-1 rounded">6H</button>
+      <button data-period="12h" class="period-btn text-[11px] px-2.5 py-1 rounded">12H</button>
+      <button data-period="24h" class="period-btn active text-[11px] px-2.5 py-1 rounded">24H</button>
     </div>
   </div>
-  <div class="flex items-center justify-between mb-3">
-    <span class="text-[10px] text-slate-600" data-i18n="prl_minus_cost">PRL paid − cost</span>
-    <span id="period-loading" class="text-[10px] text-cyan-500 hidden">loading…</span>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-[#0a0f1a] text-[10px] text-slate-600 uppercase tracking-wider">
+        <tr>
+          <th class="px-3 py-2 text-left" data-i18n="th_hour">Hour</th>
+          <th class="px-3 py-2 text-right" data-i18n="th_hr">HR</th>
+          <th class="px-3 py-2 text-right" data-i18n="th_prl_paid">PRL</th>
+          <th class="px-3 py-2 text-right" data-i18n="th_revenue">Revenue</th>
+          <th class="px-3 py-2 text-right" data-i18n="th_cost">Cost</th>
+          <th class="px-3 py-2 text-right" data-i18n="th_pl">P/L</th>
+        </tr>
+      </thead>
+      <tbody id="hourly-body">
+        <tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
+      </tbody>
+    </table>
   </div>
-  <div class="grid grid-cols-2 gap-4">
-    <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-main-label" data-i18n="last_24h">24 Hours</span></p>
-      <div class="flex items-baseline gap-1 mt-1">
-        <span id="actual-pl-24h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
+  <!-- Chart at the bottom -->
+  <div class="border-t border-[#162032] px-5 pt-4 pb-3">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-[10px] text-slate-500 uppercase tracking-wider" data-i18n="chart_label">Visualization</span>
+      <div class="flex items-center gap-3 text-[10px] text-slate-600">
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-cyan-400"></span><span data-i18n="profit">Profit</span></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-slate-600"></span><span data-i18n="future">Future</span></span>
       </div>
-      <p id="actual-pl-24h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
     </div>
-    <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider"><span id="period-recent-label" data-i18n="last_hour">Last Hour</span></p>
-      <div class="flex items-baseline gap-1 mt-1">
-        <span id="actual-pl-1h" class="text-3xl font-bold font-mono-num text-slate-500">—</span>
-      </div>
-      <p id="actual-pl-1h-detail" class="text-[10px] text-slate-500 mt-1">—</p>
+    <div class="modern-chart-wrap">
+      <svg id="hour-chart" viewBox="0 0 800 200" preserveAspectRatio="none"></svg>
+      <div id="chart-tooltip" class="chart-tooltip"></div>
     </div>
-  </div>
-</div>
-
-<!-- Variance breakdown -->
-<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-6 card-glow">
-  <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3" data-i18n="insight">📊 Insight</h2>
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center">
-    <div>
-      <p class="text-[10px] text-slate-600 uppercase" data-i18n="best_hour">Best Hour</p>
-      <p id="best-hour" class="text-base font-mono-num text-cyan-400 mt-1">—</p>
+    <div class="flex justify-between text-[10px] text-slate-600 mt-1">
+      <span id="chart-axis-start" data-i18n="ago_24h">24h ago</span>
+      <span data-i18n="now">now</span>
     </div>
-    <div>
-      <p class="text-[10px] text-slate-600 uppercase" data-i18n="worst_hour">Worst Hour</p>
-      <p id="worst-hour" class="text-base font-mono-num text-red-400 mt-1">—</p>
-    </div>
-    <div>
-      <p class="text-[10px] text-slate-600 uppercase" data-i18n="hours_payout">Hours w/ Payout</p>
-      <p id="hours-hit" class="text-base font-mono-num text-slate-300 mt-1">—</p>
-    </div>
-    <div>
-      <p class="text-[10px] text-slate-600 uppercase" data-i18n="total_prl_24h">Total PRL 24h</p>
-      <p id="luck-actual" class="text-base font-mono-num text-purple-400 mt-1">—</p>
-    </div>
-  </div>
-</div>
-
-<!-- Hourly chart visualization -->
-<div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-6 card-glow">
-  <div class="flex items-center justify-between mb-3">
-    <h2 id="chart-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="last_24h_chart">Last 24h · Actual P/L Per Hour</h2>
-    <div class="flex items-center gap-3 text-[10px] text-slate-600">
-      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-cyan-400"></span><span data-i18n="profit">Profit</span></span>
-      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
-      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-slate-600"></span><span data-i18n="future">Future</span></span>
-    </div>
-  </div>
-  <div id="hour-chart" class="hour-bar"></div>
-  <div class="flex justify-between text-[10px] text-slate-600 mt-1">
-    <span id="chart-axis-start" data-i18n="ago_24h">24h ago</span>
-    <span data-i18n="now">now</span>
   </div>
 </div>
 
@@ -298,1159 +588,257 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   <h3 class="text-[10px] text-slate-500 uppercase tracking-wider mb-2" data-i18n="legend_title">📖 Column Legend</h3>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] text-slate-400 leading-relaxed">
     <div><span class="text-cyan-400 font-semibold">HR</span> = <span data-i18n="legend_hr">hashrate that hour. Low = OFF/idle</span></div>
-    <div><span class="text-cyan-400 font-semibold">Pool Blk</span> = <span data-i18n="legend_pool_blk">total pool blocks that hour</span></div>
-    <div><span class="text-cyan-400 font-semibold">PRL Paid</span> = <span data-i18n="legend_prl_paid">real PRL paid to wallet that hour</span></div>
+    <div><span class="text-cyan-400 font-semibold">PRL</span> = <span data-i18n="legend_prl_paid">real PRL paid to wallet that hour</span></div>
     <div><span class="profit font-semibold">P/L +</span> = <span data-i18n="legend_profit">profit (PRL paid bigger than cost)</span></div>
     <div><span class="loss font-semibold">P/L -</span> = <span data-i18n="legend_loss">loss (cost bigger than PRL paid)</span></div>
   </div>
 </div>
 
-<!-- Hourly table -->
-<div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
-  <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
-    <h2 id="table-title" class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown · Latest First</h2>
-    <div class="flex items-center gap-3 text-[11px]">
-      <span id="table-total-label" class="text-slate-600 uppercase tracking-wider" data-i18n="total_24h_label">Total 24h:</span>
-      <span id="table-total-pl" class="text-base font-mono-num font-bold text-slate-500">—</span>
-      <span id="table-total-detail" class="text-[10px] text-slate-600">—</span>
-    </div>
-  </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
-        <tr>
-          <th id="th-period" class="px-3 py-2.5 text-left" data-i18n="th_hour">Hour (WIB)</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_hr">HR</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_pool_blk">Pool Blk</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_prl_paid">PRL Paid</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_revenue">Revenue</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_cost">Cost</th>
-          <th class="px-3 py-2.5 text-right" data-i18n="th_pl">P/L</th>
-        </tr>
-      </thead>
-      <tbody id="hourly-body">
-        <tr><td colspan="7" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div id="hourly-pagination"></div>
-</div>
+</div><!-- /dashboard -->
 
-<!-- Pool + Wallet -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
-  <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 card-glow">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="pool_stats">Pool Stats</h2>
-    <div class="space-y-2.5">
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_hashrate">Pool hashrate</span><span id="pool-hash" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="connected_miners">Connected miners</span><span id="pool-miners" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="blocks_24h_pool">Blocks 24h (pool)</span><span id="pool-blocks" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_luck_24h">Pool luck 24h</span><span id="pool-luck" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="avg_block_reward">Avg block reward</span><span id="avg-reward" class="text-xs text-slate-300 font-mono-num">—</span></div>
+<!-- ============================ WORKERS ============================ -->
+<div class="spa-page hidden" data-page="workers">
+  <div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
+    <div class="px-5 py-4 border-b border-[#162032] flex items-center justify-between">
+      <div>
+        <h2 class="text-sm font-semibold text-slate-200" data-i18n="workers_title">Connected Workers</h2>
+        <p class="text-[10px] text-slate-500 mt-0.5" data-i18n="workers_sub">Live status of your mining rigs</p>
+      </div>
+      <span id="workers-count-big" class="text-[11px] text-cyan-400 font-mono-num font-semibold">0 <span data-i18n="active">active</span></span>
     </div>
-  </div>
-  <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 card-glow">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="wallet">Wallet</h2>
-    <div class="space-y-2.5">
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pending_balance">Pending balance</span><span id="w-pending" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="maturing_blocks">Maturing blocks</span><span id="w-maturing" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="next_maturity">Next maturity</span><span id="w-next-mature" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="status_label">Status</span><span id="w-status" class="text-xs text-slate-300 font-mono-num">—</span></div>
-      <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="shares_24h">Shares 24h</span><span id="w-shares" class="text-xs text-slate-300 font-mono-num">—</span></div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
+          <tr>
+            <th class="px-5 py-2.5 text-left" data-i18n="th_worker">Worker</th>
+            <th class="px-5 py-2.5 text-right" data-i18n="th_hashrate">Hashrate</th>
+            <th class="px-5 py-2.5 text-right" data-i18n="th_shares_1h">Shares 1h</th>
+            <th class="px-5 py-2.5 text-right" data-i18n="th_stale">Stale %</th>
+            <th class="px-5 py-2.5 text-right" data-i18n="th_last_seen">Last Seen</th>
+          </tr>
+        </thead>
+        <tbody id="workers-body">
+          <tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="no_workers">No workers</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- Workers -->
-<div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
-  <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between">
-    <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider" data-i18n="workers">Workers</h2>
-    <span id="workers-count" class="text-[10px] text-slate-600 uppercase tracking-wider">0 <span data-i18n="active">active</span></span>
-  </div>
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
-        <tr>
-          <th class="px-5 py-2.5 text-left" data-i18n="th_worker">Worker</th>
-          <th class="px-5 py-2.5 text-right" data-i18n="th_hashrate">Hashrate</th>
-          <th class="px-5 py-2.5 text-right" data-i18n="th_shares_1h">Shares 1h</th>
-          <th class="px-5 py-2.5 text-right" data-i18n="th_stale">Stale %</th>
-          <th class="px-5 py-2.5 text-right" data-i18n="th_last_seen">Last Seen</th>
-        </tr>
-      </thead>
-      <tbody id="workers-body">
-        <tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="no_workers">No workers</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Donate -->
-<div class="bg-gradient-to-br from-[#1a1428] via-[#0f1420] to-[#0c1a2a] border border-purple-900/40 rounded-lg p-4 mb-6 card-glow">
-  <div class="flex items-center justify-between gap-3 flex-wrap">
-    <div class="flex items-center gap-2.5 min-w-0 flex-1">
-      <span class="text-xl">☕</span>
-      <div class="min-w-0">
-        <p class="text-xs font-semibold text-pink-300 uppercase tracking-wider" data-i18n="donate_title">Support This Tool</p>
-        <p class="text-[10px] text-slate-500" data-i18n="donate_sub">Donate PRL · Tip the dev</p>
+<!-- ============================ REWARDS ============================ -->
+<div class="spa-page hidden" data-page="rewards">
+  <div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
+    <div class="px-5 py-4 border-b border-[#162032]">
+      <h2 class="text-sm font-semibold text-slate-200 mb-3" data-i18n="rewards_title">Rewards</h2>
+      <div class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937] max-w-md">
+        <button class="reward-tab active" data-reward-tab="pending"><span data-i18n="rewards_pending">Pending</span> <span id="rewards-pending-count" class="text-[10px] opacity-70">0</span></button>
+        <button class="reward-tab" data-reward-tab="claimed"><span data-i18n="rewards_claimed">Claimed</span> <span id="rewards-claimed-count" class="text-[10px] opacity-70">0</span></button>
       </div>
     </div>
-    <div class="flex items-center gap-2 w-full sm:w-auto">
-      <code id="donate-addr" class="flex-1 sm:flex-none bg-[#080b14] border border-[#1f2937] rounded-md px-2.5 py-1.5 text-[10px] text-slate-300 font-mono-num truncate select-all">prl1pejnmtenn2r72skjhz8a266k58a003tlqxrmtdd7ljw6lcvm4643sz0z027</code>
-      <button id="donate-copy" type="button" class="flex-shrink-0 px-3 py-1.5 text-[11px] bg-pink-600/20 border border-pink-700/40 text-pink-300 hover:bg-pink-600/30 active:bg-pink-600/40 rounded-md font-medium transition select-none flex items-center gap-1.5">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-        <span id="donate-copy-label" data-i18n="copy">Copy</span>
-      </button>
+
+    <!-- Pending list -->
+    <div id="rewards-pending-pane" class="px-5 py-4">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div class="bg-[#080b14] border border-[#162032] rounded p-3">
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="pending_balance">Pending Balance</p>
+          <p id="r-pending" class="text-base font-semibold font-mono-num text-cyan-400">—</p>
+        </div>
+        <div class="bg-[#080b14] border border-[#162032] rounded p-3">
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="maturing_blocks">Maturing</p>
+          <p id="r-maturing" class="text-base font-semibold font-mono-num text-yellow-400">—</p>
+        </div>
+        <div class="bg-[#080b14] border border-[#162032] rounded p-3">
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="next_maturity">Next Maturity</p>
+          <p id="r-next-mature" class="text-base font-semibold font-mono-num text-slate-200">—</p>
+        </div>
+        <div class="bg-[#080b14] border border-[#162032] rounded p-3">
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="status_label">Status</p>
+          <p id="r-status" class="text-base font-semibold font-mono-num text-slate-200">—</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
+            <tr>
+              <th class="px-3 py-2 text-left" data-i18n="th_block_height">Block</th>
+              <th class="px-3 py-2 text-left" data-i18n="th_status">Status</th>
+              <th class="px-3 py-2 text-right" data-i18n="th_reward">Reward (PRL)</th>
+              <th class="px-3 py-2 text-right" data-i18n="th_eta">ETA</th>
+            </tr>
+          </thead>
+          <tbody id="pending-blocks-body">
+            <tr><td colspan="4" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="no_pending">No pending blocks</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Claimed list -->
+    <div id="rewards-claimed-pane" class="px-5 py-4 hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
+            <tr>
+              <th class="px-3 py-2 text-left" data-i18n="th_when">When</th>
+              <th class="px-3 py-2 text-right" data-i18n="th_amount">Amount (PRL)</th>
+              <th class="px-3 py-2 text-right" data-i18n="th_fee">Fee</th>
+              <th class="px-3 py-2 text-left" data-i18n="th_tx">Tx</th>
+            </tr>
+          </thead>
+          <tbody id="claimed-body">
+            <tr><td colspan="4" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="no_claimed">No payouts yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="claimed-pagination"></div>
     </div>
   </div>
 </div>
 
-<footer class="mt-8 pb-6 text-center">
-  <p class="text-[10px] text-slate-700 uppercase tracking-wider mb-1" data-i18n="footer_data">Data: akoyapool.com · Auto-refresh 60s · Timezone: WIB (UTC+7)</p>
-  <p class="text-[10px] text-slate-700 max-w-2xl mx-auto leading-relaxed" data-i18n="footer_explain">Profit/Loss = PRL paid × $price − cost. Cost charged proportional to hashrate.<br>Rig OFF (HR &lt; 5% peak) = no cost.</p>
-</footer>
-
+<!-- ============================ BLOCKS ============================ -->
+<div class="spa-page hidden" data-page="blocks">
+  <div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
+    <div class="px-5 py-4 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
+      <div>
+        <h2 class="text-sm font-semibold text-slate-200" data-i18n="blocks_title">Pool Blocks</h2>
+        <p class="text-[10px] text-slate-500 mt-0.5" data-i18n="blocks_sub">Recent blocks found by the pool. ⭐ = found by you</p>
+      </div>
+      <div class="flex items-center gap-3 text-[11px] flex-wrap">
+        <div class="flex items-center gap-1.5"><span class="text-slate-600" data-i18n="my_blocks">Mine:</span><span id="blocks-mine-count" class="text-yellow-400 font-mono-num font-semibold">0</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-slate-600" data-i18n="pool_blocks_label">Pool:</span><span id="blocks-pool-count" class="text-cyan-400 font-mono-num font-semibold">0</span></div>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
+          <tr>
+            <th class="px-3 py-2 text-left" data-i18n="th_block_height">Height</th>
+            <th class="px-3 py-2 text-left" data-i18n="th_when">When</th>
+            <th class="px-3 py-2 text-right" data-i18n="th_reward">Reward (PRL)</th>
+            <th class="px-3 py-2 text-left" data-i18n="th_finder">Finder</th>
+            <th class="px-3 py-2 text-left" data-i18n="th_status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="blocks-body">
+          <tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="blocks-pagination"></div>
+  </div>
 </div>
 
-<script>
-// ============ POOL CONFIG ============
-const POOLS = {
-  akoya: { name: "Akoya", url: "akoya.html" },
-  pearlhash: { name: "Pearlhash", url: "pearlhash.html" },
-  alphapool: { name: "AlphaPool", url: "alphapool.html" },
-};
-let currentPool = "akoya";
-const API = "https://akoyapool.com/api/v1";
-const STORAGE_KEY = "akoya_hybrid_pl_settings";   // pool-specific: Akoya only
+<!-- ============================ SETTINGS ============================ -->
+<div class="spa-page hidden" data-page="settings">
 
-// ============ I18N ============
-const I18N = {
-  en: {
-    app_title: "⛏ Calc Your Pool — Akoya",
-    app_subtitle: "PPS · Per-Block · Hashrate-aware",
-    your_setup: "Your Setup",
-    wallet_address: "Wallet Address",
-    cost_per_hr: "Cost $/hr",
-    prl_price: "PRL Price $",
-    refresh: "Refresh",
-    status_ready: "Ready. Enter wallet to begin.",
-    hashrate: "Hashrate",
-    live: "live",
-    pool_share: "Pool Share",
-    of_pool: "of pool",
-    workers: "Workers",
-    online: "online",
-    total_paid: "Total Paid",
-    all_time: "all time",
-    profit_loss: "📦 Profit / Loss",
-    prl_minus_cost: "PRL paid − cost",
-    last_24h: "24 Hours",
-    last_hour: "Last Hour",
-    insight: "📊 Insight",
-    best_hour: "Best Hour",
-    worst_hour: "Worst Hour",
-    hours_payout: "Hours w/ Payout",
-    total_prl_24h: "Total PRL 24h",
-    last_24h_chart: "Last 24h · Actual P/L Per Hour",
-    profit: "Profit",
-    loss: "Loss",
-    future: "Future",
-    ago_24h: "24h ago",
-    now: "now",
-    legend_title: "📖 Column Legend",
-    legend_hr: "hashrate that hour. Low = OFF/idle",
-    legend_pool_blk: "total pool blocks that hour",
-    legend_prl_paid: "real PRL paid to wallet that hour",
-    legend_profit: "profit (PRL paid bigger than cost)",
-    legend_loss: "loss (cost bigger than PRL paid)",
-    hourly_breakdown: "Hourly Breakdown · Latest First",
-    total_24h_label: "Total 24h:",
-    th_hour: "Hour (WIB)",
-    th_hr: "HR",
-    th_pool_blk: "Pool Blk",
-    th_prl_paid: "PRL Paid",
-    th_revenue: "Revenue",
-    th_cost: "Cost",
-    th_pl: "P/L",
-    loading: "Loading...",
-    pool_stats: "Pool Stats",
-    pool_hashrate: "Pool hashrate",
-    connected_miners: "Connected miners",
-    blocks_24h_pool: "Blocks 24h (pool)",
-    pool_luck_24h: "Pool luck 24h",
-    avg_block_reward: "Avg block reward",
-    wallet: "Wallet",
-    pending_balance: "Pending balance",
-    maturing_blocks: "Maturing blocks",
-    next_maturity: "Next maturity",
-    status_label: "Status",
-    shares_24h: "Shares 24h",
-    th_worker: "Worker",
-    th_hashrate: "Hashrate",
-    th_shares_1h: "Shares 1h",
-    th_stale: "Stale %",
-    th_last_seen: "Last Seen",
-    no_workers: "No workers",
-    active: "active",
-    never: "never",
-    footer_data: "Data: akoyapool.com · Auto-refresh 60s · Timezone: WIB (UTC+7)",
-    footer_explain: "Profit/Loss = PRL paid × $price − cost. Cost charged flat per hour while rig is mining.<br>Rig OFF (HR &lt; 5% peak) = no cost.",
-    cost_adv: "Cost adv",
-    cost_adv_title: "⚙️ Cost Advanced",
-    cost_adv_hint: "Override cost for specific time ranges",
-    add_range: "+ Add range",
-    from_label: "From",
-    to_label: "To",
-    cost_label: "$ /hr",
-    online_status: "🟢 Online",
-    offline_status: "🔴 Offline",
-    error_prefix: "Error: ",
-    fetching: "Fetching data...",
-    updated: "Updated",
-    auto_refresh_60s: "Auto-refresh in 60s",
-    donate_title: "Support This Tool",
-    donate_sub: "Donate PRL · Tip the dev",
-    copy: "Copy",
-    copied: "Copied!",
-    pool_label: "Pool",
-    invalid_wallet: "Wallet must start with 'prl1'",
-    switching: "Switching to",
-    // period selector
-    period_1d: "24 Hours",
-    period_7d: "7 Days",
-    period_30d: "30 Days",
-    period_all: "All-Time",
-    period_recent_1d: "Last Hour",
-    period_recent_7d: "Today",
-    period_recent_30d: "Today",
-    period_recent_all: "Today",
-    chart_title_1d: "Last 24h · Actual P/L Per Hour",
-    chart_title_7d: "Last 7 Days · P/L Per Day",
-    chart_title_30d: "Last 30 Days · P/L Per Day",
-    chart_title_all: "All-Time · P/L Per Month",
-    table_title_1d: "Hourly Breakdown · Latest First",
-    table_title_7d: "Daily Breakdown · Latest First",
-    table_title_30d: "Daily Breakdown · Latest First",
-    table_title_all: "Monthly Breakdown · Latest First",
-    th_hour_1d: "Hour (WIB)",
-    th_hour_7d: "Date",
-    th_hour_30d: "Date",
-    th_hour_all: "Month",
-    chart_axis_1d: "24h ago",
-    chart_axis_7d: "7d ago",
-    chart_axis_30d: "30d ago",
-    chart_axis_all: "start",
-    total_label_1d: "Total 24h:",
-    total_label_7d: "Total 7d:",
-    total_label_30d: "Total 30d:",
-    total_label_all: "All-time:",
-  },
-  id: {
-    app_title: "⛏ Hitung Pool Kamu — Akoya",
-    app_subtitle: "PPS · Per-Block · Sadar hashrate",
-    your_setup: "Setup Kamu",
-    wallet_address: "Alamat Wallet",
-    cost_per_hr: "Cost $/jam",
-    prl_price: "Harga PRL $",
-    refresh: "Refresh",
-    status_ready: "Siap. Masukin wallet untuk mulai.",
-    hashrate: "Hashrate",
-    live: "live",
-    pool_share: "Bagian Pool",
-    of_pool: "dari pool",
-    workers: "Workers",
-    online: "online",
-    total_paid: "Total Dibayar",
-    all_time: "all time",
-    profit_loss: "📦 Profit / Loss",
-    prl_minus_cost: "PRL dibayar − cost",
-    last_24h: "24 Jam",
-    last_hour: "Jam Terakhir",
-    insight: "📊 Insight",
-    best_hour: "Jam Terbaik",
-    worst_hour: "Jam Terburuk",
-    hours_payout: "Jam ada Payout",
-    total_prl_24h: "Total PRL 24j",
-    last_24h_chart: "24 Jam Terakhir · P/L Aktual Per Jam",
-    profit: "Profit",
-    loss: "Loss",
-    future: "Belum",
-    ago_24h: "24j lalu",
-    now: "sekarang",
-    legend_title: "📖 Penjelasan Kolom",
-    legend_hr: "hashrate jam itu. Low = OFF/idle",
-    legend_pool_blk: "total block pool jam itu",
-    legend_prl_paid: "PRL real masuk wallet jam itu",
-    legend_profit: "profit (PRL paid lebih besar dari cost)",
-    legend_loss: "loss (cost lebih besar dari PRL paid)",
-    hourly_breakdown: "Breakdown Per Jam · Terbaru Dulu",
-    total_24h_label: "Total 24j:",
-    th_hour: "Jam (WIB)",
-    th_hr: "HR",
-    th_pool_blk: "Pool Blk",
-    th_prl_paid: "PRL Dibayar",
-    th_revenue: "Revenue",
-    th_cost: "Cost",
-    th_pl: "P/L",
-    loading: "Loading...",
-    pool_stats: "Statistik Pool",
-    pool_hashrate: "Hashrate pool",
-    connected_miners: "Miner terkoneksi",
-    blocks_24h_pool: "Block 24j (pool)",
-    pool_luck_24h: "Luck pool 24j",
-    avg_block_reward: "Reward block rata2",
-    wallet: "Wallet",
-    pending_balance: "Saldo pending",
-    maturing_blocks: "Block matang",
-    next_maturity: "Maturity berikutnya",
-    status_label: "Status",
-    shares_24h: "Shares 24j",
-    th_worker: "Worker",
-    th_hashrate: "Hashrate",
-    th_shares_1h: "Shares 1j",
-    th_stale: "Stale %",
-    th_last_seen: "Last Seen",
-    no_workers: "Ga ada workers",
-    active: "aktif",
-    never: "belum",
-    footer_data: "Data: akoyapool.com · Auto-refresh 60d · Zona: WIB (UTC+7)",
-    footer_explain: "Profit/Loss = PRL dibayar × harga$ − cost. Cost di-charge flat per jam selama rig mining.<br>Rig OFF (HR &lt; 5% peak) = ga ada cost.",
-    cost_adv: "Cost adv",
-    cost_adv_title: "⚙️ Cost Advanced",
-    cost_adv_hint: "Override biaya buat range jam tertentu",
-    add_range: "+ Tambah range",
-    from_label: "Dari",
-    to_label: "Sampai",
-    cost_label: "$ /jam",
-    online_status: "🟢 Online",
-    offline_status: "🔴 Offline",
-    error_prefix: "Error: ",
-    fetching: "Mengambil data...",
-    updated: "Diupdate",
-    auto_refresh_60s: "Auto-refresh dalam 60d",
-    donate_title: "Dukung Tool Ini",
-    donate_sub: "Donasi PRL · Tip developer",
-    copy: "Salin",
-    copied: "Tersalin!",
-    pool_label: "Pool",
-    invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
-    switching: "Pindah ke",
-    period_1d: "24 Jam",
-    period_7d: "7 Hari",
-    period_30d: "30 Hari",
-    period_all: "Sepanjang Waktu",
-    period_recent_1d: "Jam Terakhir",
-    period_recent_7d: "Hari Ini",
-    period_recent_30d: "Hari Ini",
-    period_recent_all: "Hari Ini",
-    chart_title_1d: "24 Jam Terakhir · P/L Aktual Per Jam",
-    chart_title_7d: "7 Hari Terakhir · P/L Per Hari",
-    chart_title_30d: "30 Hari Terakhir · P/L Per Hari",
-    chart_title_all: "Sepanjang Waktu · P/L Per Bulan",
-    table_title_1d: "Breakdown Per Jam · Terbaru Dulu",
-    table_title_7d: "Breakdown Per Hari · Terbaru Dulu",
-    table_title_30d: "Breakdown Per Hari · Terbaru Dulu",
-    table_title_all: "Breakdown Per Bulan · Terbaru Dulu",
-    th_hour_1d: "Jam (WIB)",
-    th_hour_7d: "Tanggal",
-    th_hour_30d: "Tanggal",
-    th_hour_all: "Bulan",
-    chart_axis_1d: "24j lalu",
-    chart_axis_7d: "7h lalu",
-    chart_axis_30d: "30h lalu",
-    chart_axis_all: "mulai",
-    total_label_1d: "Total 24j:",
-    total_label_7d: "Total 7h:",
-    total_label_30d: "Total 30h:",
-    total_label_all: "Sepanjang waktu:",
-  },
-  zh: {
-    app_title: "⛏ 计算你的矿池 — Akoya",
-    app_subtitle: "PPS · 每区块 · 算力感知",
-    your_setup: "您的设置",
-    wallet_address: "钱包地址",
-    cost_per_hr: "成本 $/小时",
-    prl_price: "PRL 价格 $",
-    refresh: "刷新",
-    status_ready: "就绪。请输入钱包开始。",
-    hashrate: "算力",
-    live: "实时",
-    pool_share: "矿池占比",
-    of_pool: "占矿池",
-    workers: "矿工",
-    online: "在线",
-    total_paid: "已支付总额",
-    all_time: "全部时间",
-    profit_loss: "📦 盈亏",
-    prl_minus_cost: "PRL支付 − 成本",
-    last_24h: "24 小时",
-    last_hour: "最后一小时",
-    insight: "📊 分析",
-    best_hour: "最佳小时",
-    worst_hour: "最差小时",
-    hours_payout: "有支付的小时",
-    total_prl_24h: "24小时总PRL",
-    last_24h_chart: "过去24小时 · 每小时实际盈亏",
-    profit: "盈利",
-    loss: "亏损",
-    future: "未来",
-    ago_24h: "24小时前",
-    now: "现在",
-    legend_title: "📖 列说明",
-    legend_hr: "该小时算力。低 = 关闭/空闲",
-    legend_pool_blk: "该小时矿池总区块数",
-    legend_prl_paid: "该小时实际支付到钱包的PRL",
-    legend_profit: "盈利 (PRL支付大于成本)",
-    legend_loss: "亏损 (成本大于PRL支付)",
-    hourly_breakdown: "按小时分解 · 最新优先",
-    total_24h_label: "24小时总计:",
-    th_hour: "小时 (WIB)",
-    th_hr: "算力",
-    th_pool_blk: "池区块",
-    th_prl_paid: "PRL支付",
-    th_revenue: "收入",
-    th_cost: "成本",
-    th_pl: "盈亏",
-    loading: "加载中...",
-    pool_stats: "矿池统计",
-    pool_hashrate: "矿池算力",
-    connected_miners: "已连接矿工",
-    blocks_24h_pool: "24小时区块 (池)",
-    pool_luck_24h: "24小时池运气",
-    avg_block_reward: "平均区块奖励",
-    wallet: "钱包",
-    pending_balance: "待处理余额",
-    maturing_blocks: "成熟区块",
-    next_maturity: "下次成熟",
-    status_label: "状态",
-    shares_24h: "24小时份额",
-    th_worker: "矿工",
-    th_hashrate: "算力",
-    th_shares_1h: "1小时份额",
-    th_stale: "陈旧 %",
-    th_last_seen: "上次见到",
-    no_workers: "没有矿工",
-    active: "活跃",
-    never: "从未",
-    footer_data: "数据: akoyapool.com · 自动刷新60秒 · 时区: WIB (UTC+7)",
-    footer_explain: "盈亏 = PRL支付 × 价格$ − 成本。成本在矿机挖矿期间按小时固定收取。<br>矿机关闭 (算力 &lt; 5% 峰值) = 无成本。",
-    cost_adv: "高级成本",
-    cost_adv_title: "⚙️ 高级成本",
-    cost_adv_hint: "为特定时间段覆盖成本",
-    add_range: "+ 添加范围",
-    from_label: "从",
-    to_label: "到",
-    cost_label: "$ /小时",
-    online_status: "🟢 在线",
-    offline_status: "🔴 离线",
-    error_prefix: "错误: ",
-    fetching: "获取数据中...",
-    updated: "已更新",
-    auto_refresh_60s: "60秒后自动刷新",
-    donate_title: "支持此工具",
-    donate_sub: "捐赠 PRL · 给开发者打赏",
-    copy: "复制",
-    copied: "已复制!",
-    pool_label: "矿池",
-    invalid_wallet: "钱包必须以 'prl1' 开头",
-    switching: "切换到",
-    period_1d: "24 小时",
-    period_7d: "7 天",
-    period_30d: "30 天",
-    period_all: "全部时间",
-    period_recent_1d: "最后一小时",
-    period_recent_7d: "今日",
-    period_recent_30d: "今日",
-    period_recent_all: "今日",
-    chart_title_1d: "过去24小时 · 每小时实际盈亏",
-    chart_title_7d: "过去7天 · 每日盈亏",
-    chart_title_30d: "过去30天 · 每日盈亏",
-    chart_title_all: "全部时间 · 每月盈亏",
-    table_title_1d: "按小时分解 · 最新优先",
-    table_title_7d: "按日分解 · 最新优先",
-    table_title_30d: "按日分解 · 最新优先",
-    table_title_all: "按月分解 · 最新优先",
-    th_hour_1d: "小时 (WIB)",
-    th_hour_7d: "日期",
-    th_hour_30d: "日期",
-    th_hour_all: "月份",
-    chart_axis_1d: "24小时前",
-    chart_axis_7d: "7天前",
-    chart_axis_30d: "30天前",
-    chart_axis_all: "开始",
-    total_label_1d: "24小时总计:",
-    total_label_7d: "7天总计:",
-    total_label_30d: "30天总计:",
-    total_label_all: "全部时间:",
-  },
-};
+  <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 mb-4 card-glow">
+    <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+      <div>
+        <h2 class="text-sm font-semibold text-slate-200" data-i18n="settings_title">Setup</h2>
+        <p class="text-[10px] text-slate-500 mt-0.5" data-i18n="settings_sub">Edit wallet, cost, and PRL price.</p>
+      </div>
+      <button id="settings-edit-btn" class="px-3 py-1.5 text-[11px] bg-cyan-600/20 border border-cyan-700/40 text-cyan-300 hover:bg-cyan-600/30 rounded-md font-medium transition" data-i18n="settings_edit">Edit Setup</button>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div class="lg:col-span-3">
+        <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="wallet_address">Wallet Address</p>
+        <p id="settings-wallet-display" class="text-xs text-slate-300 font-mono-num bg-[#080b14] border border-[#162032] rounded px-3 py-2 truncate">—</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="cost_per_hr">Cost $/hr</p>
+        <p id="settings-cost-display" class="text-base font-semibold font-mono-num text-cyan-400">—</p>
+      </div>
+      <div>
+        <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="prl_price">PRL Price $</p>
+        <p id="settings-price-display" class="text-base font-semibold font-mono-num text-purple-400">—</p>
+      </div>
+      <div class="flex items-end justify-end">
+        <button id="cost-adv-btn" type="button" class="bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-700/40 text-cyan-300 text-[11px] px-3 py-1.5 rounded transition flex items-center gap-1">
+          <span>📊</span><span data-i18n="cost_adv">Cost adv</span>
+        </button>
+      </div>
+    </div>
 
-let currentLang = localStorage.getItem("akoya_lang") || "en";
+    <!-- Cost advanced (range overrides) panel -->
+    <div id="cost-adv-panel" class="hidden mt-4 pt-4 border-t border-[#1a2235]">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[11px] text-slate-400 uppercase tracking-wider font-medium" data-i18n="cost_adv_title">⚙️ Cost Advanced</p>
+        <span class="text-[10px] text-slate-600" data-i18n="cost_adv_hint">Override cost for specific time ranges</span>
+      </div>
+      <div id="cost-adv-list" class="bg-[#080b14] border border-[#162032] rounded mb-3 max-h-60 overflow-y-auto"></div>
+      <div class="grid grid-cols-12 gap-2 items-end">
+        <div class="col-span-5">
+          <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="from_label">From</label>
+          <input id="cost-adv-from" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
+        </div>
+        <div class="col-span-5">
+          <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="to_label">To</label>
+          <input id="cost-adv-to" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
+        </div>
+        <div class="col-span-2">
+          <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="cost_label">$ /hr</label>
+          <input id="cost-adv-amount" type="number" step="0.01" placeholder="15.00" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
+        </div>
+      </div>
+      <div class="mt-2 flex justify-end">
+        <button id="cost-adv-add-btn" type="button" class="bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-700/40 text-cyan-200 text-xs px-4 py-1.5 rounded transition" data-i18n="add_range">+ Add range</button>
+      </div>
+    </div>
+  </div>
 
-function t(key) {
-  return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
-}
+  <!-- Pool + Wallet stats -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
+    <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 card-glow">
+      <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="pool_stats">Pool Stats</h2>
+      <div class="space-y-2.5">
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_hashrate">Pool hashrate</span><span id="pool-hash" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="connected_miners">Connected miners</span><span id="pool-miners" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="blocks_24h_pool">Blocks 24h (pool)</span><span id="pool-blocks-stat" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_luck_24h">Pool luck 24h</span><span id="pool-luck" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="avg_block_reward">Avg block reward</span><span id="avg-reward" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      </div>
+    </div>
+    <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 card-glow">
+      <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="wallet">Wallet</h2>
+      <div class="space-y-2.5">
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pending_balance">Pending balance</span><span id="w-pending" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="maturing_blocks">Maturing blocks</span><span id="w-maturing" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="next_maturity">Next maturity</span><span id="w-next-mature" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="status_label">Status</span><span id="w-status" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="shares_24h">Shares 24h</span><span id="w-shares" class="text-xs text-slate-300 font-mono-num">—</span></div>
+      </div>
+    </div>
+  </div>
 
-function applyI18n() {
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    const val = t(key);
-    if (val) el.innerHTML = val;
-  });
-  // Update lang button active state
-  document.querySelectorAll(".lang-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-lang") === currentLang);
-  });
-  // Update toggle label
-  const labels = { en: "🇬🇧 EN", id: "🇮🇩 ID", zh: "🇨🇳 ZH" };
-  const cur = document.getElementById("lang-current");
-  if (cur) cur.textContent = labels[currentLang] || "🇬🇧 EN";
-  document.documentElement.lang = currentLang;
-}
+  <!-- Donate -->
+  <div class="bg-gradient-to-br from-[#1a1428] via-[#0f1420] to-[#0c1a2a] border border-purple-900/40 rounded-lg p-4 mb-6 card-glow">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-2.5 min-w-0 flex-1">
+        <span class="text-xl">☕</span>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-pink-300 uppercase tracking-wider" data-i18n="donate_title">Support This Tool</p>
+          <p class="text-[10px] text-slate-500" data-i18n="donate_sub">Donate PRL · Tip the dev</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <code id="donate-addr" class="flex-1 sm:flex-none bg-[#080b14] border border-[#1f2937] rounded-md px-2.5 py-1.5 text-[10px] text-slate-300 font-mono-num truncate select-all">prl1pejnmtenn2r72skjhz8a266k58a003tlqxrmtdd7ljw6lcvm4643sz0z027</code>
+        <button id="donate-copy" type="button" class="flex-shrink-0 px-3 py-1.5 text-[11px] bg-pink-600/20 border border-pink-700/40 text-pink-300 hover:bg-pink-600/30 active:bg-pink-600/40 rounded-md font-medium transition select-none flex items-center gap-1.5">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          <span id="donate-copy-label" data-i18n="copy">Copy</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div><!-- /settings -->
 
-function setLang(lang) {
-  currentLang = lang;
-  localStorage.setItem("akoya_lang", lang);
-  applyI18n();
-  closeLangMenu();
-  // Re-render dynamic content
-  if (window._lastWallet) refresh();
-}
+<footer class="mt-2 pb-6 text-center">
+  <p class="text-[10px] text-slate-700 uppercase tracking-wider mb-1" data-i18n="footer_data">Data: akoyapool.com · Auto-refresh 60s · Timezone: WIB (UTC+7)</p>
+  <p class="text-[10px] text-slate-700 max-w-2xl mx-auto leading-relaxed" data-i18n="footer_explain">Profit/Loss = PRL paid × $price − cost. Rig OFF (HR &lt; 5% peak) = no cost.</p>
+</footer>
 
-function toggleLangMenu() {
-  const menu = document.getElementById("lang-menu");
-  if (menu) menu.classList.toggle("hidden");
-  // Close pool menu when opening lang
-  const pmenu = document.getElementById("pool-menu");
-  if (pmenu) pmenu.classList.add("hidden");
-}
+</div><!-- /max-w wrap -->
+</div><!-- /app-shell -->
 
-function closeLangMenu() {
-  const menu = document.getElementById("lang-menu");
-  if (menu) menu.classList.add("hidden");
-}
-
-// Pool switching
-function applyPool() {
-  document.querySelectorAll(".pool-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-pool") === currentPool);
-  });
-}
-
-function setPool(pool) {
-  if (!POOLS[pool]) return;
-  if (pool === currentPool) {
-    closePoolMenu();
-    return;
-  }
-  // Save selection
-  localStorage.setItem("akoya_pool", pool);
-  closePoolMenu();
-  // Show overlay + navigate
-  const overlay = document.getElementById("switch-overlay");
-  const target = document.getElementById("switch-target");
-  if (target) target.textContent = POOLS[pool].name;
-  if (overlay) overlay.classList.add("show");
-  setTimeout(() => {
-    if (pool === "pearlhash") location.href = "pearlhash.html";
-    else location.href = "index.html";
-  }, 600);
-}
-
-function togglePoolMenu() {
-  const menu = document.getElementById("pool-menu");
-  if (menu) menu.classList.toggle("hidden");
-  // Close lang menu when opening pool
-  const lmenu = document.getElementById("lang-menu");
-  if (lmenu) lmenu.classList.add("hidden");
-}
-
-function closePoolMenu() {
-  const menu = document.getElementById("pool-menu");
-  if (menu) menu.classList.add("hidden");
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  applyI18n();
-  applyPool();
-  
-  const toggle = document.getElementById("lang-toggle");
-  if (toggle) {
-    const handleToggle = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleLangMenu();
-    };
-    toggle.addEventListener("click", handleToggle);
-  }
-  document.querySelectorAll(".lang-btn").forEach(btn => {
-    const handleSelect = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setLang(btn.getAttribute("data-lang"));
-    };
-    btn.addEventListener("click", handleSelect);
-  });
-  
-  // Pool switcher
-  const ptoggle = document.getElementById("pool-toggle");
-  if (ptoggle) {
-    ptoggle.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      togglePoolMenu();
-    });
-  }
-  document.querySelectorAll(".pool-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setPool(btn.getAttribute("data-pool"));
-    });
-  });
-  
-  // Click outside closes both menus
-  document.addEventListener("click", (e) => {
-    const lmenu = document.getElementById("lang-menu");
-    const ltoggle = document.getElementById("lang-toggle");
-    if (lmenu && !lmenu.contains(e.target) && ltoggle && !ltoggle.contains(e.target)) {
-      closeLangMenu();
-    }
-    const pmenu = document.getElementById("pool-menu");
-    const ptog = document.getElementById("pool-toggle");
-    if (pmenu && !pmenu.contains(e.target) && ptog && !ptog.contains(e.target)) {
-      closePoolMenu();
-    }
-  });
-  
-  // Donate copy button
-  const copyBtn = document.getElementById("donate-copy");
-  if (copyBtn) {
-    copyBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const addr = document.getElementById("donate-addr").textContent.trim();
-      const label = document.getElementById("donate-copy-label");
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(addr);
-        } else {
-          // Fallback for older browsers / non-HTTPS
-          const ta = document.createElement("textarea");
-          ta.value = addr;
-          ta.style.position = "fixed";
-          ta.style.left = "-9999px";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-        }
-        const orig = label.textContent;
-        label.textContent = t("copied");
-        copyBtn.classList.add("bg-green-600/30", "border-green-700/50", "text-green-300");
-        copyBtn.classList.remove("bg-pink-600/20", "border-pink-700/40", "text-pink-300");
-        setTimeout(() => {
-          label.textContent = t("copy");
-          copyBtn.classList.remove("bg-green-600/30", "border-green-700/50", "text-green-300");
-          copyBtn.classList.add("bg-pink-600/20", "border-pink-700/40", "text-pink-300");
-        }, 1500);
-      } catch (err) {
-        console.error("Copy failed:", err);
-        alert("Copy failed. Long-press the address and copy manually.");
-      }
-    });
-  }
-});
-
-function loadSettings() {
-  try {
-    const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    if (s.wallet) document.getElementById("wallet").value = s.wallet;
-    if (s.cost) document.getElementById("cost").value = s.cost;
-    if (s.prl_price) document.getElementById("prl-price").value = s.prl_price;
-  } catch (e) {}
-}
-function saveSettings() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    wallet: document.getElementById("wallet").value.trim(),
-    cost: document.getElementById("cost").value,
-    prl_price: document.getElementById("prl-price").value,
-  }));
-}
-function fmtHash(h) {
-  if (!h) return "—";
-  if (h >= 1e18) return (h/1e18).toFixed(2) + " EH/s";
-  if (h >= 1e15) return (h/1e15).toFixed(2) + " PH/s";
-  if (h >= 1e12) return (h/1e12).toFixed(2) + " TH/s";
-  if (h >= 1e9) return (h/1e9).toFixed(2) + " GH/s";
-  return (h/1e6).toFixed(2) + " MH/s";
-}
-function fmtNum(n, dec=2) {
-  if (n == null || isNaN(n)) return "—";
-  return Number(n).toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec});
-}
-function fmtAge(ts) {
-  if (!ts) return "—";
-  const sec = Math.floor(Date.now()/1000 - ts);
-  if (sec < 60) return sec + "s ago";
-  if (sec < 3600) return Math.floor(sec/60) + "m ago";
-  if (sec < 86400) return Math.floor(sec/3600) + "h ago";
-  return Math.floor(sec/86400) + "d ago";
-}
-function fmtPL(amount) {
-  if (Math.abs(amount) < 0.01) return "$0.00";
-  if (amount > 0) return "+$" + fmtNum(amount, 2);
-  return "-$" + fmtNum(Math.abs(amount), 2);
-}
-function setText(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
-}
-function setClass(id, cls) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.className = el.className.replace(/\b(profit|loss|neutral|expected)\b/g, "").trim();
-  el.classList.add(cls);
-}
-function showError(msg) {
-  const e = document.getElementById("error");
-  e.textContent = msg;
-  e.classList.remove("hidden");
-}
-function hideError() { document.getElementById("error").classList.add("hidden"); }
-function setStatus(msg) { document.getElementById("status").textContent = msg; }
-
-async function fetchJSON(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
-}
-
-// ============ PERIOD CONFIG ============
-const PERIODS = Period.PERIODS;
-let currentPeriod = "1d";
-
-function fmtHourLabel(ts) { return Period.fmtHour(ts); }
-
-// ============ FETCHERS ============
-async function fetchPayoutsSince(wallet, sinceTs) {
-  const all = [];
-  for (let page = 1; page <= 50; page++) {
-    const r = await fetchJSON(`${API}/miners/${wallet}/payouts?page=${page}&page_size=200`);
-    const items = r.data || [];
-    if (!items.length) break;
-    all.push(...items);
-    const oldest = items[items.length - 1].created_at || 0;
-    if (oldest < sinceTs) break;
-  }
-  return all
-    .filter(p => p.created_at && p.created_at >= sinceTs)
-    .map(p => ({
-      ts: p.created_at,
-      amount: p.amount,
-      fee: p.fee_amount,
-      status: p.status,
-      tx: p.tx_id,
-    }));
-}
-
-async function fetchBlocksSince(sinceTs) {
-  const all = [];
-  for (let page = 1; page <= 80; page++) {
-    const r = await fetchJSON(`${API}/pool/blocks?page=${page}&page_size=100`);
-    const blocks = r.data || [];
-    if (!blocks.length) break;
-    all.push(...blocks);
-    const oldest = blocks[blocks.length - 1].found_at || 0;
-    if (oldest < sinceTs) break;
-  }
-  return all.filter(b => b.found_at >= sinceTs);
-}
-
-async function fetchHashrateHistory(wallet) {
-  // API only returns last 24h; only used for 1d period
-  const r = await fetchJSON(`${API}/miners/${wallet}/hashrate_history`);
-  return (r.data && r.data.samples) || [];
-}
-
-// ============ BUCKETING ============
-function bucketPayouts(skeleton, payouts) {
-  const out = skeleton.buckets.map(b => ({ ...b, payouts: 0, amount: 0 }));
-  for (const p of payouts) {
-    if (!p.ts) continue;
-    const idx = Period.findIdx(out, p.ts);
-    if (idx === -1) continue;
-    out[idx].payouts++;
-    out[idx].amount += (p.amount || 0);
-  }
-  return out;
-}
-
-function bucketBlocks(skeleton, blocks, wallet) {
-  const out = skeleton.buckets.map(b => ({ ...b, my_blocks: 0, my_reward: 0, pool_blocks: 0 }));
-  for (const b of blocks) {
-    const idx = Period.findIdx(out, b.found_at);
-    if (idx === -1) continue;
-    out[idx].pool_blocks++;
-    if (b.found_by === wallet) {
-      out[idx].my_blocks++;
-      out[idx].my_reward += (b.reward || 0);
-    }
-  }
-  return out;
-}
-
-function bucketHashrate(skeleton, samples) {
-  const out = skeleton.buckets.map(b => ({ ...b, hashrate_avg: 0, hashrate_max: 0, samples: 0 }));
-  for (const s of samples) {
-    const idx = Period.findIdx(out, s.timestamp);
-    if (idx === -1) continue;
-    out[idx].hashrate_avg += s.hash_rate;
-    out[idx].hashrate_max = Math.max(out[idx].hashrate_max, s.hash_rate);
-    out[idx].samples++;
-  }
-  for (const b of out) {
-    if (b.samples > 0) b.hashrate_avg /= b.samples;
-  }
-  return out;
-}
-
-// ============ COST ADV ============
-const costAdv = new CostAdv("akoya");
-
-function updateCostAdvPanel() {
-  costAdv.renderPanel("cost-adv-list", "#22d3ee", () => {
-    if (document.getElementById("wallet").value) refresh();
-  });
-}
-
-function toggleCostAdv() {
-  const panel = document.getElementById("cost-adv-panel");
-  const opening = panel.classList.contains("hidden");
-  panel.classList.toggle("hidden");
-  if (opening) {
-    updateCostAdvPanel();
-    CostAdv.prefillForm("cost-adv-from", "cost-adv-to");
-    document.getElementById("cost-adv-amount").value = "";
-  }
-}
-
-
-async function refresh() {
-  const wallet = document.getElementById("wallet").value.trim();
-  const cost = parseFloat(document.getElementById("cost").value) || 0;
-  const prlPrice = parseFloat(document.getElementById("prl-price").value) || 0;
-  
-  if (!wallet || !wallet.startsWith("prl1")) {
-    showError(t("invalid_wallet") || "Wallet must start with 'prl1'");
-    return;
-  }
-  hideError();
-  saveSettings();
-  setStatus(t("fetching"));
-  window._lastWallet = wallet;
-  document.getElementById("period-loading").classList.remove("hidden");
-  
-  try {
-    // First fetch miner + pool meta — needed to know created_at for all-time period
-    const [miner, poolStats, poolLuck] = await Promise.all([
-      fetchJSON(`${API}/miners/${wallet}`),
-      fetchJSON(`${API}/pool/stats`),
-      fetchJSON(`${API}/pool/luck`),
-    ]);
-    const m = miner.data || {};
-    const ps = poolStats.data || {};
-    const pl = poolLuck.data || {};
-    
-    // Period-aware fetch range
-    const now = Math.floor(Date.now() / 1000);
-    const minerCreatedAt = m.created_at || (now - 86400 * 90);
-    const skeleton = Period.buildSkeleton(currentPeriod, minerCreatedAt);
-    const sinceTs = skeleton.periodStart;
-    
-    // Fetch period-scoped data
-    const [allBlocks, payouts, hashHistory] = await Promise.all([
-      fetchBlocksSince(sinceTs).catch(() => []),
-      fetchPayoutsSince(wallet, sinceTs).catch(() => []),
-      // hashrate history is only useful for 1d (API caps to 24h)
-      currentPeriod === "1d" ? fetchHashrateHistory(wallet).catch(() => []) : Promise.resolve([]),
-    ]);
-    const blocks = Array.isArray(allBlocks) ? allBlocks : [];
-    
-    // ============ TOP STATS (always live) ============
-    const myHash = m.total_hashrate || 0;
-    const poolHash = ps.total_hashrate || 0;
-    const myShare = poolHash > 0 ? (myHash / poolHash) : 0;
-    
-    setText("stat-hashrate", fmtHash(myHash));
-    setText("stat-share", (myShare * 100).toFixed(3));
-    setText("stat-workers", m.online_worker_count || 0);
-    setText("stat-workers-sub", `${m.worker_count || 0} total`);
-    setText("stat-paid", fmtNum(m.total_paid || 0, 2));
-    
-    // Pool stats
-    const poolBlocks24h = ps.blocks_found24_h || 0;
-    const fee = (ps.pool_fee_percent || 5) / 100;
-    
-    const recentRewards = blocks.slice(0, 20).map(b => b.reward || 0).filter(r => r > 0);
-    const avgReward = recentRewards.length > 0 ? recentRewards.reduce((a,b)=>a+b, 0) / recentRewards.length : 2715;
-    
-    setText("pool-hash", fmtHash(poolHash));
-    setText("pool-miners", ps.connected_miners || "—");
-    setText("pool-blocks", poolBlocks24h);
-    setText("pool-luck", pl.luck24_h ? pl.luck24_h.toFixed(0) + "%" : "—");
-    setText("avg-reward", fmtNum(avgReward, 2) + " PRL");
-    
-    // Wallet
-    setText("w-pending", fmtNum(m.pending_balance || 0, 4) + " PRL");
-    setText("w-maturing", (m.maturing_pool_blocks_count || 0) + " blocks");
-    const eta = m.next_pool_block_maturity_eta_seconds;
-    setText("w-next-mature", eta ? `${Math.floor(eta/60)}m ${eta%60}s` : "—");
-    setText("w-status", m.is_online ? t("online_status") : t("offline_status"));
-    setText("w-shares", `${fmtNum(m.accepted_shares24_h || 0, 0)} / ${fmtNum(m.total_shares24_h || 0, 0)}`);
-    
-    // ============ PERIOD-AWARE P/L COMPUTATION ============
-    const payoutBuckets = bucketPayouts(skeleton, payouts);
-    const blockBuckets = bucketBlocks(skeleton, blocks, wallet);
-    const hashBuckets = currentPeriod === "1d"
-      ? bucketHashrate(skeleton, hashHistory)
-      : skeleton.buckets.map(() => ({ hashrate_avg: 0, samples: 0 }));
-    
-    // For 1d we have per-hour hashrate; otherwise treat as unknown but assume rig active during bucket
-    const buckets = payoutBuckets.map((pb, i) => ({
-      ...pb,
-      pool_blocks: blockBuckets[i].pool_blocks,
-      my_blocks: blockBuckets[i].my_blocks,
-      my_reward: blockBuckets[i].my_reward,
-      hashrate: hashBuckets[i].hashrate_avg,
-    }));
-    
-    let totalPL = 0;
-    let totalPRL = 0;
-    let totalCost = 0;
-    let activeBuckets = 0;
-    let bucketsWithPayout = 0;
-    let bestPL = -Infinity, bestLabel = "";
-    let worstPL = Infinity, worstLabel = "";
-    
-    for (const b of buckets) {
-      // Mining signal gating only on multi-day periods.
-      // 1D: charge cost for ALL elapsed hours (machine runs 24/7, 0 blocks = unlucky not offline).
-      // 7D/30D/ALL: only charge buckets with mining signal (so days/months before machine
-      //             was ever running don't show false losses).
-      const hasMining = (b.hashrate > 0) || (b.my_blocks > 0) || (b.payouts > 0);
-      const costEnd = Math.min(b.end, now);
-      const isPast = costEnd > b.start;
-      const isActive = currentPeriod === "1d"
-        ? isPast
-        : (isPast && hasMining);
-      const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
-      const revenue = (b.amount || 0) * prlPrice;
-      
-      b.actual_revenue = revenue;
-      b.cost = bucketCost;
-      b.actual_pl = revenue - bucketCost;
-      b.is_active = isActive;
-      
-      totalPL += b.actual_pl;
-      totalPRL += (b.amount || 0);
-      totalCost += bucketCost;
-      if (isActive) activeBuckets++;
-      
-      // Best/worst across non-current, completed buckets
-      const isCompleted = now >= b.end;
-      if (isCompleted) {
-        if (b.actual_pl > bestPL) { bestPL = b.actual_pl; bestLabel = b.label; }
-        if (b.actual_pl < worstPL) { worstPL = b.actual_pl; worstLabel = b.label; }
-        if (b.payouts > 0) bucketsWithPayout++;
-      }
-    }
-    
-    const lastBucket = buckets[buckets.length - 1];
-    
-    // ============ DISPLAY ============
-    // Period labels
-    setText("period-main-label", t(`period_${currentPeriod}`));
-    setText("period-recent-label", t(`period_recent_${currentPeriod}`));
-    setText("chart-title", t(`chart_title_${currentPeriod}`));
-    setText("chart-axis-start", t(`chart_axis_${currentPeriod}`));
-    setText("table-title", t(`table_title_${currentPeriod}`));
-    setText("table-total-label", t(`total_label_${currentPeriod}`));
-    setText("th-period", t(`th_hour_${currentPeriod}`));
-    
-    // Main P/L card
-    setText("actual-pl-24h", fmtPL(totalPL));
-    setClass("actual-pl-24h", totalPL > 0.01 ? "profit" : totalPL < -0.01 ? "loss" : "neutral");
-    const unit = skeleton.granularity === "hour" ? "h" : skeleton.granularity === "day" ? "d" : "mo";
-    setText("actual-pl-24h-detail", `${activeBuckets}${unit} active · ${fmtNum(totalPRL, 1)} PRL · cost $${fmtNum(totalCost, 0)}`);
-    
-    // Header total
-    setText("table-total-pl", fmtPL(totalPL));
-    setClass("table-total-pl", totalPL > 0.01 ? "profit" : totalPL < -0.01 ? "loss" : "neutral");
-    document.getElementById("table-total-detail").innerHTML =
-      `<span class="text-cyan-400">rev $${fmtNum(totalPRL * prlPrice, 0)}</span> − <span class="text-red-400">cost $${fmtNum(totalCost, 0)}</span>`;
-    
-    // Recent bucket card
-    setText("actual-pl-1h", fmtPL(lastBucket.actual_pl));
-    setClass("actual-pl-1h", lastBucket.actual_pl > 0.01 ? "profit" : lastBucket.actual_pl < -0.01 ? "loss" : "neutral");
-    setText("actual-pl-1h-detail", `${lastBucket.payouts} payouts · ${fmtNum(lastBucket.amount || 0, 2)} PRL`);
-    
-    // Variance breakdown
-    setText("best-hour", isFinite(bestPL) ? fmtPL(bestPL) + " @ " + bestLabel : "—");
-    setText("worst-hour", isFinite(worstPL) ? fmtPL(worstPL) + " @ " + worstLabel : "—");
-    setText("hours-hit", `${bucketsWithPayout} / ${buckets.length}`);
-    setText("luck-actual", fmtNum(totalPRL, 1) + " PRL");
-    
-    // Chart
-    const chart = document.getElementById("hour-chart");
-    const maxAbs = Math.max(...buckets.map(b => Math.abs(b.actual_pl || 0)), 1);
-    chart.innerHTML = buckets.map(b => {
-      const pl = b.actual_pl || 0;
-      const heightPct = Math.abs(pl) / maxAbs * 100;
-      let cls;
-      if (!b.is_active) cls = "future-cell";
-      else if (pl > 0.01) cls = "profit-cell";
-      else if (pl < -0.01) cls = "loss-cell";
-      else cls = "future-cell";
-      const tooltip = `${b.label} · ${b.my_blocks} blk · ${fmtPL(pl)}`;
-      return `<div class="hour-cell ${cls}" style="height:${Math.max(heightPct, 4)}%" title="${tooltip}"></div>`;
-    }).join("");
-    
-    // Table (newest first) — paginated
-    const PAGE_SIZE = 10;
-    const allRows = buckets.slice().reverse();
-    window._akoyaRows = allRows; // stash for pagination handler
-    
-    function renderHourlyTable(page) {
-      const hbody = document.getElementById("hourly-body");
-      const pag = Period.paginate(allRows, page, PAGE_SIZE);
-      // For 1d, no pagination needed (24 buckets fit). Skip controls.
-      const usePagination = currentPeriod !== "1d" && pag.totalPages > 1;
-      const rowsToShow = usePagination ? pag.items : allRows;
-      
-      hbody.innerHTML = rowsToShow.map(b => {
-        const isCurrent = (now >= b.start && now < b.end);
-        const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
-        const dot = b.payouts > 0 ? `<span class="text-cyan-400">●</span>` : "";
-        const hrColor = b.is_active && b.hashrate > 0 ? "text-emerald-400" : "text-slate-700";
-        let hrText;
-        if (currentPeriod === "1d") {
-          hrText = b.hashrate > 0 ? fmtHash(b.hashrate) : (b.is_active ? "off" : "—");
-        } else {
-          hrText = "—";
-        }
-        const offlineRowCls = !b.is_active ? "opacity-50" : "";
-        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-cyan-950/20" : ""} ${offlineRowCls}">
-          <td class="px-3 py-2.5 text-xs ${isCurrent ? "text-cyan-400" : "text-slate-300"} font-mono-num">${b.label}${isCurrent ? " ◀" : ""}</td>
-          <td class="px-3 py-2.5 text-xs ${hrColor} font-mono-num text-right">${hrText}</td>
-          <td class="px-3 py-2.5 text-xs text-slate-500 font-mono-num text-right">${b.pool_blocks}</td>
-          <td class="px-3 py-2.5 text-xs ${b.payouts > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${b.payouts > 0 ? fmtNum(b.amount, 1) + " " + dot : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${b.actual_revenue > 0.01 ? "text-cyan-400" : "text-slate-700"} font-mono-num text-right">${b.actual_revenue > 0.01 ? "$" + b.actual_revenue.toFixed(2) : "—"}</td>
-          <td class="px-3 py-2.5 text-xs ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
-          <td class="px-3 py-2.5 text-sm ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
-        </tr>`;
-      }).join("");
-      
-      const pagBox = document.getElementById("hourly-pagination");
-      if (usePagination) {
-        pagBox.innerHTML = Period.renderPagination(pag.page, pag.totalPages);
-        pagBox.querySelectorAll(".page-btn").forEach(btn => {
-          btn.addEventListener("click", () => {
-            const p = parseInt(btn.getAttribute("data-page")) || 1;
-            window._akoyaPage = p;
-            renderHourlyTable(p);
-          });
-        });
-      } else {
-        pagBox.innerHTML = "";
-      }
-    }
-    renderHourlyTable(window._akoyaPage || 1);
-    
-    // Workers
-    const wbody = document.getElementById("workers-body");
-    const instances = (m.instances || []).filter(i => i.is_connected);
-    document.getElementById("workers-count").innerHTML = `${instances.length} <span data-i18n="active">${t("active")}</span>`;
-    
-    if (instances.length === 0) {
-      wbody.innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600">No active workers</td></tr>`;
-    } else {
-      wbody.innerHTML = instances.sort((a,b) => (b.hashrate||0)-(a.hashrate||0)).map(w => {
-        const stale = w.shares1_h ? (w.stale_shares1_h / w.shares1_h * 100) : 0;
-        const staleColor = stale < 1 ? "text-emerald-400" : stale < 5 ? "text-yellow-400" : "text-red-400";
-        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">
-          <td class="px-5 py-2.5 text-xs text-slate-300 font-mono-num">${w.worker_name || "—"}</td>
-          <td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">${fmtHash(w.hashrate || 0)}</td>
-          <td class="px-5 py-2.5 text-xs text-slate-400 font-mono-num text-right">${w.shares1_h || 0}</td>
-          <td class="px-5 py-2.5 text-xs ${staleColor} font-mono-num text-right">${stale.toFixed(2)}%</td>
-          <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${w.last_seen_at ? fmtAge(w.last_seen_at) : "—"}</td>
-        </tr>`;
-      }).join("");
-    }
-    
-    // (your blocks section removed, no rendering needed)
-    
-    setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
-    document.getElementById("last-update").textContent = "updated " + new Date().toLocaleTimeString();
-    document.getElementById("period-loading").classList.add("hidden");
-    
-  } catch (e) {
-    console.error("[refresh] ERROR:", e);
-    showError(t("error_prefix") + e.message);
-    setStatus(t("error_prefix") + e.message);
-    document.getElementById("period-loading").classList.add("hidden");
-  }
-}
-
-let refreshTimer = null;
-function startAutoRefresh() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(() => {
-    if (document.getElementById("wallet").value.trim()) refresh();
-  }, 60000);
-}
-
-document.getElementById("refresh").addEventListener("click", refresh);
-document.getElementById("wallet").addEventListener("keydown", e => { if (e.key === "Enter") refresh(); });
-document.getElementById("cost").addEventListener("change", refresh);
-document.getElementById("prl-price").addEventListener("change", refresh);
-
-// Period selector — restore last choice from storage
-const savedPeriod = localStorage.getItem("akoya_period");
-if (savedPeriod && PERIODS.includes(savedPeriod)) currentPeriod = savedPeriod;
-function applyPeriod() {
-  document.querySelectorAll("#period-selector .period-btn").forEach(b => {
-    b.classList.toggle("active", b.getAttribute("data-period") === currentPeriod);
-  });
-}
-applyPeriod();
-document.querySelectorAll("#period-selector .period-btn").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    const p = btn.getAttribute("data-period");
-    if (!PERIODS.includes(p) || p === currentPeriod) return;
-    currentPeriod = p;
-    localStorage.setItem("akoya_period", p);
-    window._akoyaPage = 1; // reset pagination on period switch
-    applyPeriod();
-    if (document.getElementById("wallet").value.trim()) refresh();
-  });
-});
-
-// Cost advanced panel
-document.getElementById("cost-adv-btn").addEventListener("click", toggleCostAdv);
-document.getElementById("cost-adv-add-btn").addEventListener("click", () => {
-  const data = CostAdv.parseAddForm("cost-adv-from", "cost-adv-to", "cost-adv-amount");
-  if (!data) { alert("Please fill all fields"); return; }
-  const err = costAdv.addRange(data.start, data.end, data.cost);
-  if (err) { alert(err); return; }
-  document.getElementById("cost-adv-amount").value = "";
-  updateCostAdvPanel();
-  if (document.getElementById("wallet").value) refresh();
-});
-
-loadSettings();
-if (document.getElementById("wallet").value.trim()) refresh();
-startAutoRefresh();
-</script>
-
+<script src="akoya.js?v=29"></script>
 </body>
 </html>

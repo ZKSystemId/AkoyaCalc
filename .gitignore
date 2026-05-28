@@ -11,3 +11,7 @@ npm-debug.log*
 # Local notes
 *.local
 .env
+
+# Backup files
+*.bak
+*.bak.*
