@@ -323,9 +323,9 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 /* Hero brand smaller */
 .hero-title { line-height: 1; }
 </style>
-<script src="assets/period.js?v=34"></script>
-<script src="assets/cost-adv.js?v=34"></script>
-<script src="assets/spa.js?v=34"></script>
+<script src="assets/period.js?v=35"></script>
+<script src="assets/cost-adv.js?v=35"></script>
+<script src="assets/spa.js?v=35"></script>
 </head>
 <body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
 
@@ -510,29 +510,29 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
   </div>
 </div>
 
-<!-- Total Profit/Loss (hero layout) -->
-<div class="bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border border-cyan-900/30 rounded-lg p-4 mb-3 card-glow">
-  <div class="flex flex-col gap-4">
-    <!-- TOP: Label kiri kecil, P/L gede sejajar dibawahnya, period dibawah lagi -->
-    <div>
-      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="total_pl_label">Total Profit / Loss</p>
-      <div id="total-pl-big" class="text-3xl lg:text-4xl font-bold font-display font-mono-num leading-none text-slate-500">—</div>
-      <div id="total-pl-period" class="text-[10px] text-slate-600 uppercase tracking-wider mt-1.5" data-i18n="period_24h">over 24 hours</div>
+<!-- Total Profit/Loss (hero side-by-side) -->
+<div class="bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border border-cyan-900/30 rounded-lg p-5 mb-3 card-glow">
+  <!-- TOP ROW: Label kiri vertical-aligned, BIG P/L value kanan -->
+  <div class="flex items-center justify-between gap-4 mb-4">
+    <div class="flex-shrink-0">
+      <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold" data-i18n="total_pl_label">Total Profit / Loss</p>
+      <p id="total-pl-period" class="text-[10px] text-slate-600 uppercase tracking-wider mt-1" data-i18n="period_24h">over 24 hours</p>
     </div>
-    <!-- BOTTOM: 3 stats centered, equal width -->
-    <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800/60">
-      <div class="text-center">
-        <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="revenue">Revenue</p>
-        <p id="total-revenue" class="text-base font-semibold font-mono-num text-cyan-400">—</p>
-      </div>
-      <div class="text-center">
-        <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="total_prl_24h">Total PRL</p>
-        <p id="total-prl" class="text-base font-semibold font-mono-num text-purple-400">—</p>
-      </div>
-      <div class="text-center">
-        <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="th_cost">Cost</p>
-        <p id="total-cost" class="text-base font-semibold font-mono-num text-red-400">—</p>
-      </div>
+    <div id="total-pl-big" class="text-4xl sm:text-5xl lg:text-6xl font-bold font-display font-mono-num leading-none text-slate-500 text-right">—</div>
+  </div>
+  <!-- BOTTOM ROW: 3 stats centered grid -->
+  <div class="grid grid-cols-3 gap-2 pt-4 border-t border-slate-800/60">
+    <div class="text-center">
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="revenue">Revenue</p>
+      <p id="total-revenue" class="text-base font-semibold font-mono-num text-cyan-400">—</p>
+    </div>
+    <div class="text-center">
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="total_prl_24h">Total PRL</p>
+      <p id="total-prl" class="text-base font-semibold font-mono-num text-purple-400">—</p>
+    </div>
+    <div class="text-center">
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="th_cost">Cost</p>
+      <p id="total-cost" class="text-base font-semibold font-mono-num text-red-400">—</p>
     </div>
   </div>
 </div>
@@ -845,6 +845,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 </div><!-- /max-w wrap -->
 </div><!-- /app-shell -->
 
-<script src="akoya.js?v=34"></script>
+<script src="akoya.js?v=35"></script>
 </body>
 </html>
