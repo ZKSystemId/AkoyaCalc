@@ -3,6 +3,7 @@ const POOLS = {
   akoya: { name: "Akoya", url: "akoya.html" },
   pearlhash: { name: "Pearlhash", url: "pearlhash.html" },
   alphapool: { name: "AlphaPool", url: "alphapool.html" },
+  pearlfortune: { name: "Pearl Fortune", url: "pearlfortune.html" },
 };
 let currentPool = "pearlhash";
 const API = "https://pearlhash.xyz/api";
@@ -822,7 +823,28 @@ async function refresh() {
 
     const payoutBuckets = bucketPayouts(skeleton, periodPayouts);
     const blockBuckets = bucketBlocks(skeleton, periodBlocks, wallet);
-    const hashBuckets = bucketHashrate(skeleton, []);
+    // Derive hashrate samples from epoch credits (pearlhash has no hashrate-history API)
+    const hashSamples = [];
+    if (_poolHash > 0 && _netHash > 0) {
+      const poolBlocksPerHour = (_poolHash / _netHash) * (3600 / _blockTime);
+      const poolCreditPerHour = poolBlocksPerHour * _BLOCK_REWARD * (1 - _POOL_FEE);
+      if (poolCreditPerHour > 0) {
+        for (const eb of myEpochBlocks) {
+          hashSamples.push({
+            timestamp: eb.found_at,
+            hash_rate: _poolHash * (eb.reward / poolCreditPerHour),
+          });
+        }
+      }
+    }
+    // Fallback: if no epoch credits, use worker hashrate as flat sample for recent hours
+    if (hashSamples.length === 0 && myHashEst > 0) {
+      for (const b of skeleton.buckets) {
+        const mid = Math.floor((b.start + b.end) / 2);
+        if (mid <= now) hashSamples.push({ timestamp: mid, hash_rate: myHashEst });
+      }
+    }
+    const hashBuckets = bucketHashrate(skeleton, hashSamples);
 
     const buckets = payoutBuckets.map((pb, i) => ({
       ...pb,
@@ -841,13 +863,24 @@ async function refresh() {
     for (const b of buckets) {
       const costEnd = Math.min(b.end, now);
       const isPast = costEnd > b.start;
-      // Pearlhash: charge cost when mining session active.
-      // Epoch credit is luck-based (1 jam bisa 0 credit tapi rig tetep nyala).
-      // Mining signal: connected_workers > 0 sekarang = rig active = charge SEMUA past buckets.
-      // No workers + no credit di bucket = idle = no cost.
-      const hasActiveWorkers = (account?.connected_workers || []).length > 0;
-      const hasMining = hasActiveWorkers || (b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0;
-      const isActive = isPast && hasMining;
+      // Pearlhash: charge cost only when mining is ACTUALLY happening.
+      // Current bucket: check if workers are genuinely active (last_seen_at within 15min).
+      // Past buckets: only charge if there's mining evidence (epoch credit/blocks).
+      // This prevents stale connected_workers data from charging all buckets.
+      const freshWorkerThreshold = 900; // 15 min
+      const hasFreshWorkers = (workers || []).some(w => {
+        const ls = w.last_seen_at || w.last_share_at || 0;
+        return ls > 0 && (now - ls) < freshWorkerThreshold;
+      });
+      const isCurrentBucket = (now >= b.start && now < b.end);
+      let isActive;
+      if (isCurrentBucket) {
+        // Current hour: charge only if workers are actively mining NOW
+        isActive = hasFreshWorkers;
+      } else {
+        // Past hours: charge only if there's actual mining evidence in this bucket
+        isActive = isPast && ((b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0);
+      }
       const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
       // Pearlhash: revenue from epoch credit (my_reward)
       const revenue = (b.my_reward || 0) * prlPrice;
@@ -902,8 +935,11 @@ async function refresh() {
       const revenue = b.actual_revenue || 0;
       const revText = revenue > 0.001 ? "$" + fmtNum(revenue, revenue < 1 ? 3 : 2) : "—";
       const revColor = revenue > 0.001 ? "text-emerald-400" : "text-slate-700";
+      const hrText = (b.hashrate || 0) > 0 ? fmtHash(b.hashrate) : "—";
+      const hrColor = (b.hashrate || 0) > 0 ? "text-cyan-300" : "text-slate-700";
       return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-cyan-950/20" : ""} ${offlineRowCls}">
         <td class="px-3 py-2 text-xs ${isCurrent ? "text-cyan-400" : "text-slate-300"} font-mono-num">${b.label}${isCurrent ? " ◀" : ""}</td>
+        <td class="px-3 py-2 text-xs ${hrColor} font-mono-num text-right">${hrText}</td>
         <td class="px-3 py-2 text-xs ${epochCount > 0 ? "text-purple-400" : "text-slate-700"} font-mono-num text-right">${epochLabel}</td>
         <td class="px-3 py-2 text-xs ${creditPRL > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${creditPRL > 0 ? fmtNum(creditPRL, 4) : "—"}</td>
         <td class="px-3 py-2 text-xs ${revColor} font-mono-num text-right">${revText}</td>

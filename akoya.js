@@ -3,6 +3,7 @@ const POOLS = {
   akoya: { name: "Akoya", url: "akoya.html" },
   pearlhash: { name: "Pearlhash", url: "pearlhash.html" },
   alphapool: { name: "AlphaPool", url: "alphapool.html" },
+  pearlfortune: { name: "Pearl Fortune", url: "pearlfortune.html" },
 };
 let currentPool = "akoya";
 const API = "https://akoyapool.com/api/v1";

@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Calc Your Pool — Pearlhash</title>
-<meta name="description" content="Pearlhash Pool real + expected P/L tracker. Per-hour epoch credit tracking + PoUW.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🦪%3C/text%3E%3C/svg%3E">
+<title>Calc Your Pool — Pearl Fortune</title>
+<meta name="description" content="Pearl Fortune Pool PPLNS tracker. Per-block mining rewards and worker monitoring.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍀%3C/text%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
@@ -18,13 +18,13 @@ body { font-family: 'Inter', sans-serif; }
 }
 .pulse-dot { animation: pulse 2s infinite; }
 @keyframes pulse {
-  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,211,238,0.7); }
-  50% { opacity:.6; box-shadow: 0 0 0 6px rgba(34,211,238,0); }
+  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(52,211,153,0.7); }
+  50% { opacity:.6; box-shadow: 0 0 0 6px rgba(52,211,153,0); }
 }
 .pool-btn { color: #cbd5e1; }
-.pool-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
+.pool-btn.active { background: #064e3b; color: #6ee7b7; font-weight: 600; }
 .lang-btn { color: #cbd5e1; }
-.lang-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
+.lang-btn.active { background: #064e3b; color: #6ee7b7; font-weight: 600; }
 
 input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monospace; }
 .profit { color: #22c55e !important; }
@@ -35,8 +35,8 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 /* ============ MODERN CHART ============ */
 .modern-chart-wrap { position: relative; width: 100%; height: 240px; }
 .modern-chart-wrap svg { width: 100%; height: 100%; display: block; overflow: visible; }
-.chart-grid-line { stroke: rgba(34, 211, 238, 0.06); stroke-width: 1; stroke-dasharray: 2 4; }
-.chart-zero-line { stroke: rgba(34, 211, 238, 0.18); stroke-width: 1; }
+.chart-grid-line { stroke: rgba(52, 211, 153, 0.06); stroke-width: 1; stroke-dasharray: 2 4; }
+.chart-zero-line { stroke: rgba(52, 211, 153, 0.18); stroke-width: 1; }
 .chart-cursor {
   stroke: rgba(167, 139, 250, 0.55);
   stroke-width: 1;
@@ -58,7 +58,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.55));
+  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.55));
   stroke-dasharray: 2200;
   stroke-dashoffset: 2200;
   animation: drawLine 1.5s cubic-bezier(0.65, 0, 0.35, 1) 0.2s forwards;
@@ -78,7 +78,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
   pointer-events: none;
 }
-.chart-dot.dot-profit { stroke: #22d3ee; filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.6)); }
+.chart-dot.dot-profit { stroke: #34d399; filter: drop-shadow(0 0 5px rgba(52, 211, 153, 0.6)); }
 .chart-dot.dot-loss   { stroke: #f87171; filter: drop-shadow(0 0 5px rgba(248, 113, 113, 0.6)); }
 .chart-dot.dot-neutral { stroke: #94a3b8; }
 .chart-axis-text {
@@ -94,7 +94,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   position: absolute;
   pointer-events: none;
   background: linear-gradient(135deg, rgba(15, 20, 32, 0.97) 0%, rgba(20, 27, 45, 0.97) 100%);
-  border: 1px solid rgba(34, 211, 238, 0.35);
+  border: 1px solid rgba(52, 211, 153, 0.35);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 11px;
@@ -103,7 +103,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   z-index: 50;
   width: 140px;
   backdrop-filter: blur(8px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(34, 211, 238, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(52, 211, 153, 0.1);
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity 0.18s ease, transform 0.18s ease;
@@ -111,7 +111,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .chart-tooltip.visible { opacity: 1; transform: translateY(0); }
 .chart-tooltip .tt-time { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .chart-tooltip .tt-pl { font-weight: 700; font-size: 14px; font-family: 'JetBrains Mono', monospace; margin-bottom: 5px; }
-.chart-tooltip .tt-pl.profit { color: #22d3ee; }
+.chart-tooltip .tt-pl.profit { color: #34d399; }
 .chart-tooltip .tt-pl.loss { color: #f87171; }
 .chart-tooltip .tt-pl.neutral { color: #64748b; }
 .chart-tooltip .tt-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #94a3b8; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
@@ -124,7 +124,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   cursor: pointer; border: none; background: transparent;
 }
 .period-btn:hover { color: #cbd5e1; }
-.period-btn.active { background: #0c4a6e; color: #67e8f9; font-weight: 600; }
+.period-btn.active { background: #064e3b; color: #6ee7b7; font-weight: 600; }
 
 /* Bottom nav (Android-style) */
 #bottom-nav {
@@ -134,7 +134,7 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   background: rgba(10, 15, 26, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(34, 211, 238, 0.08);
+  border-top: 1px solid rgba(52, 211, 153, 0.08);
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
 }
 .nav-btn {
@@ -160,12 +160,12 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .nav-btn .nav-ic svg { width: 100%; height: 100%; }
 .nav-btn:hover { color: #cbd5e1; }
 .nav-btn:active { transform: scale(0.94); }
-.nav-btn.active { color: #67e8f9; }
+.nav-btn.active { color: #6ee7b7; }
 .nav-btn.active::before {
   content: ''; position: absolute; top: 0;
   left: 50%; transform: translateX(-50%);
   width: 28px; height: 2.5px;
-  background: linear-gradient(90deg, #22d3ee, #67e8f9);
+  background: linear-gradient(90deg, #34d399, #6ee7b7);
   border-radius: 0 0 3px 3px;
   box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
 }
@@ -186,14 +186,14 @@ body { padding-bottom: 76px; }
   border-radius: 6px;
 }
 .reward-tab.active {
-  background: #0c4a6e;
-  color: #67e8f9;
+  background: #064e3b;
+  color: #6ee7b7;
   font-weight: 600;
 }
 
 /* Hero */
 .hero-title {
-  background: linear-gradient(120deg, #67e8f9 0%, #a78bfa 50%, #f472b6 100%);
+  background: linear-gradient(120deg, #6ee7b7 0%, #a78bfa 50%, #f472b6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -210,7 +210,7 @@ body { padding-bottom: 76px; }
 #switch-overlay.show { opacity: 1; pointer-events: all; }
 .switch-spinner {
   width: 56px; height: 56px; border-radius: 50%;
-  border: 3px solid #1f2937; border-top-color: #22d3ee;
+  border: 3px solid #1f2937; border-top-color: #34d399;
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -218,7 +218,7 @@ body { padding-bottom: 76px; }
   font-family: 'JetBrains Mono', monospace; color: #94a3b8;
   font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase;
 }
-.switch-text-pool { color: #67e8f9; font-weight: 600; }
+.switch-text-pool { color: #6ee7b7; font-weight: 600; }
 .switch-dots::after {
   content: ''; display: inline-block; width: 1em; text-align: left;
   animation: dots 1.4s steps(4, end) infinite;
@@ -256,8 +256,8 @@ body { padding-bottom: 76px; }
   cursor: pointer;
   transition: all 0.15s;
 }
-.icon-btn:hover { color: #67e8f9; border-color: rgba(34, 211, 238, 0.4); }
-.icon-btn:active { background: rgba(8, 47, 73, 0.5); transform: scale(0.92); }
+.icon-btn:hover { color: #6ee7b7; border-color: rgba(52, 211, 153, 0.4); }
+.icon-btn:active { background: rgba(6, 78, 59, 0.5); transform: scale(0.92); }
 .icon-btn.spinning svg { animation: spin 0.8s linear infinite; }
 
 /* ============ SMOOTH ANIMATIONS ============ */
@@ -286,12 +286,12 @@ body { padding-bottom: 76px; }
 .card-glow { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
 .card-glow:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 0 1px rgba(34,211,238,0.08), 0 8px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 0 0 1px rgba(52,211,153,0.08), 0 8px 32px rgba(0,0,0,0.5);
   border-color: rgba(34, 211, 238, 0.15);
 }
 /* Stat numbers pulse on update */
 @keyframes valueFlash {
-  0%   { color: #67e8f9; text-shadow: 0 0 12px rgba(34,211,238,0.4); }
+  0%   { color: #6ee7b7; text-shadow: 0 0 12px rgba(52,211,153,0.4); }
   100% { color: inherit; text-shadow: none; }
 }
 .value-flash { animation: valueFlash 0.6s ease-out; }
@@ -343,8 +343,8 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 <div id="setup-screen" class="hidden">
   <div class="setup-card">
     <div class="flex items-center gap-3 mb-1">
-      <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 pulse-dot"></span>
-      <p class="text-[11px] text-cyan-400 uppercase tracking-widest font-semibold" data-i18n="setup_kicker">Welcome</p>
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-dot"></span>
+      <p class="text-[11px] text-emerald-400 uppercase tracking-widest font-semibold" data-i18n="setup_kicker">Welcome</p>
     </div>
     <h1 class="text-3xl lg:text-4xl font-display font-bold hero-title mb-2" data-i18n="setup_title">Calc Your Pool</h1>
     <p class="text-sm text-slate-400 mb-7" data-i18n="setup_subtitle">Enter your mining setup to start tracking real-time profit/loss.</p>
@@ -353,23 +353,23 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       <div>
         <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="wallet_address">Wallet Address</label>
         <input id="setup-wallet" type="text" placeholder="prl1..."
-          class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
+          class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-700/60 transition">
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="cost_per_hr">Cost $/hr</label>
           <input id="setup-cost" type="number" step="0.01" min="0" value="11"
-            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
+            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-700/60 transition">
         </div>
         <div>
           <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="prl_price">PRL Price $</label>
           <input id="setup-price" type="number" step="0.001" min="0" value="0.40"
-            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
+            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-700/60 transition">
         </div>
       </div>
       <div id="setup-error" class="hidden text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
       <button id="setup-save" type="submit"
-        class="w-full mt-2 px-4 py-3 text-sm font-semibold bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-cyan-50 rounded-md transition shadow-lg shadow-cyan-900/30">
+        class="w-full mt-2 px-4 py-3 text-sm font-semibold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-emerald-50 rounded-md transition shadow-lg shadow-emerald-900/30">
         <span data-i18n="setup_save">Save & Start Tracking</span>
       </button>
     </form>
@@ -387,46 +387,46 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 <!-- Hero header -->
 <header class="mb-6 flex items-start justify-between gap-3">
   <div class="flex items-center gap-3 min-w-0 flex-1">
-    <!-- Logo: real Pearlhash purple pearl SVG -->
+    <!-- Logo: Pearl Fortune clover -->
     <div class="relative flex-shrink-0">
-      <div class="w-11 h-11 rounded-xl bg-[#1a0e2a] flex items-center justify-center shadow-lg shadow-purple-900/40 border border-purple-700/30 overflow-hidden">
-        <img src="assets/icons/pearlhash.svg" alt="Pearlhash" class="w-9 h-9" />
+      <div class="w-11 h-11 rounded-xl bg-[#0a2e1a] flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-700/30 overflow-hidden">
+        <span class="text-2xl">🍀</span>
       </div>
-      <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-purple-400 pulse-dot ring-2 ring-[#080b14]"></span>
+      <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-dot ring-2 ring-[#080b14]"></span>
     </div>
     <div class="min-w-0">
       <h1 class="font-display font-bold leading-none flex items-baseline gap-2 flex-wrap">
-        <span class="text-lg lg:text-xl hero-title" data-i18n="hero_brand">Pearlhash</span>
+        <span class="text-lg lg:text-xl hero-title" data-i18n="hero_brand">Pearl Fortune</span>
         <span class="text-[10px] lg:text-xs font-medium text-slate-500 uppercase tracking-[0.18em]" data-i18n="hero_suffix">Tracker</span>
       </h1>
-      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate mt-1.5" data-i18n="app_subtitle">Epoch · Hourly Credits · PoUW</p>
+      <p class="text-[10px] lg:text-[11px] text-slate-500 uppercase tracking-widest truncate mt-1.5" data-i18n="app_subtitle">PPLNS Tracker</p>
     </div>
   </div>
   <div class="flex flex-col items-end gap-2 flex-shrink-0">
     <div class="flex items-center gap-2">
       <div class="relative">
-        <button id="pool-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-cyan-700/40 active:bg-cyan-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
-          <span class="text-cyan-400">🦪</span>
-          <span id="pool-current">Pearlhash</span>
+        <button id="pool-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-emerald-700/40 active:bg-emerald-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+          <span class="text-emerald-400">🍀</span>
+          <span id="pool-current">Pearl Fortune</span>
           <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div id="pool-menu" class="hidden absolute right-0 top-full mt-1 w-44 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
-          <button data-pool="akoya" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition select-none">⛏ Akoya</button>
-          <button data-pool="pearlhash" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🦪 Pearlhash</button>
-          <button data-pool="alphapool" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">⛏ AlphaPool</button>
-          <button data-pool="pearlfortune" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🍀 Pearl Fortune</button>
+          <button data-pool="akoya" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-emerald-900/40 hover:bg-emerald-900/30 transition select-none">⛏ Akoya</button>
+          <button data-pool="pearlhash" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-emerald-900/40 hover:bg-emerald-900/30 transition border-t border-[#1f2937] select-none">🦪 Pearlhash</button>
+          <button data-pool="alphapool" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-emerald-900/40 hover:bg-emerald-900/30 transition border-t border-[#1f2937] select-none">⛏ AlphaPool</button>
+          <button data-pool="pearlfortune" type="button" class="pool-btn w-full px-3 py-2.5 text-[13px] text-left active:bg-emerald-900/40 hover:bg-emerald-900/30 transition border-t border-[#1f2937] select-none">🍀 Pearl Fortune</button>
           <a href="index.html?pick=1" class="block w-full px-3 py-2.5 text-[12px] text-left text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition border-t border-[#1f2937] select-none">↺ Choose pool…</a>
         </div>
       </div>
       <div class="relative">
-        <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-cyan-700/40 active:bg-cyan-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
+        <button id="lang-toggle" type="button" class="flex items-center gap-1 bg-[#0f1420] border border-[#1f2937] hover:border-emerald-700/40 active:bg-emerald-900/30 rounded-md px-2.5 py-1.5 text-[12px] text-slate-300 transition select-none">
           <span id="lang-current">🇬🇧 EN</span>
           <svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
         </button>
         <div id="lang-menu" class="hidden absolute right-0 top-full mt-1 w-36 bg-[#0f1420] border border-[#1f2937] rounded-md shadow-2xl z-[9999] overflow-hidden">
-          <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition select-none">🇬🇧 English</button>
-          <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
-          <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
+          <button data-lang="en" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-emerald-900/40 hover:bg-emerald-900/30 transition select-none">🇬🇧 English</button>
+          <button data-lang="id" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-emerald-900/40 hover:bg-emerald-900/30 transition border-t border-[#1f2937] select-none">🇮🇩 Indonesia</button>
+          <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-emerald-900/40 hover:bg-emerald-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
         </div>
       </div>
     </div>
@@ -504,7 +504,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-4 mb-3 card-glow">
   <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-3" data-i18n="insight">📊 Insight</p>
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
-    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="best_hour">Best Hour</span><span id="best-hour" class="font-mono-num text-cyan-400 mt-1">—</span></div>
+    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="best_hour">Best Hour</span><span id="best-hour" class="font-mono-num text-emerald-400 mt-1">—</span></div>
     <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="worst_hour">Worst Hour</span><span id="worst-hour" class="font-mono-num text-red-400 mt-1">—</span></div>
     <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="hours_payout">Hours w/ Credit</span><span id="hours-hit" class="font-mono-num text-slate-300 mt-1">—</span></div>
     <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="total_blocks_period">Total Blocks</span><span id="total-blocks-period" class="font-mono-num text-yellow-400 mt-1">—</span></div>
@@ -512,7 +512,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 </div>
 
 <!-- Total Profit/Loss (hero side-by-side) -->
-<div class="bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border border-cyan-900/30 rounded-lg p-5 mb-3 card-glow">
+<div class="bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border border-emerald-900/30 rounded-lg p-5 mb-3 card-glow">
   <!-- TOP ROW: Label kiri vertical-aligned, BIG P/L value kanan -->
   <div class="flex items-center justify-between gap-4 mb-4">
     <div class="flex-shrink-0">
@@ -525,7 +525,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
   <div class="grid grid-cols-3 gap-2 pt-4 border-t border-slate-800/60">
     <div class="text-center">
       <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="revenue">Revenue</p>
-      <p id="total-revenue" class="text-base font-semibold font-mono-num text-cyan-400">—</p>
+      <p id="total-revenue" class="text-base font-semibold font-mono-num text-emerald-400">—</p>
     </div>
     <div class="text-center">
       <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="total_prl_24h">Total PRL</p>
@@ -543,7 +543,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
   <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
     <div class="flex items-center gap-3">
       <h2 id="chart-title" class="text-xs font-medium text-slate-300 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown</h2>
-      <span id="period-loading" class="text-[10px] text-cyan-500 hidden">loading…</span>
+      <span id="period-loading" class="text-[10px] text-emerald-500 hidden">loading…</span>
     </div>
     <div id="period-selector" class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
       <button data-period="1h"  class="period-btn text-[11px] px-2.5 py-1 rounded">1H</button>
@@ -557,16 +557,15 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       <thead class="bg-[#0a0f1a] text-[10px] text-slate-600 uppercase tracking-wider">
         <tr>
           <th class="px-3 py-2 text-left" data-i18n="th_hour">Hour</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_hr">HR</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_epoch">Epoch</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_credit_prl">PRL</th>
+          <th class="px-3 py-2 text-right" data-i18n="th_blocks">Blk</th>
+          <th class="px-3 py-2 text-right" data-i18n="th_prl_paid">PRL</th>
           <th class="px-3 py-2 text-right" data-i18n="th_revenue">Revenue</th>
           <th class="px-3 py-2 text-right" data-i18n="th_cost">Cost</th>
           <th class="px-3 py-2 text-right" data-i18n="th_pl">P/L</th>
         </tr>
       </thead>
       <tbody id="hourly-body">
-        <tr><td colspan="7" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
+        <tr><td colspan="6" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
       </tbody>
     </table>
   </div>
@@ -575,7 +574,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
     <div class="flex items-center justify-between mb-2">
       <span class="text-[10px] text-slate-500 uppercase tracking-wider" data-i18n="chart_label">Visualization</span>
       <div class="flex items-center gap-3 text-[10px] text-slate-600">
-        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-cyan-400"></span><span data-i18n="profit">Profit</span></span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-emerald-400"></span><span data-i18n="profit">Profit</span></span>
         <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-400"></span><span data-i18n="loss">Loss</span></span>
         <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-slate-600"></span><span data-i18n="future">Future</span></span>
       </div>
@@ -595,8 +594,8 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-4 mb-3 card-glow">
   <h3 class="text-[10px] text-slate-500 uppercase tracking-wider mb-2" data-i18n="legend_title">📖 Column Legend</h3>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] text-slate-400 leading-relaxed">
-    <div><span class="text-cyan-400 font-semibold">Epoch</span> = <span data-i18n="legend_epoch">epoch credits in that hour. — = no credit</span></div>
-    <div><span class="text-cyan-400 font-semibold">PRL</span> = <span data-i18n="legend_prl_paid">epoch credit PRL for that hour</span></div>
+    <div><span class="text-yellow-400 font-semibold">Blk</span> = <span>pool blocks found that hour (you participated via PPLNS)</span></div>
+    <div><span class="text-emerald-400 font-semibold">PRL</span> = <span>estimated PRL reward from your share ratio</span></div>
     <div><span class="profit font-semibold">P/L +</span> = <span data-i18n="legend_profit">profit (credit value bigger than cost)</span></div>
     <div><span class="loss font-semibold">P/L -</span> = <span data-i18n="legend_loss">loss (cost bigger than credit value)</span></div>
   </div>
@@ -612,7 +611,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
         <h2 class="text-sm font-semibold text-slate-200" data-i18n="workers_title">Connected Workers</h2>
         <p class="text-[10px] text-slate-500 mt-0.5" data-i18n="workers_sub">Live status of your mining rigs</p>
       </div>
-      <span id="workers-count-big" class="text-[11px] text-cyan-400 font-mono-num font-semibold">0 <span data-i18n="active">active</span></span>
+      <span id="workers-count-big" class="text-[11px] text-emerald-400 font-mono-num font-semibold">0 <span data-i18n="active">active</span></span>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -620,8 +619,8 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
           <tr>
             <th class="px-5 py-2.5 text-left" data-i18n="th_worker">Worker</th>
             <th class="px-5 py-2.5 text-right" data-i18n="th_hashrate">Hashrate</th>
-            <th class="px-5 py-2.5 text-right" data-i18n="th_shares_1h">Shares 1h</th>
-            <th class="px-5 py-2.5 text-right" data-i18n="th_stale">Stale %</th>
+            <th class="px-5 py-2.5 text-right">GPUs</th>
+            <th class="px-5 py-2.5 text-right">Status</th>
             <th class="px-5 py-2.5 text-right" data-i18n="th_last_seen">Last Seen</th>
           </tr>
         </thead>
@@ -649,7 +648,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <div class="bg-[#080b14] border border-[#162032] rounded p-3">
           <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="pending_balance">Pending Balance</p>
-          <p id="r-pending" class="text-base font-semibold font-mono-num text-cyan-400">—</p>
+          <p id="r-pending" class="text-base font-semibold font-mono-num text-emerald-400">—</p>
         </div>
         <div class="bg-[#080b14] border border-[#162032] rounded p-3">
           <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="maturing_blocks">Total Paid</p>
@@ -668,10 +667,10 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
         <table class="w-full text-sm">
           <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
             <tr>
-              <th class="px-3 py-2 text-left" data-i18n="th_when">When</th>
-              <th class="px-3 py-2 text-left" data-i18n="th_epoch">Epoch</th>
-              <th class="px-3 py-2 text-right" data-i18n="th_reward">Credit (PRL)</th>
-              <th class="px-3 py-2 text-right" data-i18n="th_status">Status</th>
+              <th class="px-3 py-2 text-left">When</th>
+              <th class="px-3 py-2 text-left">Block</th>
+              <th class="px-3 py-2 text-right">PRL</th>
+              <th class="px-3 py-2 text-right">Status</th>
             </tr>
           </thead>
           <tbody id="pending-blocks-body">
@@ -713,7 +712,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       </div>
       <div class="flex items-center gap-3 text-[11px] flex-wrap">
         <div class="flex items-center gap-1.5"><span class="text-slate-600" data-i18n="my_blocks">Mine:</span><span id="blocks-mine-count" class="text-yellow-400 font-mono-num font-semibold">0</span></div>
-        <div class="flex items-center gap-1.5"><span class="text-slate-600" data-i18n="pool_blocks_label">Total:</span><span id="blocks-pool-count" class="text-cyan-400 font-mono-num font-semibold">0</span></div>
+        <div class="flex items-center gap-1.5"><span class="text-slate-600" data-i18n="pool_blocks_label">Total:</span><span id="blocks-pool-count" class="text-emerald-400 font-mono-num font-semibold">0</span></div>
       </div>
     </div>
     <div class="overflow-x-auto">
@@ -745,7 +744,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
         <h2 class="text-sm font-semibold text-slate-200" data-i18n="settings_title">Setup</h2>
         <p class="text-[10px] text-slate-500 mt-0.5" data-i18n="settings_sub">Edit wallet, cost, and PRL price.</p>
       </div>
-      <button id="settings-edit-btn" class="px-3 py-1.5 text-[11px] bg-cyan-600/20 border border-cyan-700/40 text-cyan-300 hover:bg-cyan-600/30 rounded-md font-medium transition" data-i18n="settings_edit">Edit Setup</button>
+      <button id="settings-edit-btn" class="px-3 py-1.5 text-[11px] bg-emerald-600/20 border border-emerald-700/40 text-emerald-300 hover:bg-emerald-600/30 rounded-md font-medium transition" data-i18n="settings_edit">Edit Setup</button>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
       <div class="lg:col-span-3">
@@ -754,14 +753,14 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       </div>
       <div>
         <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="cost_per_hr">Cost $/hr</p>
-        <p id="settings-cost-display" class="text-base font-semibold font-mono-num text-cyan-400">—</p>
+        <p id="settings-cost-display" class="text-base font-semibold font-mono-num text-emerald-400">—</p>
       </div>
       <div>
         <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="prl_price">PRL Price $</p>
         <p id="settings-price-display" class="text-base font-semibold font-mono-num text-purple-400">—</p>
       </div>
       <div class="flex items-end justify-end">
-        <button id="cost-adv-btn" type="button" class="bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-700/40 text-cyan-300 text-[11px] px-3 py-1.5 rounded transition flex items-center gap-1">
+        <button id="cost-adv-btn" type="button" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-700/40 text-emerald-300 text-[11px] px-3 py-1.5 rounded transition flex items-center gap-1">
           <span>📊</span><span data-i18n="cost_adv">Cost adv</span>
         </button>
       </div>
@@ -777,19 +776,19 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       <div class="grid grid-cols-12 gap-2 items-end">
         <div class="col-span-5">
           <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="from_label">From</label>
-          <input id="cost-adv-from" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
+          <input id="cost-adv-from" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-emerald-500/50 focus:outline-none transition">
         </div>
         <div class="col-span-5">
           <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="to_label">To</label>
-          <input id="cost-adv-to" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
+          <input id="cost-adv-to" type="datetime-local" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-emerald-500/50 focus:outline-none transition">
         </div>
         <div class="col-span-2">
           <label class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="cost_label">$ /hr</label>
-          <input id="cost-adv-amount" type="number" step="0.01" placeholder="15.00" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-cyan-500/50 focus:outline-none transition">
+          <input id="cost-adv-amount" type="number" step="0.01" placeholder="15.00" class="w-full mt-1 bg-[#080b14] border border-[#162032] rounded px-2 py-1.5 text-xs text-slate-200 focus:border-emerald-500/50 focus:outline-none transition">
         </div>
       </div>
       <div class="mt-2 flex justify-end">
-        <button id="cost-adv-add-btn" type="button" class="bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-700/40 text-cyan-200 text-xs px-4 py-1.5 rounded transition" data-i18n="add_range">+ Add range</button>
+        <button id="cost-adv-add-btn" type="button" class="bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-700/40 text-emerald-200 text-xs px-4 py-1.5 rounded transition" data-i18n="add_range">+ Add range</button>
       </div>
     </div>
   </div>
@@ -800,9 +799,9 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="pool_stats">Pool Stats</h2>
       <div class="space-y-2.5">
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_hashrate">Pool hashrate</span><span id="pool-hash" class="text-xs text-slate-300 font-mono-num">—</span></div>
-        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="connected_miners">Total accounts</span><span id="pool-miners" class="text-xs text-slate-300 font-mono-num">—</span></div>
-        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="blocks_24h_pool">Total workers</span><span id="pool-blocks-stat" class="text-xs text-slate-300 font-mono-num">—</span></div>
-        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pool_luck_24h">Network hashrate</span><span id="pool-luck" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500">Connected miners</span><span id="pool-miners" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500">Blocks found</span><span id="pool-blocks-stat" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500">Pool luck</span><span id="pool-luck" class="text-xs text-slate-300 font-mono-num">—</span></div>
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="avg_block_reward">Avg block reward</span><span id="avg-reward" class="text-xs text-slate-300 font-mono-num">—</span></div>
       </div>
     </div>
@@ -811,7 +810,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       <div class="space-y-2.5">
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pending_balance">Pending balance</span><span id="w-pending" class="text-xs text-slate-300 font-mono-num">—</span></div>
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="total_paid_label">Total paid</span><span id="w-maturing" class="text-xs text-slate-300 font-mono-num">—</span></div>
-        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="last_epoch_label">Last epoch</span><span id="w-next-mature" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500">Last seen</span><span id="w-next-mature" class="text-xs text-slate-300 font-mono-num">—</span></div>
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="status_label">Status</span><span id="w-status" class="text-xs text-slate-300 font-mono-num">—</span></div>
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="block_height_label">Block height</span><span id="w-shares" class="text-xs text-slate-300 font-mono-num">—</span></div>
       </div>
@@ -840,13 +839,13 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 </div><!-- /settings -->
 
 <footer class="mt-2 pb-6 text-center">
-  <p class="text-[10px] text-slate-700 uppercase tracking-wider mb-1" data-i18n="footer_data">Data: pearlhash.xyz · Auto-refresh 60s · Timezone: WIB (UTC+7)</p>
-  <p class="text-[10px] text-slate-700 max-w-2xl mx-auto leading-relaxed" data-i18n="footer_explain">Profit/Loss = Epoch credits × $price − cost. Cost charged flat per hour while mining.</p>
+  <p class="text-[10px] text-slate-700 uppercase tracking-wider mb-1" data-i18n="footer_data">Data: pearlfortune.org · Auto-refresh 60s · Timezone: WIB (UTC+7)</p>
+  <p class="text-[10px] text-slate-700 max-w-2xl mx-auto leading-relaxed" data-i18n="footer_explain">Profit/Loss = PPLNS rewards × $price − cost. Cost charged flat per hour while mining.</p>
 </footer>
 
 </div><!-- /max-w wrap -->
 </div><!-- /app-shell -->
 
-<script src="pearlhash.js?v=36"></script>
+<script src="pearlfortune.js?v=1"></script>
 </body>
 </html>
