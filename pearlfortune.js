@@ -7,13 +7,11 @@ const POOLS = {
 };
 let currentPool = "pearlfortune";
 const API = "https://pearlfortune.org/api/v1";
-// CORS proxy with fallback chain: corsproxy.io (fast, ~700ms) → codetabs (slower) → allorigins
 const corsProxy = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
 const corsProxyFallback = (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`;
 const corsProxyFallback2 = (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
 const STORAGE_KEY = "pearlfortune_hybrid_pl_settings";
 const POOL_KEY = "pearlfortune";
-
 const ATOMIC_UNITS = 1e8;
 
 // ============ I18N ============
@@ -36,23 +34,21 @@ const I18N = {
     profit_loss: "📦 Profit / Loss", prl_minus_cost: "PRL paid − cost",
     total_pl_label: "Total Profit / Loss", revenue: "Revenue",
     period_1h: "over 1 hour", period_6h: "over 6 hours", period_12h: "over 12 hours", period_24h: "over 24 hours",
-    insight: "📊 Insight", best_hour: "Best Hour", worst_hour: "Worst Hour", hours_payout: "Hours w/ Payout", total_prl_24h: "Total PRL", total_blocks_period: "Total Block", total_blocks_period: "Total Blocks",
+    insight: "📊 Insight", best_hour: "Best Hour", worst_hour: "Worst Hour", hours_payout: "Hours w/ Payout", total_prl_24h: "Total PRL", total_blocks_period: "Total Blocks",
     hourly_breakdown: "Hourly Breakdown",
     chart_label: "Visualization",
     profit: "Profit", loss: "Loss", future: "Future",
     ago_1h: "1h ago", ago_6h: "6h ago", ago_12h: "12h ago", ago_24h: "24h ago", now: "now",
     legend_title: "📖 Column Legend",
-    legend_hr: "hashrate that hour. Low = OFF/idle",
-    legend_prl_paid: "real PRL paid to wallet that hour",
-    legend_profit: "profit (PRL paid bigger than cost)",
-    legend_loss: "loss (cost bigger than PRL paid)",
+    legend_profit: "profit (revenue bigger than cost)",
+    legend_loss: "loss (cost bigger than revenue)",
     th_hour: "Hour (WIB)", th_hr: "HR", th_prl_paid: "PRL", th_cost: "Cost", th_pl: "P/L", th_revenue: "Revenue", th_epoch: "Epoch", th_credit_prl: "Credit (PRL)",
     loading: "Loading...",
     workers_title: "Connected Workers", workers_sub: "Live status of your mining rigs",
     th_worker: "Worker", th_hashrate: "Hashrate", th_shares_1h: "Shares 1h", th_stale: "Stale %", th_last_seen: "Last Seen",
     no_workers: "No workers", active: "active",
     rewards_title: "Rewards", rewards_pending: "Pending", rewards_claimed: "Claimed",
-    pending_balance: "Pending Balance", maturing_blocks: "Maturing", next_maturity: "Next Maturity", status_label: "Status",
+    pending_balance: "Pending", maturing_blocks: "Matured", next_maturity: "Next Maturity", status_label: "Status",
     th_block_height: "Block", th_status: "Status", th_reward: "Reward (PRL)", th_eta: "ETA",
     th_when: "When", th_amount: "Amount (PRL)", th_fee: "Fee", th_tx: "Tx",
     no_pending: "No pending blocks", no_claimed: "No payouts yet",
@@ -71,8 +67,7 @@ const I18N = {
     pool_label: "Pool", invalid_wallet: "Wallet must start with 'prl1'",
     switching: "Switching to",
     footer_data: "Data: pearlfortune.org · Auto-refresh 60s · Timezone: WIB (UTC+7)",
-    footer_explain: "Profit/Loss = PRL paid × $price − cost. Rig OFF (HR &lt; 5% peak) = no cost.",
-    legend_epoch: "PPLNS share entries",
+    footer_explain: "Profit/Loss = PRL earned × $price − cost. Cost charged flat per hour while mining.",
     total_paid_label: "Total paid",
     last_epoch_label: "Last epoch",
     block_height_label: "Block height",
@@ -101,10 +96,8 @@ const I18N = {
     profit: "Profit", loss: "Loss", future: "Belum",
     ago_1h: "1j lalu", ago_6h: "6j lalu", ago_12h: "12j lalu", ago_24h: "24j lalu", now: "sekarang",
     legend_title: "📖 Penjelasan Kolom",
-    legend_hr: "hashrate jam itu. Low = OFF/idle",
-    legend_prl_paid: "PRL real masuk wallet jam itu",
-    legend_profit: "profit (PRL paid lebih besar dari cost)",
-    legend_loss: "loss (cost lebih besar dari PRL paid)",
+    legend_profit: "profit (revenue lebih besar dari cost)",
+    legend_loss: "loss (cost lebih besar dari revenue)",
     th_hour: "Jam (WIB)", th_hr: "HR", th_prl_paid: "PRL", th_cost: "Cost", th_pl: "P/L", th_revenue: "Pendapatan", th_epoch: "Epoch", th_credit_prl: "Credit (PRL)",
     loading: "Loading...",
     workers_title: "Workers Tersambung", workers_sub: "Status real-time rig mining kamu",
@@ -130,8 +123,7 @@ const I18N = {
     pool_label: "Pool", invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
     switching: "Pindah ke",
     footer_data: "Data: pearlfortune.org · Auto-refresh 60d · Zona: WIB (UTC+7)",
-    footer_explain: "Profit/Loss = PRL dibayar × harga$ − cost. Rig OFF (HR &lt; 5% peak) = ga ada cost.",
-    legend_epoch: "Entri share PPLNS",
+    footer_explain: "Profit/Loss = PRL earned × harga$ − cost. Rig OFF = ga ada cost.",
     total_paid_label: "Total dibayar",
     last_epoch_label: "Epoch terakhir",
     block_height_label: "Tinggi block",
@@ -160,10 +152,8 @@ const I18N = {
     profit: "盈利", loss: "亏损", future: "未来",
     ago_1h: "1小时前", ago_6h: "6小时前", ago_12h: "12小时前", ago_24h: "24小时前", now: "现在",
     legend_title: "📖 列说明",
-    legend_hr: "该小时算力。低 = 关闭/空闲",
-    legend_prl_paid: "该小时实际支付到钱包的PRL",
-    legend_profit: "盈利 (PRL支付大于成本)",
-    legend_loss: "亏损 (成本大于PRL支付)",
+    legend_profit: "盈利 (收入大于成本)",
+    legend_loss: "亏损 (成本大于收入)",
     th_hour: "小时 (WIB)", th_hr: "算力", th_prl_paid: "PRL", th_cost: "成本", th_pl: "盈亏", th_revenue: "收入", th_epoch: "周期", th_credit_prl: "积分 (PRL)",
     loading: "加载中...",
     workers_title: "已连接矿工", workers_sub: "您挖矿设备的实时状态",
@@ -189,8 +179,7 @@ const I18N = {
     pool_label: "矿池", invalid_wallet: "钱包必须以 'prl1' 开头",
     switching: "切换到",
     footer_data: "数据: pearlfortune.org · 自动刷新60秒 · 时区: WIB (UTC+7)",
-    footer_explain: "盈亏 = PRL支付 × 价格$ − 成本。矿机关闭 (算力 &lt; 5% 峰值) = 无成本。",
-    legend_epoch: "PPLNS份额条目",
+    footer_explain: "盈亏 = PRL收入 × 价格$ − 成本。",
     total_paid_label: "总支付",
     last_epoch_label: "上次周期",
     block_height_label: "区块高度",
@@ -347,11 +336,8 @@ function renderModernChart(buckets) {
   }).join("");
 
   const points = buckets.map((b, i) => ({
-    x: xCenter(i),
-    y: yVal(b.actual_pl || 0),
-    pl: b.actual_pl || 0,
-    active: b.is_active,
-    i
+    x: xCenter(i), y: yVal(b.actual_pl || 0),
+    pl: b.actual_pl || 0, active: b.is_active, i
   }));
   const activePoints = points.filter(p => p.active);
 
@@ -438,7 +424,7 @@ function renderModernChart(buckets) {
     if (!b) { tip.classList.remove("visible"); return; }
     const pl = b.actual_pl || 0;
     const cls = !b.is_active ? "neutral" : pl > 0.001 ? "profit" : pl < -0.001 ? "loss" : "neutral";
-    const blocksLine = (b.my_blocks || 0) > 0 ? `<div class="tt-row"><span class="tt-dot" style="background:#facc15"></span>${b.my_blocks} blk · ${fmtNum(b.my_prl || b.my_reward || 0, 4)} PRL</div>` : "";
+    const blocksLine = (b.my_blocks || 0) > 0 ? `<div class="tt-row"><span class="tt-dot" style="background:#facc15"></span>${b.my_blocks} blk</div>` : "";
     const costLine = (b.cost || 0) > 0 ? `<div class="tt-row"><span class="tt-dot" style="background:#fb7185"></span>−$${fmtNum(b.cost, 3)} cost</div>` : "";
     const revLine = (b.actual_revenue || 0) > 0 ? `<div class="tt-row"><span class="tt-dot" style="background:#34d399"></span>+$${fmtNum(b.actual_revenue, 3)} rev</div>` : "";
     tip.innerHTML = `
@@ -488,7 +474,7 @@ function renderModernChart(buckets) {
     const cls = !b.is_active ? "neutral" : pl > 0.01 ? "profit" : pl < -0.01 ? "loss" : "neutral";
     tip.innerHTML = `
       <div class="tt-pl ${cls}">${fmtPL(pl)}</div>
-      <div class="tt-meta">${b.label} · ${b.my_blocks || 0} blk · ${fmtNum(b.my_prl || 0, 2)} PRL</div>
+      <div class="tt-meta">${b.label} · ${b.my_blocks || 0} blk</div>
     `;
     tip.style.left = relX + "px";
     tip.style.top = (t.clientY - rect.top - 8) + "px";
@@ -542,30 +528,46 @@ if (!Period.PERIODS.includes(currentPeriod)) currentPeriod = "24h";
 let walletCache = null;
 let costCache = 11;
 let priceCache = 0.4;
-
-// Reward tab state
+window._livePrice = 0;  // expose for spa.js commitSetup
+const DEX_PAIR_URL = 'https://api.dexscreener.com/latest/dex/pairs/ethereum/0x89a67c6dee35db9815da2fb9191f0998a8b37c39';
+async function fetchDexPrice() {
+  try {
+    const r = await fetch(DEX_PAIR_URL);
+    const j = await r.json();
+    const pair = (j.pairs || [])[0];
+    if (pair && pair.priceUsd) {
+      const p = parseFloat(pair.priceUsd);
+      if (p > 0) return p;
+    }
+  } catch (e) { console.warn('DexScreener fetch failed:', e); }
+  return null;
+}
+// Fetch live price immediately on page load
+fetchDexPrice().then(p => {
+  if (p) {
+    priceCache = p;
+    window._livePrice = p;
+    setText('setup-price-live', '$' + fmtNum(p, 4));
+    setText('live-price-value', '$' + fmtNum(p, 4));
+  }
+}).catch(() => {});
 let rewardTab = "pending";
-
-// Pagination
 let claimedPage = 1;
 let blocksPage = 1;
-
-// Latest fetched data for cross-tab reuse
-let _payoutsAll = [];
 let _blocksAll = [];
-let _apiNow = 0; // API generated_at, set in refresh()
+let _apiNow = 0;
 
-// Convert API created_at (UTC+7 server time) to UTC timestamp
+// Convert API created_at to UTC timestamp
 function apiTimeToUTC(dateStr) {
   if (!dateStr) return 0;
   return Math.floor(new Date(dateStr.replace(" ","T") + "Z").getTime() / 1000) - 7 * 3600;
 }
-// Display age using API clock (drift-agnostic)
+// Display age using API clock
 function fmtAgeApi(apiTs) {
   if (!apiTs) return "—";
-  const ref = _apiNow || Math.floor(Date.now() / 1000);
+  const ref = Math.floor(Date.now() / 1000);
   const sec = Math.floor(ref - apiTs);
-  if (sec < 0) return "in " + fmtDuration(-sec);
+  if (sec < 0) return "just now";
   if (sec < 60) return sec + "s ago";
   if (sec < 3600) return Math.floor(sec/60) + "m ago";
   if (sec < 86400) return Math.floor(sec/3600) + "h ago";
@@ -574,7 +576,6 @@ function fmtAgeApi(apiTs) {
 
 // ============ COST ADV ============
 const costAdv = new CostAdv("pearlfortune");
-
 function updateCostAdvPanel() {
   costAdv.renderPanel("cost-adv-list", "#34d399", () => {
     if (walletCache) refresh();
@@ -591,30 +592,15 @@ function toggleCostAdv() {
   }
 }
 
-// ============ FETCHERS (Pearl Fortune API) ============
-async function fetchPFSummary() {
-  return fetchWithProxyFallback(`${API}/summary`, 6000);
-}
-async function fetchPFMiner(wallet) {
-  return fetchWithProxyFallback(`${API}/miners/${wallet}`, 10000);
-}
-async function fetchPFConnections(wallet) {
-  return fetchWithProxyFallback(`${API}/miners/${wallet}/connections`, 10000);
-}
-async function fetchPFLedger(wallet) {
-  return fetchWithProxyFallback(`${API}/miners/${wallet}/ledger`, 10000);
-}
-async function fetchPFHourlyShares(wallet) {
-  return fetchWithProxyFallback(`${API}/miners/${wallet}/hourly-shares`, 10000);
-}
-async function fetchPFBlocks() {
-  return fetchWithProxyFallback(`${API}/blocks?limit=50`, 8000);
-}
-async function fetchPFConfig() {
-  return fetchWithProxyFallback(`${API}/config`, 6000).catch(() => ({}));
-}
+// ============ FETCHERS ============
+async function fetchPFSummary() { return fetchWithProxyFallback(`${API}/summary`, 6000); }
+async function fetchPFMiner(wallet) { return fetchWithProxyFallback(`${API}/miners/${wallet}`, 10000); }
+async function fetchPFConnections(wallet) { return fetchWithProxyFallback(`${API}/miners/${wallet}/connections`, 10000); }
+async function fetchPFBlocks() { return fetchWithProxyFallback(`${API}/blocks?limit=500`, 12000); }
+async function fetchPFCredits(wallet) { return fetchWithProxyFallback(`${API}/miners/${wallet}/credits?limit=200`, 10000).catch(() => ({credits:[]})); }
+async function fetchPFShares(wallet) { return fetchWithProxyFallback(`${API}/miners/${wallet}/shares?limit=500`, 10000).catch(() => ({rows:[]})); }
+async function fetchPFConfig() { return fetchWithProxyFallback(`${API}/config`, 6000).catch(() => ({})); }
 
-// Parse "1.86 EH/s", "274.50 TH/s" etc → raw H/s
 function parseHashStr(s) {
   if (!s || typeof s !== "string") return 0;
   const m = s.match(/([\d.]+)\s*([EPTGMKk]?)H\/s/);
@@ -626,40 +612,13 @@ function parseHashStr(s) {
 }
 
 // ============ BUCKETING ============
-function bucketPayouts(skeleton, payouts) {
-  const out = skeleton.buckets.map(b => ({ ...b, payouts: 0, amount: 0 }));
-  for (const p of payouts) {
-    if (!p.created_at) continue;
-    const idx = Period.findIdx(out, p.created_at);
-    if (idx === -1) continue;
-    out[idx].payouts++;
-    out[idx].amount += (p.amount || 0);
-  }
-  return out;
-}
-function bucketBlocks(skeleton, blocks, wallet) {
-  const out = skeleton.buckets.map(b => ({ ...b, my_blocks: 0, my_reward: 0, pool_blocks: 0 }));
+function bucketBlocks(skeleton, blocks) {
+  const out = skeleton.buckets.map(b => ({ ...b, my_blocks: 0, pool_blocks: 0 }));
   for (const b of blocks) {
     const idx = Period.findIdx(out, b.found_at);
     if (idx === -1) continue;
     out[idx].pool_blocks++;
-    if (b.found_by === wallet) {
-      out[idx].my_blocks++;
-      out[idx].my_reward += (b.reward || 0);
-    }
   }
-  return out;
-}
-function bucketHashrate(skeleton, samples) {
-  const out = skeleton.buckets.map(b => ({ ...b, hashrate_avg: 0, hashrate_max: 0, samples: 0 }));
-  for (const s of samples) {
-    const idx = Period.findIdx(out, s.timestamp);
-    if (idx === -1) continue;
-    out[idx].hashrate_avg += s.hash_rate;
-    out[idx].hashrate_max = Math.max(out[idx].hashrate_max, s.hash_rate);
-    out[idx].samples++;
-  }
-  for (const b of out) if (b.samples > 0) b.hashrate_avg /= b.samples;
   return out;
 }
 
@@ -675,432 +634,339 @@ async function refresh() {
   document.getElementById("period-loading").classList.remove("hidden");
   const refreshBtn = document.getElementById("refresh-btn");
   if (refreshBtn) refreshBtn.classList.add("spinning");
-
   window._lastWallet = wallet;
 
   try {
-    // Parallel fetch with proxy fallback chain
-    const [summaryResp, minerResp, connectionsResp, ledgerResp, hourlyResp, blocksResp, configResp] = await Promise.all([
+    const [summaryResp, minerResp, connectionsResp, blocksResp, configResp, creditsResp, sharesResp] = await Promise.all([
       fetchPFSummary(),
       fetchPFMiner(wallet),
       fetchPFConnections(wallet),
-      fetchPFLedger(wallet),
-      fetchPFHourlyShares(wallet),
       fetchPFBlocks(),
       fetchPFConfig(),
+      fetchPFCredits(wallet),
+      fetchPFShares(wallet),
     ]);
 
-    // Unwrap {data: {...}} wrapper from codetabs proxy
+    // Unwrap proxy wrapper
     const summary = (summaryResp && summaryResp.data) || summaryResp || {};
     const miner = (minerResp && minerResp.data) || minerResp || {};
     const connections = (connectionsResp && connectionsResp.data) || connectionsResp || {};
-    const ledger = (ledgerResp && ledgerResp.data) || ledgerResp || {};
-    const hourly = (hourlyResp && hourlyResp.data) || hourlyResp || {};
     const blocksData = (blocksResp && blocksResp.data) || blocksResp || {};
     const pfConfig = (configResp && configResp.data) || configResp || {};
-    const maturityBlocks = pfConfig.maturity_blocks || 100;
+    const creditsData = (creditsResp && creditsResp.data) || creditsResp || {};
+    const creditsList = creditsData.credits || [];
 
-    // Period skeleton (1h..24h)
-    const skeleton = Period.buildSkeleton(currentPeriod);
-    const sinceTs = skeleton.periodStart;
+    // API clock
+    const apiNow = summary.generated_at || Math.floor(Date.now() / 1000);
+    _apiNow = apiNow;
 
-    // === Pool stats ===
+    // Pool stats
     const poolStats = (summary.pool_stats && summary.pool_stats.pools && summary.pool_stats.pools[0]) || {};
-    const hourlyStats = (summary.pool_stats && summary.pool_stats.hourly_stats) || [];
-    const lastHourly = hourlyStats.length > 0 ? hourlyStats[hourlyStats.length - 1] : {};
     const rollingStats = (summary.pool_stats && summary.pool_stats.rolling_stats) || [];
     const poolDetail = summary.pool_detail || {};
-    // Use 1h rolling hashrate (more stable than last single hour which can spike)
+    const hourlyStats = (summary.pool_stats && summary.pool_stats.hourly_stats) || [];
+    const lastHourly = hourlyStats.length > 0 ? hourlyStats[hourlyStats.length - 1] : {};
     const rolling1h = rollingStats.length > 1 ? rollingStats[1] : (rollingStats.length > 0 ? rollingStats[0] : {});
     const _poolHash = rolling1h.hashrate || lastHourly.pool_hashrate || 0;
-    // Prefer numeric net_hashrate from rolling_stats (reliable), fallback to parsing string
     const _netHash = rolling1h.net_hashrate || lastHourly.network_hashrate || parseHashStr(summary.stats && summary.stats.network_hashrate) || 0;
     const poolBlockCount = poolStats.block_count || 0;
-    const poolTotalReward = poolStats.total_reward || 0;
-    const POOL_FEE = 0.05; // 5% fee
-    // Connected miners = unique miners in pool_detail (not pool_count which is blocks/hour)
+    const POOL_FEE = 0.05;
     const connectedMinersCount = (poolDetail.miners && poolDetail.miners.length) || 0;
 
-    // === Connections (workers) ===
+    // Workers
     const connSummary = connections.summary || {};
-    const myHashReported = connSummary.reported_hashrate || 0;
+    const myHash = connSummary.reported_hashrate || 0;
     const workersList = connections.workers || [];
+    const workerCount = connSummary.worker_count || 0;
 
-    // === Pending shares (PPLNS window) ===
+    // Pending shares
     const pendingRows = (miner.pending_shares && miner.pending_shares.rows) || [];
-
-    // === Ledger ===
-    const ledgerEntries = ledger.entries || [];
-    // sum_credit_amount_coin is total pending (credits not yet paid)
-    const pendingCredits = (ledger.sum_credit_amount_coin || 0);
-    // sum_payout_amount_coin is total paid out
-    const totalPaidLedger = (ledger.sum_payout_amount_coin || 0);
-
-    // === Hourly shares for hashrate estimation ===
-    const hourlySeries = hourly.series || [];
-
-    // === Pool blocks ===
-    const poolBlocks = blocksData.blocks || [];
-
-    // Period skeleton
-    // Use API generated_at as reference (UTC), created_at is UTC+7 (Jakarta server)
-    const apiNow = summary.generated_at || Math.floor(Date.now() / 1000);
-    _apiNow = apiNow; // set global for fmtAgeApi
-    const now = apiNow;
-
-    // Build epoch blocks from pending_shares (PPLNS entries)
-    const myEpochBlocks = [];
-    for (const row of pendingRows) {
-      myEpochBlocks.push({
-        height: row.block_height || null,
-        found_at: row.created_at ? apiTimeToUTC(row.created_at) || now : now,
-        found_by: wallet,
-        reward: 0, // shares don't have direct reward
-        status: "pending",
-        shares: row.shares || 0,
-        ratio: row.ratio || 0,
-        total_shares: row.total_shares || 0,
-      });
-    }
-
-    // Build payouts from ledger entries
-    const payouts = [];
-    let pendingBalance = 0;
-    for (const entry of ledgerEntries) {
-      const ts = entry.created_at ? apiTimeToUTC(entry.created_at) : 0;
-      // Credit entries (positive amounts) = pending rewards
-      if (entry.type === "credit" || (entry.amount && entry.amount > 0)) {
-        // These are credits - may be in atomic units
-        // We'll use sum_credit_amount_coin directly for pending
-      }
-      // Payout entries
-      if (entry.type === "payout" || (entry.amount && entry.amount < 0)) {
-        payouts.push({
-          created_at: ts,
-          amount: Math.abs(entry.amount || 0) / ATOMIC_UNITS,
-          fee_amount: (entry.fee || 0) / ATOMIC_UNITS,
-          tx_id: entry.tx_id || entry.tx_hash || null,
-          status: "confirmed",
-        });
-      }
-    }
-
-    // Use pending_estimate_amount_atomic from miner API (more reliable than ledger)
-    // Apply 5% pool fee
     const pendingEstimateAtomic = (miner.pending_shares && miner.pending_shares.pending_estimate_amount_atomic) || 0;
-    const pendingGross = pendingEstimateAtomic > 0 ? pendingEstimateAtomic / ATOMIC_UNITS : pendingCredits / ATOMIC_UNITS;
-    pendingBalance = pendingGross * (1 - POOL_FEE);
-    const totalPaid = totalPaidLedger / ATOMIC_UNITS;
+    // Shares: complete history of all blocks user participated in
+    const sharesData = (sharesResp && sharesResp.data) || sharesResp || {};
+    const sharesRows = sharesData.rows || [];
+    const latestBlockReward = (summary.stats && summary.stats.latest_block_reward) || 0;
+    const latestHeight = (summary.stats && summary.stats.latest_height) || 0;
+    const maturityBlocks = pfConfig.maturity_blocks || 100;
 
-    // Build allBlocks from /blocks API
+    // Pool blocks
+    const poolBlocks = blocksData.blocks || [];
     const allBlocks = poolBlocks.map(b => ({
       height: b.block_height || null,
       hash: b.block_hash || "",
       found_at: b.created_at ? apiTimeToUTC(b.created_at) : 0,
       found_by: b.miner_address || "",
-      reward: b.block_reward || 0, // already in PRL (not atomic)
+      reward: b.block_reward || 0,
       status: "confirmed",
-      effort: b.effort || null,
-      worker_name: b.worker_name || "",
     })).filter(b => b.found_at > 0);
-
-    _payoutsAll = payouts.slice();
     _blocksAll = allBlocks.slice();
 
-    // Block reward lookup map (height → reward in PRL)
-    const blockRewardMap = {};
-    for (const b of allBlocks) {
-      if (b.height && b.reward > 0) blockRewardMap[b.height] = b.reward;
-    }
-
-    // Hashrate from connections
-    const myHash = myHashReported || 0;
-    const workerCount = connSummary.worker_count || 0;
-
-    // Build hourly hashrate samples from hourly-shares series
-    const hashSamples = [];
-    for (const entry of hourlySeries) {
-      const hourTs = entry.hour || 0;
-      if (entry.total_share_sum > 0 && entry.pool_hashrate > 0) {
-        const ratio = entry.share_sum / entry.total_share_sum;
-        const estimatedHash = ratio * entry.pool_hashrate;
-        hashSamples.push({
-          timestamp: hourTs,
-          hash_rate: estimatedHash,
-        });
-      }
-    }
-
-    // Online status: check if any worker has recent last_stats_at
-    const freshWorkerThreshold = 900; // 15 min
+    // Online status
+    const freshWorkerThreshold = 900;
     const hasFreshWorkers = workersList.some(w => {
       if (w.stale) return false;
       const ls = w.last_stats_at ? Math.floor(new Date(w.last_stats_at).getTime() / 1000) : 0;
-      return ls > 0 && (now - ls) < freshWorkerThreshold;
+      return ls > 0 && (apiNow - ls) < freshWorkerThreshold;
     });
     const isOnline = hasFreshWorkers || workerCount > 0;
 
-    // Last epoch (most recent pending share or credit)
-    const lastEpochTs = myEpochBlocks.length > 0
-      ? Math.max(...myEpochBlocks.map(b => b.found_at))
-      : 0;
+    // ====================================================
+    // EARNINGS — DIRECT FROM API, NO ESTIMATION
+    // ====================================================
+    const pendingGross = pendingEstimateAtomic > 0 ? pendingEstimateAtomic / ATOMIC_UNITS : 0;
+    const pendingPrl = pendingGross * (1 - POOL_FEE);
+    const maturedPrl = creditsList.reduce((s, cr) => s + (cr.amount_atomic || 0), 0) / ATOMIC_UNITS;
+    const totalEarnedPrl = pendingPrl + maturedPrl;
 
-    const m = {
-      total_hashrate: myHash,
-      online_worker_count: hasFreshWorkers ? workerCount : 0,
-      worker_count: workerCount,
-      total_paid: totalPaid,
-      pending_balance: pendingBalance,
-      maturing_pool_blocks_count: 0,
-      next_pool_block_maturity_eta_seconds: null,
-      is_online: isOnline,
-      accepted_shares24_h: 0,
-      total_shares24_h: 0,
-      instances: workersList.map(w => ({
-        is_connected: !w.stale && (() => {
-          const ls = w.last_stats_at ? Math.floor(new Date(w.last_stats_at).getTime() / 1000) : 0;
-          return ls > 0 && (now - ls) < freshWorkerThreshold;
-        })(),
-        worker_name: w.worker || "—",
-        hashrate: w.reported_hashrate || 0,
-        shares1_h: 0,
-        stale_shares1_h: 0,
-        last_seen_at: w.last_stats_at ? apiTimeToUTC(w.last_stats_at) : null,
-        reported_gpus: w.reported_gpus || 0,
-        stale: w.stale || false,
-      })),
-    };
+    // ====================================================
+    // MINING SINCE — oldest block we can find
+    // ====================================================
+    // Mining since — oldest share timestamp (not pool blocks which are limited to 20)
+    const allShareTimestamps = [
+      ...sharesRows.map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0),
+      ...pendingRows.map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0),
+    ].filter(ts => ts > 0).sort((a, b) => a - b);
+    const miningSinceTs = allShareTimestamps.length > 0 ? allShareTimestamps[0] : null;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const hoursActive = miningSinceTs ? Math.max(0.01, (nowSec - miningSinceTs) / 3600) : 0;
 
-    const ps = {
-      total_hashrate: _poolHash,
-      connected_miners: connectedMinersCount,
-      blocks_found24_h: poolBlockCount,
-      pool_pct_network: _netHash > 0 ? (_poolHash / _netHash * 100) : (lastHourly.percentage || poolStats.percentage || 0),
-    };
-    const pl = { luck24_h: null };
+    // ====================================================
+    // COST — total cost since mining started
+    // ====================================================
+    const totalCost = miningSinceTs ? costAdv.costInRange(miningSinceTs, nowSec, cost) : 0;
 
-    // ========== TOP STATS ==========
-    const poolHash = ps.total_hashrate || 0;
-    const poolPctNetwork = ps.pool_pct_network || 0;
+    // ====================================================
+    // REVENUE & P/L
+    // ====================================================
+    const totalRevenue = totalEarnedPrl * prlPrice;
+    const totalPL = totalRevenue - totalCost;
+
+    // ====================================================
+    // TOP STATS
+    // ====================================================
+    const poolHash = _poolHash;
+    const myPctPool = poolHash > 0 ? (myHash / poolHash * 100) : 0;
+
     setText("stat-hashrate", fmtHash(myHash));
-    setText("stat-share", poolPctNetwork > 0 ? poolPctNetwork.toFixed(1) + "%" : "—");
-    setText("stat-workers", m.online_worker_count || 0);
-    setText("stat-workers-sub", `${m.worker_count || 0} total`);
-    setText("stat-paid", fmtNum(m.total_paid || 0, 2));
+    setText("stat-share", myPctPool > 0 ? myPctPool.toFixed(2) + "%" : "—");
+    setText("stat-workers", isOnline ? workerCount : 0);
+    setText("stat-workers-sub", (isOnline ? workerCount : 0) + " " + t("online"));
 
-    const recentRewards = _blocksAll.slice(0, 20).map(b => b.reward || 0).filter(r => r > 0);
-    const avgReward = recentRewards.length > 0 ? recentRewards.reduce((a,b)=>a+b, 0) / recentRewards.length : 0;
-    setText("pool-hash", fmtHash(poolHash));
-    setText("pool-miners", ps.connected_miners || "—");
-    setText("pool-blocks-stat", poolBlockCount);
-    setText("pool-luck", poolPctNetwork > 0 ? poolPctNetwork.toFixed(1) + "%" : "—");
-    setText("avg-reward", avgReward > 0 ? fmtNum(avgReward, 2) + " PRL" : "—");
-
-    setText("w-pending", fmtNum(m.pending_balance || 0, 4) + " PRL");
-    setText("w-maturing", fmtNum(m.total_paid || 0, 2) + " PRL");
-    setText("w-next-mature", connSummary.generated_at ? fmtAgeApi(apiTimeToUTC(connSummary.generated_at)) : "—");
-    setText("w-status", m.is_online ? t("online_status") : t("offline_status"));
-    setText("w-shares", summary.stats && summary.stats.latest_height ? "#" + summary.stats.latest_height : "—");
-
-    // ========== BUCKETING ==========
-    // Use pending_estimate_hourly_atomic for accurate PRL per hour (better than ratio estimation)
-    const hourlyPrlMap = {};
-    const peha = (miner.pending_shares && miner.pending_shares.pending_estimate_hourly_atomic) || [];
-    for (const entry of peha) {
-      hourlyPrlMap[entry.hour] = (entry.amount_atomic || 0) / ATOMIC_UNITS;
+    // Mining since
+    if (miningSinceTs) {
+      const miningSec = Math.floor(Date.now() / 1000) - miningSinceTs;
+      setText("stat-mining-since", fmtDuration(miningSec));
+      setText("stat-mining-since-sub", fmtAgeApi(miningSinceTs));
+    } else {
+      setText("stat-mining-since", "—");
+      setText("stat-mining-since-sub", "no data");
     }
 
-    // Pool blocks per hour (all blocks, not just ours)
-    const poolBlockBuckets = bucketBlocks(skeleton, allBlocks, "__none__");
+    // ====================================================
+    // EARNINGS CARDS
+    // ====================================================
+    setText("earn-pending", fmtNum(pendingPrl, 4) + " PRL");
+    setText("earn-pending-usd", "$" + fmtNum(pendingPrl * prlPrice, 2));
+    setText("earn-matured", fmtNum(maturedPrl, 4) + " PRL");
+    setText("earn-matured-usd", "$" + fmtNum(maturedPrl * prlPrice, 2));
+    setText("earn-total", fmtNum(totalEarnedPrl, 4) + " PRL");
+    setText("earn-total-usd", "$" + fmtNum(totalRevenue, 2));
 
-    // Build revenue blocks from hourly PRL estimates (apply 5% fee)
-    const revenueBlocks = [];
-    for (const [hourTs, prlAmt] of Object.entries(hourlyPrlMap)) {
-      if (prlAmt > 0) {
-        revenueBlocks.push({
-          height: null,
-          found_at: parseInt(hourTs),
-          found_by: wallet,
-          reward: prlAmt * (1 - POOL_FEE),
-          status: "confirmed",
-        });
-      }
-    }
-
-    const periodPayouts = (payouts || []).filter(p => p.created_at && p.created_at >= sinceTs);
-    const periodBlocks = (revenueBlocks || []).filter(b => b.found_at && b.found_at >= sinceTs);
-
-    const payoutBuckets = bucketPayouts(skeleton, periodPayouts);
-    const blockBuckets = bucketBlocks(skeleton, periodBlocks, wallet);
-    const hashBuckets = bucketHashrate(skeleton, hashSamples);
-
-    const buckets = payoutBuckets.map((pb, i) => ({
-      ...pb,
-      pool_blocks: poolBlockBuckets[i].pool_blocks,
-      my_blocks: poolBlockBuckets[i].pool_blocks, // show pool blocks per hour
-      my_reward: blockBuckets[i].my_reward, // use hourly PRL estimate
-      hashrate: hashBuckets[i].hashrate_avg,
-    }));
-
-    let totalPL = 0, totalPRL = 0, totalCost = 0, totalRev = 0;
-    let bestPL = -Infinity, bestLabel = "";
-    let worstPL = Infinity, worstLabel = "";
-    let bucketsWithPayout = 0;
-
-    for (const b of buckets) {
-      const costEnd = Math.min(b.end, now);
-      const isPast = costEnd > b.start;
-      const isCurrentBucket = (now >= b.start && now < b.end);
-      let isActive;
-      if (isCurrentBucket) {
-        isActive = hasFreshWorkers;
-      } else {
-        isActive = isPast && ((b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0);
-      }
-      const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
-      const revenue = (b.my_reward || 0) * prlPrice;
-      b.cost = bucketCost;
-      b.actual_revenue = revenue;
-      b.actual_pl = revenue - bucketCost;
-      b.is_active = isActive;
-      totalPL += b.actual_pl;
-      totalPRL += (b.my_reward || 0);
-      totalCost += bucketCost;
-      totalRev += revenue;
-      const isCompleted = now >= b.end;
-      if (isCompleted) {
-        if (b.actual_pl > bestPL) { bestPL = b.actual_pl; bestLabel = b.label; }
-        if (b.actual_pl < worstPL) { worstPL = b.actual_pl; worstLabel = b.label; }
-        if (b.payouts > 0) bucketsWithPayout++;
-      }
-    }
-
-    // ========== DASHBOARD DISPLAY ==========
+    // ====================================================
+    // P/L HERO
+    // ====================================================
     setText("total-pl-big", fmtPL(totalPL));
     setClass("total-pl-big", totalPL > 0.01 ? "profit" : totalPL < -0.01 ? "loss" : "neutral");
-    setText("total-pl-period", t(`period_${currentPeriod}`));
-    setText("total-revenue", "$" + fmtNum(totalRev, 2));
+    setText("total-pl-period", t("period_" + currentPeriod));
+    setText("total-revenue", "$" + fmtNum(totalRevenue, 2));
     setText("total-cost", "$" + fmtNum(totalCost, 2));
-    setText("chart-axis-start", t(`ago_${currentPeriod}`));
+    setText("total-prl", fmtNum(totalEarnedPrl, 2) + " PRL");
+    setText("chart-axis-start", t("ago_" + currentPeriod));
 
-    // Insight
-    setText("best-hour", isFinite(bestPL) ? fmtPL(bestPL) + " @ " + bestLabel : "—");
-    setText("worst-hour", isFinite(worstPL) ? fmtPL(worstPL) + " @ " + worstLabel : "—");
-    setText("hours-hit", `${bucketsWithPayout} / ${buckets.length}`);
-    setText("total-prl", fmtNum(totalPRL, 1) + " PRL");
-    setText("luck-actual", fmtNum(totalPRL, 1) + " PRL");
+    // ====================================================
+    // POOL STATS (settings page)
+    // ====================================================
+    const recentRewards = allBlocks.slice(0, 20).map(b => b.reward || 0).filter(r => r > 0);
+    const avgReward = recentRewards.length > 0 ? recentRewards.reduce((a,b) => a+b, 0) / recentRewards.length : 0;
+    setText("pool-hash", fmtHash(poolHash));
+    setText("pool-miners", connectedMinersCount || "—");
+    setText("pool-blocks-stat", poolBlockCount);
+    setText("pool-luck", _netHash > 0 ? (poolHash / _netHash * 100).toFixed(1) + "%" : "—");
+    setText("avg-reward", avgReward > 0 ? fmtNum(avgReward, 2) + " PRL" : "—");
 
-    const totalBlocks = buckets.reduce((s, b) => s + (b.my_blocks || 0), 0);
-    setText("total-blocks-period", totalBlocks + " " + (totalBlocks === 1 ? "block" : "blocks"));
+    // Wallet stats (settings page)
+    setText("w-pending", fmtNum(pendingPrl, 4) + " PRL");
+    setText("w-maturing", fmtNum(maturedPrl, 4) + " PRL");
+    setText("w-total-earned", fmtNum(totalEarnedPrl, 4) + " PRL");
+    setText("w-next-mature", connSummary.generated_at ? fmtAgeApi(apiTimeToUTC(connSummary.generated_at)) : "—");
+    setText("w-status", isOnline ? t("online_status") : t("offline_status"));
+    setText("w-shares", latestHeight ? "#" + latestHeight : "—");
 
-    // Modern SVG chart
-    renderModernChart(buckets);
+    // ====================================================
+    // HOURLY TABLE — count blocks by WIB hour directly
+    // ====================================================
+    const WIB_OFFSET = 7 * 3600;
+    // Use latest block time as current hour (matches pearlfortune.org website)
+    // API generated_at can be BEHIND latest block created_at
+    const allTs = [...sharesRows, ...pendingRows].map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0).filter(t => t > 0);
+    const latestBlockTs = allTs.length > 0 ? Math.max(...allTs) : apiNow;
+    const curRef = Math.max(apiNow, latestBlockTs); // pick whichever is more recent
+    const curRefWIB = curRef + WIB_OFFSET;
+    const curWIBHour = Math.floor(curRefWIB / 3600) * 3600;
+    
+    // Count blocks per WIB hour from created_at strings (already WIB)
+    const hourBlockCounts = {};
+    const hourTsMap = {};
+    const allRows = [...sharesRows, ...pendingRows.filter(r => !sharesRows.some(s => s.block_height === r.block_height))];
+    for (const r of allRows) {
+      if (!r.created_at) continue;
+      const parts = r.created_at.split(/[- :]/);
+      if (parts.length < 6) continue;
+      const h = ((parseInt(parts[3]) - 1) + 24) % 24;
+      const key = String(h).padStart(2, "0") + ":00";
+      hourBlockCounts[key] = (hourBlockCounts[key] || 0) + 1;
+      // Timestamp for cost calc
+      const ts = apiTimeToUTC(r.created_at);
+      if (!hourTsMap[key] || ts < hourTsMap[key].min) hourTsMap[key] = { min: ts, max: ts };
+      if (ts > hourTsMap[key].max) hourTsMap[key].max = ts;
+    }
+    
+    // Build period hours (24h = last 24 hours in WIB)
+    const periodHours = currentPeriod === "1h" ? 1 : currentPeriod === "6h" ? 6 : currentPeriod === "12h" ? 12 : 24;
+    const buckets = [];
+    for (let i = periodHours - 1; i >= 0; i--) {
+      const start = curWIBHour - (i * 3600);
+      const wibH = ((Math.floor(start / 3600) - 1) % 24 + 24) % 24;
+      const label = String(wibH).padStart(2, "0") + ":00";
+      const blkCount = hourBlockCounts[label] || 0;
+      const isCurrent = (i === 0);
+      const isActive = isCurrent ? hasFreshWorkers : (blkCount > 0);
+      // Cost: full hourly cost if active
+      const bucketCost = isActive ? cost : 0;
+      buckets.push({ label, start: start - WIB_OFFSET, end: start + 3600 - WIB_OFFSET, my_blocks: blkCount, cost: bucketCost, is_active: isActive });
+    }
+    
+    const totalPeriodBlocks = buckets.reduce((s, b) => s + b.my_blocks, 0);
+    const prlPerBlock = totalPeriodBlocks > 0 ? totalEarnedPrl / totalPeriodBlocks : 0;
+    const revenuePerBlock = totalPeriodBlocks > 0 ? totalRevenue / totalPeriodBlocks : 0;
+    
+    for (const b of buckets) {
+      b.prl_amount = b.my_blocks * prlPerBlock;
+      b.actual_revenue = b.my_blocks * revenuePerBlock;
+      b.actual_pl = b.actual_revenue - b.cost;
+    }
 
-    // Hourly table (newest first) — Pearl Fortune columns: Hour | Blocks | PRL | Revenue | Cost | P/L
+    // Hourly table (newest first)
     const hbody = document.getElementById("hourly-body");
     const rowsToShow = buckets.slice().reverse();
     hbody.innerHTML = rowsToShow.map(b => {
-      const isCurrent = (now >= b.start && now < b.end);
+      const isCurrent = b === buckets[buckets.length - 1];
       const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
       const blkCount = b.my_blocks || 0;
-      const prlPaid = b.my_reward || 0;
       const blkLabel = blkCount > 0 ? String(blkCount) : "—";
       const offlineRowCls = !b.is_active ? "opacity-50" : "";
-      const revenue = b.actual_revenue || 0;
-      const revText = revenue > 0.001 ? "$" + fmtNum(revenue, revenue < 1 ? 3 : 2) : "—";
-      const revColor = revenue > 0.001 ? "text-emerald-400" : "text-slate-700";
-      return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-emerald-950/20" : ""} ${offlineRowCls}">
-        <td class="px-3 py-2 text-xs ${isCurrent ? "text-emerald-400" : "text-slate-300"} font-mono-num">${b.label}${isCurrent ? " ◀" : ""}</td>
-        <td class="px-3 py-2 text-xs ${blkCount > 0 ? "text-yellow-400" : "text-slate-700"} font-mono-num text-right">${blkLabel}</td>
-        <td class="px-3 py-2 text-xs ${prlPaid > 0 ? "text-emerald-400" : "text-slate-500"} font-mono-num text-right">${prlPaid > 0 ? fmtNum(prlPaid, 4) : "—"}</td>
-        <td class="px-3 py-2 text-xs ${revColor} font-mono-num text-right">${revText}</td>
-        <td class="px-3 py-2 text-xs ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
-        <td class="px-3 py-2 text-xs ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
-      </tr>`;
+      const rev = b.actual_revenue || 0;
+      const prlAmt = b.prl_amount || 0;
+      return '<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ' + (isCurrent ? "bg-emerald-950/20" : "") + " " + offlineRowCls + '">' +
+        '<td class="px-3 py-2 text-xs ' + (isCurrent ? "text-emerald-400" : "text-slate-300") + ' font-mono-num">' + b.label + (isCurrent ? " ◀" : "") + '</td>' +
+        '<td class="px-3 py-2 text-xs ' + (blkCount > 0 ? "text-yellow-400" : "text-slate-700") + ' font-mono-num text-right">' + blkLabel + '</td>' +
+        '<td class="px-3 py-2 text-xs ' + (prlAmt > 0.001 ? "text-emerald-400" : "text-slate-700") + ' font-mono-num text-right">' + (prlAmt > 0 ? fmtNum(prlAmt, 2) : "—") + '</td>' +
+        '<td class="px-3 py-2 text-xs ' + (rev > 0.01 ? "text-emerald-400" : "text-slate-700") + ' font-mono-num text-right">' + (rev > 0 ? "$" + rev.toFixed(2) : "—") + '</td>' +
+        '<td class="px-3 py-2 text-xs ' + (b.cost > 0.01 ? "text-red-400" : "text-slate-700") + ' font-mono-num text-right">' + (b.is_active ? "$" + b.cost.toFixed(2) : "—") + '</td>' +
+        '<td class="px-3 py-2 text-xs ' + aCls + ' font-mono-num font-bold text-right">' + fmtPL(b.actual_pl) + '</td>' +
+      '</tr>';
     }).join("");
 
-    // ========== WORKERS ==========
+    // Chart
+    renderModernChart(buckets);
+
+    // ====================================================
+    // WORKERS
+    // ====================================================
     const wbody = document.getElementById("workers-body");
-    const instances = (m.instances || []).filter(i => i.is_connected);
-    setText("workers-count-big", `${instances.length} ${t("active")}`);
+    const instances = workersList.filter(w => {
+      if (w.stale) return false;
+      const ls = w.last_stats_at ? Math.floor(new Date(w.last_stats_at).getTime() / 1000) : 0;
+      return ls > 0 && (apiNow - ls) < freshWorkerThreshold;
+    });
+    setText("workers-count-big", instances.length + " " + t("active"));
     if (instances.length === 0) {
-      wbody.innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_workers")}</td></tr>`;
+      wbody.innerHTML = '<tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600">' + t("no_workers") + '</td></tr>';
     } else {
-      wbody.innerHTML = instances.sort((a,b) => (b.hashrate||0)-(a.hashrate||0)).map(w => {
-        const staleColor = w.stale ? "text-red-400" : "text-emerald-400";
-        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">
-          <td class="px-5 py-2.5 text-xs text-slate-300 font-mono-num">${w.worker_name || "—"}</td>
-          <td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">${fmtHash(w.hashrate || 0)}</td>
-          <td class="px-5 py-2.5 text-xs text-slate-400 font-mono-num text-right">${w.reported_gpus || 0} GPU</td>
-          <td class="px-5 py-2.5 text-xs ${staleColor} font-mono-num text-right">${w.stale ? "stale" : "ok"}</td>
-          <td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">${w.last_seen_at ? fmtAgeApi(w.last_seen_at) : "—"}</td>
-        </tr>`;
+      wbody.innerHTML = instances.sort((a,b) => (b.reported_hashrate||0)-(a.reported_hashrate||0)).map(w => {
+        const ls = w.last_stats_at ? Math.floor(new Date(w.last_stats_at).getTime() / 1000) : 0;
+        const staleColor = "text-emerald-400";
+        return '<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">' +
+          '<td class="px-5 py-2.5 text-xs text-slate-300 font-mono-num">' + (w.worker || "—") + '</td>' +
+          '<td class="px-5 py-2.5 text-xs text-slate-200 font-mono-num text-right">' + fmtHash(w.reported_hashrate || 0) + '</td>' +
+          '<td class="px-5 py-2.5 text-xs text-slate-400 font-mono-num text-right">' + (w.reported_gpus || 0) + ' GPU</td>' +
+          '<td class="px-5 py-2.5 text-xs ' + staleColor + ' font-mono-num text-right">ok</td>' +
+          '<td class="px-5 py-2.5 text-xs text-slate-500 font-mono-num text-right">' + (ls ? fmtAgeApi(ls) : "—") + '</td>' +
+        '</tr>';
       }).join("");
     }
 
-    // ========== REWARDS ==========
-    setText("r-pending", fmtNum(m.pending_balance || 0, 4) + " PRL");
-    setText("r-maturing", fmtNum(m.total_paid || 0, 4) + " PRL");
-    // Next maturity = when the OLDEST pending block matures (FIFO)
-    // maturity_blocks from config tells how many blocks until maturity
-    const latestHeight = (summary.stats && summary.stats.latest_height) || 0;
+    // ====================================================
+    // REWARDS
+    // ====================================================
+    setText("r-pending", fmtNum(pendingPrl, 4) + " PRL");
+    setText("r-maturing", fmtNum(maturedPrl, 4) + " PRL");
+    setText("r-total-earned", fmtNum(totalEarnedPrl, 4) + " PRL");
+
+    // Next maturity
     let nextMaturityEta = "—";
     if (pendingRows.length > 0 && latestHeight > 0) {
-      // Find oldest (lowest) pending block height
       const oldestHeight = Math.min(...pendingRows.map(r => r.block_height || Infinity));
       if (oldestHeight < Infinity) {
         const maturesAt = oldestHeight + maturityBlocks;
         const blocksLeft = Math.max(0, maturesAt - latestHeight);
-        // ~1 block per minute on Pearl
         const secondsLeft = blocksLeft * 60;
-        if (blocksLeft <= 0) {
-          nextMaturityEta = "maturing now";
-        } else {
-          nextMaturityEta = "~" + fmtDuration(secondsLeft) + " (" + blocksLeft + " blocks)";
-        }
+        nextMaturityEta = blocksLeft <= 0 ? "maturing now" : "~" + fmtDuration(secondsLeft) + " (" + blocksLeft + " blocks)";
       }
     }
     setText("r-next-mature", nextMaturityEta);
-    setText("r-status", m.is_online ? t("online_status") : t("offline_status"));
+    setText("r-status", isOnline ? t("online_status") : t("offline_status"));
 
-    // Pending: entries from pending_shares (PPLNS window)
+    // Pending table
     const pendingBody = document.getElementById("pending-blocks-body");
     setText("rewards-pending-count", pendingRows.length);
     if (pendingRows.length === 0) {
-      pendingBody.innerHTML = `<tr><td colspan="4" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_pending")}</td></tr>`;
+      pendingBody.innerHTML = '<tr><td colspan="4" class="px-5 py-6 text-center text-xs text-slate-600">' + t("no_pending") + '</td></tr>';
     } else {
       const sortedPending = pendingRows.slice().sort((a, b) => {
-        const ta = a.created_at ? apiTimeToUTC(a.created_at) * 1000 : 0;
-        const tb = b.created_at ? apiTimeToUTC(b.created_at) * 1000 : 0;
-        return tb - ta;
+        // Sort by block height descending (highest = newest)
+        return (b.block_height || 0) - (a.block_height || 0);
       });
       pendingBody.innerHTML = sortedPending.slice(0, 30).map(row => {
         const ts = row.created_at ? apiTimeToUTC(row.created_at) : 0;
         const ratio = row.ratio || 0;
-        const blockReward = blockRewardMap[row.block_height] || 0;
-        const myPrl = ratio * blockReward * (1 - POOL_FEE);
-        return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">
-          <td class="px-3 py-2 text-xs text-slate-300 font-mono-num">${ts ? fmtAgeApi(ts) : "—"}</td>
-          <td class="px-3 py-2 text-xs text-purple-400 font-mono-num">#${row.block_height || "—"}</td>
-          <td class="px-3 py-2 text-xs text-emerald-400 font-mono-num text-right">${myPrl > 0 ? fmtNum(myPrl, 4) : "—"}</td>
-          <td class="px-3 py-2 text-xs text-yellow-400">${row.submit_status || "pending"}</td>
-        </tr>`;
+        const myPrl = ratio * latestBlockReward * (1 - POOL_FEE);
+        return '<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">' +
+          '<td class="px-3 py-2 text-xs text-purple-400 font-mono-num">#' + (row.block_height || "—") + '</td>' +
+          '<td class="px-3 py-2 text-xs text-emerald-400 font-mono-num text-right">' + (myPrl > 0 ? fmtNum(myPrl, 4) : "—") + '</td>' +
+          '<td class="px-3 py-2 text-xs text-yellow-400">' + (row.submit_status || "pending") + '</td>' +
+        '</tr>';
       }).join("");
     }
 
-    // Claimed: payouts from ledger
-    const claimedPayouts = payouts.filter(p =>
-      p.status === "confirmed" || p.status === "done" || p.status === "completed" || p.status === "sent"
-    );
-    setText("rewards-claimed-count", claimedPayouts.length);
-    renderClaimedTable(claimedPayouts);
+    // Claimed table — use credits from ledger/shares
+    const claimedEntries = creditsList.length > 0 ? creditsList : 
+      sharesRows.filter(r => r.credit_amount > 0).map(r => ({
+        created_at: r.credit_created || r.created_at,
+        amount: (r.credit_amount || 0) / ATOMIC_UNITS,
+      }));
+    setText("rewards-claimed-count", claimedEntries.length);
+    renderClaimedTable(claimedEntries);
 
-    // ========== BLOCKS ==========
-    setText("blocks-pool-count", (allBlocks || []).length);
-    setText("blocks-mine-count", (allBlocks || []).filter(b => b.found_by === wallet).length);
-    renderBlocksTable(allBlocks || [], wallet);
+    // ====================================================
+    // BLOCKS
+    // ====================================================
+    setText("blocks-pool-count", allBlocks.length);
+    setText("blocks-mine-count", allBlocks.filter(b => b.found_by === wallet).length);
+    renderBlocksTable(allBlocks, wallet);
 
-    setStatus(`${t("updated")} ${new Date().toLocaleTimeString()} · ${t("auto_refresh_60s")}`);
+    // Done
+    setStatus(t("updated") + " " + new Date().toLocaleTimeString() + " · " + t("auto_refresh_60s"));
     document.getElementById("period-loading").classList.add("hidden");
     if (refreshBtn) refreshBtn.classList.remove("spinning");
 
@@ -1118,20 +984,23 @@ function renderClaimedTable(payouts) {
   const pagBox = document.getElementById("claimed-pagination");
   if (!body) return;
   if (!payouts.length) {
-    body.innerHTML = `<tr><td colspan="4" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_claimed")}</td></tr>`;
+    body.innerHTML = '<tr><td colspan="4" class="px-5 py-6 text-center text-xs text-slate-600">' + t("no_claimed") + '</td></tr>';
     if (pagBox) pagBox.innerHTML = "";
     return;
   }
-  const sorted = payouts.slice().sort((a,b) => (b.created_at||0) - (a.created_at||0));
+  const sorted = payouts.slice().sort((a, b) => {
+    const ta = a.created_at ? apiTimeToUTC(a.created_at) : 0;
+    const tb = b.created_at ? apiTimeToUTC(b.created_at) : 0;
+    return tb - ta;
+  });
   const pag = Period.paginate(sorted, claimedPage, 15);
   body.innerHTML = pag.items.map(p => {
-    const txShort = p.tx_id ? p.tx_id.slice(0, 8) + "…" + p.tx_id.slice(-6) : "—";
-    return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">
-      <td class="px-3 py-2 text-xs text-slate-300 font-mono-num">${fmtAgeApi(apiTimeToUTC(p.created_at))}</td>
-      <td class="px-3 py-2 text-xs text-emerald-400 font-mono-num font-semibold text-right">${fmtNum(p.amount || 0, 4)}</td>
-      <td class="px-3 py-2 text-xs text-slate-500 font-mono-num text-right">${fmtNum(p.fee_amount || 0, 4)}</td>
-      <td class="px-3 py-2 text-xs text-slate-400 font-mono-num">${txShort}</td>
-    </tr>`;
+    const amt = p.amount || (p.amount_atomic || 0) / ATOMIC_UNITS || 0;
+    return '<tr class="border-t border-slate-800/40 hover:bg-slate-900/30">' +
+      '<td class="px-3 py-2 text-xs text-emerald-400 font-mono-num font-semibold text-right">' + fmtNum(amt, 4) + ' PRL</td>' +
+      '<td class="px-3 py-2 text-xs text-slate-500 font-mono-num text-right">' + fmtNum(p.fee_amount || 0, 4) + '</td>' +
+      '<td class="px-3 py-2 text-xs text-slate-400 font-mono-num">' + (p.tx_id ? p.tx_id.slice(0, 8) + "…" + p.tx_id.slice(-6) : "credit") + '</td>' +
+    '</tr>';
   }).join("");
   if (pagBox) pagBox.innerHTML = Period.renderPagination(pag.page, pag.totalPages);
   if (pagBox) pagBox.querySelectorAll(".page-btn").forEach(btn => {
@@ -1148,7 +1017,7 @@ function renderBlocksTable(blocks, wallet) {
   const pagBox = document.getElementById("blocks-pagination");
   if (!body) return;
   if (!blocks.length) {
-    body.innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600">${t("no_pending")}</td></tr>`;
+    body.innerHTML = '<tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600">' + t("no_pending") + '</td></tr>';
     if (pagBox) pagBox.innerHTML = "";
     return;
   }
@@ -1160,17 +1029,16 @@ function renderBlocksTable(blocks, wallet) {
     const stColor = b.status === "confirmed" ? "text-emerald-400"
                   : b.status === "orphan" ? "text-red-400"
                   : "text-yellow-400";
-    const heightLabel = b.height ? `#${b.height}` : (b.found_at ? new Date(b.found_at * 1000).toISOString().slice(11, 16) + " UTC" : "—");
+    const heightLabel = b.height ? "#" + b.height : (b.found_at ? new Date(b.found_at * 1000).toISOString().slice(11, 16) + " UTC" : "—");
     const finderShort = isMine
       ? '<span class="text-yellow-400">you</span>'
       : (b.found_by ? '<span class="text-slate-500 font-mono-num">' + b.found_by.slice(0, 8) + '…</span>' : '<span class="text-slate-600">pool</span>');
-    return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${rowBg}">
-      <td class="px-3 py-2 text-xs text-purple-300 font-mono-num">${star}${heightLabel}</td>
-      <td class="px-3 py-2 text-xs text-slate-400 font-mono-num">${fmtAgeApi(b.found_at)}</td>
-      <td class="px-3 py-2 text-xs text-emerald-400 font-mono-num text-right font-semibold">${fmtNum(b.reward || 0, 4)}</td>
-      <td class="px-3 py-2 text-xs">${finderShort}</td>
-      <td class="px-3 py-2 text-xs ${stColor}">${b.status || "—"}</td>
-    </tr>`;
+    return '<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ' + rowBg + '">' +
+      '<td class="px-3 py-2 text-xs text-purple-300 font-mono-num">' + star + heightLabel + '</td>' +
+      '<td class="px-3 py-2 text-xs text-emerald-400 font-mono-num text-right font-semibold">' + fmtNum(b.reward || 0, 4) + '</td>' +
+      '<td class="px-3 py-2 text-xs">' + finderShort + '</td>' +
+      '<td class="px-3 py-2 text-xs ' + stColor + '">' + (b.status || "—") + '</td>' +
+    '</tr>';
   }).join("");
   if (pagBox) pagBox.innerHTML = Period.renderPagination(pag.page, pag.totalPages);
   if (pagBox) pagBox.querySelectorAll(".page-btn").forEach(btn => {
@@ -1295,27 +1163,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 1500);
       } catch (err) {
         console.error("Copy failed:", err);
-        alert("Copy failed. Long-press the address and copy manually.");
       }
     });
   }
 
-  // SPA init — handles setup gate, tab nav, and first ready callback
+  // SPA init
   SPA.init({
     storageKey: STORAGE_KEY,
     walletPrefix: "prl1",
     defaultCost: 11,
     defaultPrice: 0.40,
-    onReady: ({ wallet, cost, prl_price }) => {
+    onReady: ({ wallet, cost }) => {
       walletCache = wallet;
       costCache = cost;
-      priceCache = prl_price;
+      
+      // Display + auto-refresh IMMEDIATELY
       updateSettingsDisplay();
       refresh();
       startAutoRefresh();
+      
+      // Fetch live price from DexScreener + auto-refresh every 60s
+      function updateLivePrice(p) {
+        if (p && p > 0) {
+          priceCache = p;
+          window._livePrice = p;
+          setText('settings-price-display', '$' + fmtNum(p, 4));
+          setText('setup-price-live', '$' + fmtNum(p, 4));
+          setText('live-price-value', '$' + fmtNum(p, 4));
+        }
+      }
+      fetchDexPrice().then(p => {
+        updateLivePrice(p);
+        updateSettingsDisplay();
+        refresh();
+      }).catch(() => {});
+      setInterval(() => {
+        fetchDexPrice().then(updateLivePrice).catch(() => {});
+      }, 60000);
     },
-    onPageChange: (page) => {
-      // No-op for now; data already rendered on every refresh
-    },
+    onPageChange: (page) => {},
   });
 });

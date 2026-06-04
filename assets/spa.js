@@ -64,6 +64,16 @@
     if ($("setup-cost")) $("setup-cost").value = stored.cost || cfg.defaultCost || 11;
     if ($("setup-price")) $("setup-price").value = stored.prl_price || cfg.defaultPrice || 0.40;
     if ($("setup-error")) $("setup-error").classList.add("hidden");
+    // Fetch live price for setup display
+    if (typeof fetchDexPrice === "function") {
+      fetchDexPrice().then(p => {
+        if (p) {
+          window._livePrice = p;
+          if ($("setup-price-live")) $("setup-price-live").textContent = "$" + (p.toFixed ? p.toFixed(4) : p);
+          if ($("live-price-value")) $("live-price-value").textContent = "$" + (p.toFixed ? p.toFixed(4) : p);
+        }
+      }).catch(() => {});
+    }
   }
   function hideSetup() {
     hide($("setup-screen"));
@@ -86,7 +96,14 @@
   function commitSetup() {
     const w = $("setup-wallet").value.trim();
     const c = parseFloat($("setup-cost").value) || 0;
-    const p = parseFloat($("setup-price").value) || 0;
+    // Price: try window._livePrice (set by pool JS via DexScreener), then input, then default
+    let p = 0;
+    if (window._livePrice && window._livePrice > 0) {
+      p = window._livePrice;
+    } else {
+      const priceInput = $("setup-price");
+      p = priceInput ? (parseFloat(priceInput.value) || 0) : 0;
+    }
     const err = $("setup-error");
     if (!isValidWallet(w)) {
       if (err) {
@@ -102,18 +119,11 @@
       }
       return;
     }
-    if (p <= 0) {
-      if (err) {
-        err.textContent = "PRL price must be greater than 0";
-        err.classList.remove("hidden");
-      }
-      return;
-    }
-    persist({ wallet: w, cost: c, prl_price: p });
+    persist({ wallet: w, cost: c, prl_price: p || cfg.defaultPrice || 0.40 });
     hideSetup();
     navigate("dashboard");
     if (typeof cfg.onReady === "function") {
-      cfg.onReady({ wallet: w, cost: c, prl_price: p });
+      cfg.onReady({ wallet: w, cost: c, prl_price: p || cfg.defaultPrice || 0.40 });
     }
   }
 
@@ -162,6 +172,7 @@
           wallet: stored.wallet,
           cost: parseFloat(stored.cost) || cfg.defaultCost,
           prl_price: parseFloat(stored.prl_price) || cfg.defaultPrice,
+
         });
       }
     }

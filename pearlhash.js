@@ -544,6 +544,24 @@ if (!Period.PERIODS.includes(currentPeriod)) currentPeriod = "24h";
 let walletCache = null;
 let costCache = 11;
 let priceCache = 0.4;
+window._livePrice = 0;
+const DEX_PAIR_URL = 'https://api.dexscreener.com/latest/dex/pairs/ethereum/0x89a67c6dee35db9815da2fb9191f0998a8b37c39';
+async function fetchDexPrice() {
+  try {
+    const r = await fetch(DEX_PAIR_URL);
+    const j = await r.json();
+    const pair = (j.pairs || [])[0];
+    if (pair && pair.priceUsd) {
+      const p = parseFloat(pair.priceUsd);
+      if (p > 0) return p;
+    }
+  } catch (e) { console.warn('DexScreener fetch failed:', e); }
+  return null;
+}
+// Fetch live price immediately on page load
+fetchDexPrice().then(p => {
+  if (p) { priceCache = p; window._livePrice = p; setText('live-price-value', '$' + fmtNum(p, 4)); }
+}).catch(() => {});
 
 // Reward tab state
 let rewardTab = "pending";
@@ -1223,13 +1241,33 @@ document.addEventListener("DOMContentLoaded", () => {
     walletPrefix: "prl1",
     defaultCost: 11,
     defaultPrice: 0.40,
-    onReady: ({ wallet, cost, prl_price }) => {
+    onReady: ({ wallet, cost }) => {
       walletCache = wallet;
       costCache = cost;
-      priceCache = prl_price;
+      
+      // Display + auto-refresh IMMEDIATELY
       updateSettingsDisplay();
       refresh();
       startAutoRefresh();
+      
+      // Fetch live price from DexScreener + auto-refresh every 60s
+      function updateLivePrice(p) {
+        if (p && p > 0) {
+          priceCache = p;
+          window._livePrice = p;
+          setText('settings-price-display', '$' + fmtNum(p, 4));
+          setText('setup-price-live', '$' + fmtNum(p, 4));
+          setText('live-price-value', '$' + fmtNum(p, 4));
+        }
+      }
+      fetchDexPrice().then(p => {
+        updateLivePrice(p);
+        updateSettingsDisplay();
+        refresh();
+      }).catch(() => {});
+      setInterval(() => {
+        fetchDexPrice().then(updateLivePrice).catch(() => {});
+      }, 60000);
     },
     onPageChange: (page) => {
       // No-op for now; data already rendered on every refresh

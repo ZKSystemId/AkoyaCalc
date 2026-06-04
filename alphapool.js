@@ -66,8 +66,10 @@ const I18N = {
     error_prefix: "Error: ", fetching: "Fetching data...", updated: "Updated",
     auto_refresh_60s: "Auto-refresh in 60s",
     donate_title: "Support This Tool", donate_sub: "Donate PRL · Tip the dev", copy: "Copy", copied: "Copied!",
-    pool_label: "Pool", invalid_wallet: "Wallet must start with 'prl1'",
+    pool_label: "Pool",    invalid_wallet: "Wallet must start with 'prl1'",
     switching: "Switching to",
+    
+    realtime: "🔴 Real-time",
     footer_data: "Data: alphapool.tech · Auto-refresh 60s · Timezone: WIB (UTC+7)",
     footer_explain: "Profit/Loss = PRL paid × $price − cost. Rig OFF (HR &lt; 5% peak) = no cost.",
     alphapool_no_payouts_note: "Payouts shown when /api/miner.payments is populated.",
@@ -132,6 +134,8 @@ const I18N = {
     donate_title: "Dukung Tool Ini", donate_sub: "Donasi PRL · Tip developer", copy: "Salin", copied: "Tersalin!",
     pool_label: "Pool", invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
     switching: "Pindah ke",
+    
+    realtime: "🔴 Real-time",
     footer_data: "Data: alphapool.tech · Auto-refresh 60d · Zona: WIB (UTC+7)",
     footer_explain: "Profit/Loss = PRL dibayar × harga$ − cost. Rig OFF (HR &lt; 5% peak) = ga ada cost.",
     alphapool_no_payouts_note: "Pembayaran muncul saat /api/miner.payments terisi.",
@@ -196,6 +200,8 @@ const I18N = {
     donate_title: "支持此工具", donate_sub: "捐赠 PRL · 给开发者打赏", copy: "复制", copied: "已复制!",
     pool_label: "矿池", invalid_wallet: "钱包必须以 'prl1' 开头",
     switching: "切换到",
+    
+    realtime: "🔴 实时",
     footer_data: "数据: alphapool.tech · 自动刷新60秒 · 时区: WIB (UTC+7)",
     footer_explain: "盈亏 = PRL支付 × 价格$ − 成本。矿机关闭 (算力 &lt; 5% 峰值) = 无成本。",
     alphapool_no_payouts_note: "当 /api/miner.payments 有数据时显示支出。",
@@ -559,6 +565,24 @@ if (!Period.PERIODS.includes(currentPeriod)) currentPeriod = "24h";
 let walletCache = null;
 let costCache = 11;
 let priceCache = 0.4;
+window._livePrice = 0;
+const DEX_PAIR_URL = 'https://api.dexscreener.com/latest/dex/pairs/ethereum/0x89a67c6dee35db9815da2fb9191f0998a8b37c39';
+async function fetchDexPrice() {
+  try {
+    const r = await fetch(DEX_PAIR_URL);
+    const j = await r.json();
+    const pair = (j.pairs || [])[0];
+    if (pair && pair.priceUsd) {
+      const p = parseFloat(pair.priceUsd);
+      if (p > 0) return p;
+    }
+  } catch (e) { console.warn('DexScreener fetch failed:', e); }
+  return null;
+}
+// Fetch live price immediately on page load
+fetchDexPrice().then(p => {
+  if (p) { priceCache = p; window._livePrice = p; setText('live-price-value', '$' + fmtNum(p, 4)); }
+}).catch(() => {});
 
 // Reward tab state
 let rewardTab = "pending";
@@ -1181,13 +1205,33 @@ document.addEventListener("DOMContentLoaded", () => {
     walletPrefix: "prl1",
     defaultCost: 11,
     defaultPrice: 0.40,
-    onReady: ({ wallet, cost, prl_price }) => {
+    onReady: ({ wallet, cost }) => {
       walletCache = wallet;
       costCache = cost;
-      priceCache = prl_price;
+      
+      // Display + auto-refresh IMMEDIATELY
       updateSettingsDisplay();
       refresh();
       startAutoRefresh();
+      
+      // Fetch live price from DexScreener + auto-refresh every 60s
+      function updateLivePrice(p) {
+        if (p && p > 0) {
+          priceCache = p;
+          window._livePrice = p;
+          setText('settings-price-display', '$' + fmtNum(p, 4));
+          setText('setup-price-live', '$' + fmtNum(p, 4));
+          setText('live-price-value', '$' + fmtNum(p, 4));
+        }
+      }
+      fetchDexPrice().then(p => {
+        updateLivePrice(p);
+        updateSettingsDisplay();
+        refresh();
+      }).catch(() => {});
+      setInterval(() => {
+        fetchDexPrice().then(updateLivePrice).catch(() => {});
+      }, 60000);
     },
     onPageChange: (page) => {
       // No-op for now; data already rendered on every refresh

@@ -25,12 +25,10 @@ body { font-family: 'Inter', sans-serif; }
 .pool-btn.active { background: #064e3b; color: #6ee7b7; font-weight: 600; }
 .lang-btn { color: #cbd5e1; }
 .lang-btn.active { background: #064e3b; color: #6ee7b7; font-weight: 600; }
-
 input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monospace; }
 .profit { color: #22c55e !important; }
 .loss { color: #f87171 !important; }
 .neutral { color: #94a3b8 !important; }
-.expected { color: #a78bfa !important; }
 
 /* ============ MODERN CHART ============ */
 .modern-chart-wrap { position: relative; width: 100%; height: 240px; }
@@ -38,43 +36,30 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .chart-grid-line { stroke: rgba(52, 211, 153, 0.06); stroke-width: 1; stroke-dasharray: 2 4; }
 .chart-zero-line { stroke: rgba(52, 211, 153, 0.18); stroke-width: 1; }
 .chart-cursor {
-  stroke: rgba(167, 139, 250, 0.55);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
+  stroke: rgba(167, 139, 250, 0.55); stroke-width: 1; stroke-dasharray: 3 3;
+  pointer-events: none; transition: opacity 0.2s ease;
 }
 .chart-cursor-dot {
-  stroke: #0a0f1a;
-  stroke-width: 2;
-  pointer-events: none;
+  stroke: #0a0f1a; stroke-width: 2; pointer-events: none;
   transition: opacity 0.2s ease, cx 0.12s ease-out, cy 0.12s ease-out;
   filter: drop-shadow(0 0 8px currentColor);
 }
 .chart-hit { cursor: crosshair; }
 .chart-line {
-  fill: none;
-  stroke: url(#line-gradient);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill: none; stroke: url(#line-gradient); stroke-width: 2.5;
+  stroke-linecap: round; stroke-linejoin: round;
   filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.55));
-  stroke-dasharray: 2200;
-  stroke-dashoffset: 2200;
+  stroke-dasharray: 2200; stroke-dashoffset: 2200;
   animation: drawLine 1.5s cubic-bezier(0.65, 0, 0.35, 1) 0.2s forwards;
   pointer-events: none;
 }
 @keyframes drawLine { to { stroke-dashoffset: 0; } }
 .chart-area {
-  fill: url(#area-gradient);
-  opacity: 0;
-  animation: fadeIn 0.9s ease-out 0.5s forwards;
-  pointer-events: none;
+  fill: url(#area-gradient); opacity: 0;
+  animation: fadeIn 0.9s ease-out 0.5s forwards; pointer-events: none;
 }
 .chart-dot {
-  fill: #0a0f1a;
-  stroke-width: 2;
-  opacity: 0;
+  fill: #0a0f1a; stroke-width: 2; opacity: 0;
   animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
   pointer-events: none;
 }
@@ -82,31 +67,17 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 .chart-dot.dot-loss   { stroke: #f87171; filter: drop-shadow(0 0 5px rgba(248, 113, 113, 0.6)); }
 .chart-dot.dot-neutral { stroke: #94a3b8; }
 .chart-axis-text {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  fill: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  pointer-events: none;
-  user-select: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; fill: #475569;
+  text-transform: uppercase; letter-spacing: 0.04em; pointer-events: none; user-select: none;
 }
 .chart-tooltip {
-  position: absolute;
-  pointer-events: none;
+  position: absolute; pointer-events: none;
   background: linear-gradient(135deg, rgba(15, 20, 32, 0.97) 0%, rgba(20, 27, 45, 0.97) 100%);
-  border: 1px solid rgba(52, 211, 153, 0.35);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 11px;
-  color: #cbd5e1;
-  white-space: nowrap;
-  z-index: 50;
-  width: 140px;
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 8px;
+  padding: 8px 12px; font-size: 11px; color: #cbd5e1; white-space: nowrap; z-index: 50;
+  width: 140px; backdrop-filter: blur(8px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(52, 211, 153, 0.1);
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  opacity: 0; transform: translateY(-4px); transition: opacity 0.18s ease, transform 0.18s ease;
 }
 .chart-tooltip.visible { opacity: 1; transform: translateY(0); }
 .chart-tooltip .tt-time { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
@@ -128,35 +99,19 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
 
 /* Bottom nav (Android-style) */
 #bottom-nav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 100;
-  background: rgba(10, 15, 26, 0.85);
-  backdrop-filter: blur(16px);
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid rgba(52, 211, 153, 0.08);
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
 }
 .nav-btn {
-  flex: 1;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px;
-  padding: 8px 6px 10px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: #64748b;
-  transition: color 0.18s, transform 0.18s;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  position: relative;
-  min-width: 0;
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 8px 6px 10px; background: transparent; border: none; cursor: pointer;
+  color: #64748b; transition: color 0.18s, transform 0.18s;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.02em; position: relative; min-width: 0;
 }
-.nav-btn .nav-ic {
-  width: 22px; height: 22px;
-  display: flex; align-items: center; justify-content: center;
-}
+.nav-btn .nav-ic { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
 .nav-btn .nav-ic svg { width: 100%; height: 100%; }
 .nav-btn:hover { color: #cbd5e1; }
 .nav-btn:active { transform: scale(0.94); }
@@ -170,33 +125,20 @@ input[type="text"], input[type="number"] { font-family: 'JetBrains Mono', monosp
   box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
 }
 .nav-btn .nav-label { line-height: 1; }
-/* Body padding so content doesn't sit under nav */
 body { padding-bottom: 76px; }
 
 /* Reward tabs (Pending / Claimed) */
 .reward-tab {
-  flex: 1; padding: 10px 16px;
-  background: transparent;
-  color: #64748b;
-  font-weight: 500;
-  font-size: 13px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s;
-  border-radius: 6px;
+  flex: 1; padding: 10px 16px; background: transparent;
+  color: #64748b; font-weight: 500; font-size: 13px; border: none; cursor: pointer;
+  transition: all 0.15s; border-radius: 6px;
 }
-.reward-tab.active {
-  background: #064e3b;
-  color: #6ee7b7;
-  font-weight: 600;
-}
+.reward-tab.active { background: #064e3b; color: #6ee7b7; font-weight: 600; }
 
 /* Hero */
 .hero-title {
   background: linear-gradient(120deg, #6ee7b7 0%, #a78bfa 50%, #f472b6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
 /* Pool switching overlay */
@@ -230,31 +172,21 @@ body { padding-bottom: 76px; }
 
 /* Setup screen */
 #setup-screen {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
 }
-/* Tailwind .hidden loses to ID selector — force override */
 #setup-screen.hidden, #app-shell.hidden { display: none !important; }
 .setup-card {
   width: 100%; max-width: 540px;
   background: linear-gradient(160deg, #0f1420 0%, #0a0f1a 100%);
-  border: 1px solid #162032;
-  border-radius: 16px;
-  padding: 40px 32px;
+  border: 1px solid #162032; border-radius: 16px; padding: 40px 32px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
 /* Refresh icon button */
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 32px;
-  background: #0f1420;
-  border: 1px solid #1f2937;
-  border-radius: 8px;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 0.15s;
+  width: 36px; height: 32px; background: #0f1420; border: 1px solid #1f2937;
+  border-radius: 8px; color: #94a3b8; cursor: pointer; transition: all 0.15s;
 }
 .icon-btn:hover { color: #6ee7b7; border-color: rgba(52, 211, 153, 0.4); }
 .icon-btn:active { background: rgba(6, 78, 59, 0.5); transform: scale(0.92); }
@@ -277,55 +209,33 @@ body { padding-bottom: 76px; }
   from { opacity: 0; transform: scale(0.96); }
   to   { opacity: 1; transform: scale(1); }
 }
-
-/* Page enter animation */
-.spa-page {
-  animation: fadeInUp 0.35s ease-out;
-}
-/* Card glow + lift on hover */
+.spa-page { animation: fadeInUp 0.35s ease-out; }
 .card-glow { transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
 .card-glow:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 0 1px rgba(52,211,153,0.08), 0 8px 32px rgba(0,0,0,0.5);
   border-color: rgba(34, 211, 238, 0.15);
 }
-/* Stat numbers pulse on update */
 @keyframes valueFlash {
   0%   { color: #6ee7b7; text-shadow: 0 0 12px rgba(52,211,153,0.4); }
   100% { color: inherit; text-shadow: none; }
 }
 .value-flash { animation: valueFlash 0.6s ease-out; }
-
-/* Smooth transitions for interactive elements */
 button, a, input, .nav-btn, .period-btn, .pool-btn, .lang-btn, .reward-tab {
   transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.15s ease, opacity 0.18s ease;
 }
 button:active:not(:disabled) { transform: scale(0.97); }
-
-/* Bottom nav button bounce on tap */
 .nav-btn.active .nav-ic { animation: scaleIn 0.3s ease-out; }
-
-/* Pool/Lang dropdown slide-in */
-#pool-menu:not(.hidden), #lang-menu:not(.hidden) {
-  animation: slideInRight 0.18s ease-out;
-}
-
-/* Status bar fade */
+#pool-menu:not(.hidden), #lang-menu:not(.hidden) { animation: slideInRight 0.18s ease-out; }
 #status, #error { transition: opacity 0.25s ease; }
-
-/* Chart bar entrance stagger */
 .chart-bar { animation: barRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards; transform-origin: bottom; }
 @keyframes barRise { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
-
-/* Table row stagger */
 tbody tr { animation: fadeIn 0.3s ease-out backwards; }
-
-/* Hero brand smaller */
 .hero-title { line-height: 1; }
 </style>
-<script src="assets/period.js?v=37"></script>
-<script src="assets/cost-adv.js?v=37"></script>
-<script src="assets/spa.js?v=37"></script>
+<script src="assets/period.js?v=47"></script>
+<script src="assets/cost-adv.js?v=47"></script>
+<script src="assets/spa.js?v=47"></script>
 </head>
 <body class="bg-[#080b14] text-slate-100 antialiased min-h-screen">
 
@@ -348,7 +258,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
     </div>
     <h1 class="text-3xl lg:text-4xl font-display font-bold hero-title mb-2" data-i18n="setup_title">Calc Your Pool</h1>
     <p class="text-sm text-slate-400 mb-7" data-i18n="setup_subtitle">Enter your mining setup to start tracking real-time profit/loss.</p>
-
     <form id="setup-form" class="space-y-4">
       <div>
         <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="wallet_address">Wallet Address</label>
@@ -362,18 +271,17 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
             class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-700/60 transition">
         </div>
         <div>
-          <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="prl_price">PRL Price $</label>
-          <input id="setup-price" type="number" step="0.001" min="0" value="0.40"
-            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-700/60 transition">
+          <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5">PRL Price (Live)</label>
+          <p id="setup-price-live" class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-emerald-400 font-mono-num">Loading...</p>
         </div>
       </div>
+
       <div id="setup-error" class="hidden text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
       <button id="setup-save" type="submit"
         class="w-full mt-2 px-4 py-3 text-sm font-semibold bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-emerald-50 rounded-md transition shadow-lg shadow-emerald-900/30">
         <span data-i18n="setup_save">Save & Start Tracking</span>
       </button>
     </form>
-
     <p class="text-[10px] text-slate-600 mt-6 text-center leading-relaxed">
       <span data-i18n="setup_footnote">All settings stored locally in your browser. No account, no signup.</span>
     </p>
@@ -387,7 +295,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 <!-- Hero header -->
 <header class="mb-6 flex items-start justify-between gap-3">
   <div class="flex items-center gap-3 min-w-0 flex-1">
-    <!-- Logo: Pearl Fortune clover -->
     <div class="relative flex-shrink-0">
       <div class="w-11 h-11 rounded-xl bg-[#0a2e1a] flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-700/30 overflow-hidden">
         <span class="text-2xl">🍀</span>
@@ -430,10 +337,14 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
         </div>
       </div>
     </div>
+    <div id="live-price-badge" class="flex items-center gap-1.5 bg-[#0f1420]/80 border border-[#1f2937]/60 rounded-md px-2.5 py-1 text-[11px]">
+      <span class="text-slate-500">PRL</span>
+      <span id="live-price-value" class="text-emerald-400 font-mono-num font-semibold">Loading...</span>
+    </div>
   </div>
 </header>
 
-<!-- Bottom Tab Nav (Android-style) -->
+<!-- Bottom Tab Nav -->
 <nav id="bottom-nav">
   <div class="max-w-6xl mx-auto flex items-stretch">
     <button class="nav-btn active" data-tab="dashboard">
@@ -467,10 +378,10 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 </div>
 <div id="error" class="hidden mb-3 text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
 
-<!-- ============================ DASHBOARD ============================ -->
+<!-- ============================ DASHBOARD (REDESIGNED) ============================ -->
 <div class="spa-page" data-page="dashboard">
 
-<!-- Top stats -->
+<!-- Top stats: 4 cards -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
   <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
     <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="hashrate">Hashrate</p>
@@ -491,29 +402,36 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
     <p id="stat-workers-sub" class="text-[11px] text-slate-500 mt-1" data-i18n="online">online</p>
   </div>
   <div class="rounded-lg p-4 card-glow bg-[#0f1420]">
-    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5" data-i18n="total_paid">Total Paid</p>
-    <div class="flex items-baseline gap-1.5">
-      <span id="stat-paid" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
-      <span class="text-[11px] text-slate-600">PRL</span>
-    </div>
-    <p class="text-[11px] text-slate-500 mt-1" data-i18n="all_time">all time</p>
+    <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1.5">Mining Since</p>
+    <span id="stat-mining-since" class="text-xl font-semibold font-mono-num text-slate-100">—</span>
+    <p id="stat-mining-since-sub" class="text-[11px] text-slate-500 mt-1">active</p>
   </div>
 </div>
 
-<!-- Insight -->
+<!-- Earnings: Pending + Matured + Total Earned -->
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-4 mb-3 card-glow">
-  <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-3" data-i18n="insight">📊 Insight</p>
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
-    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="best_hour">Best Hour</span><span id="best-hour" class="font-mono-num text-emerald-400 mt-1">—</span></div>
-    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="worst_hour">Worst Hour</span><span id="worst-hour" class="font-mono-num text-red-400 mt-1">—</span></div>
-    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="hours_payout">Hours w/ Credit</span><span id="hours-hit" class="font-mono-num text-slate-300 mt-1">—</span></div>
-    <div class="flex flex-col"><span class="text-[10px] text-slate-600 uppercase tracking-wider" data-i18n="total_blocks_period">Total Blocks</span><span id="total-blocks-period" class="font-mono-num text-yellow-400 mt-1">—</span></div>
+  <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-3">💰 Earnings</p>
+  <div class="grid grid-cols-3 gap-3">
+    <div class="text-center">
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="pending_balance">Pending</p>
+      <p id="earn-pending" class="text-lg font-semibold font-mono-num text-emerald-400">—</p>
+      <p id="earn-pending-usd" class="text-[10px] text-slate-500 font-mono-num mt-0.5">—</p>
+    </div>
+    <div class="text-center">
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="maturing_blocks">Matured</p>
+      <p id="earn-matured" class="text-lg font-semibold font-mono-num text-yellow-400">—</p>
+      <p id="earn-matured-usd" class="text-[10px] text-slate-500 font-mono-num mt-0.5">—</p>
+    </div>
+    <div class="text-center">
+      <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1 font-semibold" data-i18n="total_earned">Total Earned</p>
+      <p id="earn-total" class="text-lg font-bold font-mono-num text-cyan-400">—</p>
+      <p id="earn-total-usd" class="text-[10px] text-slate-500 font-mono-num mt-0.5">—</p>
+    </div>
   </div>
 </div>
 
-<!-- Total Profit/Loss (hero side-by-side) -->
+<!-- P/L Hero: Total P/L big + Revenue + Total PRL + Cost -->
 <div class="bg-gradient-to-br from-[#0c1a2a] to-[#0a1018] border border-emerald-900/30 rounded-lg p-5 mb-3 card-glow">
-  <!-- TOP ROW: Label kiri vertical-aligned, BIG P/L value kanan -->
   <div class="flex items-center justify-between gap-4 mb-4">
     <div class="flex-shrink-0">
       <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold" data-i18n="total_pl_label">Total Profit / Loss</p>
@@ -521,7 +439,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
     </div>
     <div id="total-pl-big" class="text-4xl sm:text-5xl lg:text-6xl font-bold font-display font-mono-num leading-none text-slate-500 text-right">—</div>
   </div>
-  <!-- BOTTOM ROW: 3 stats centered grid -->
   <div class="grid grid-cols-3 gap-2 pt-4 border-t border-slate-800/60">
     <div class="text-center">
       <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="revenue">Revenue</p>
@@ -538,11 +455,11 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
   </div>
 </div>
 
-<!-- Hourly Breakdown (table first, then chart) -->
+<!-- Hourly Breakdown: Hour | Blocks | Cost | P/L est -->
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
   <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
     <div class="flex items-center gap-3">
-      <h2 id="chart-title" class="text-xs font-medium text-slate-300 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown</h2>
+      <h2 class="text-xs font-medium text-slate-300 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown</h2>
       <span id="period-loading" class="text-[10px] text-emerald-500 hidden">loading…</span>
     </div>
     <div id="period-selector" class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
@@ -556,9 +473,9 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
     <table class="w-full text-sm">
       <thead class="bg-[#0a0f1a] text-[10px] text-slate-600 uppercase tracking-wider">
         <tr>
-          <th class="px-3 py-2 text-left" data-i18n="th_hour">Hour</th>
+          <th class="px-3 py-2 text-left" data-i18n="th_hour">Hour (WIB)</th>
           <th class="px-3 py-2 text-right" data-i18n="th_blocks">Blk</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_prl_paid">PRL</th>
+          <th class="px-3 py-2 text-right">PRL</th>
           <th class="px-3 py-2 text-right" data-i18n="th_revenue">Revenue</th>
           <th class="px-3 py-2 text-right" data-i18n="th_cost">Cost</th>
           <th class="px-3 py-2 text-right" data-i18n="th_pl">P/L</th>
@@ -569,7 +486,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       </tbody>
     </table>
   </div>
-  <!-- Chart at the bottom -->
+  <!-- Chart -->
   <div class="border-t border-[#162032] px-5 pt-4 pb-3">
     <div class="flex items-center justify-between mb-2">
       <span class="text-[10px] text-slate-500 uppercase tracking-wider" data-i18n="chart_label">Visualization</span>
@@ -594,10 +511,10 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-4 mb-3 card-glow">
   <h3 class="text-[10px] text-slate-500 uppercase tracking-wider mb-2" data-i18n="legend_title">📖 Column Legend</h3>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] text-slate-400 leading-relaxed">
-    <div><span class="text-yellow-400 font-semibold">Blk</span> = <span>pool blocks found that hour (you participated via PPLNS)</span></div>
-    <div><span class="text-emerald-400 font-semibold">PRL</span> = <span>estimated PRL reward from your share ratio</span></div>
-    <div><span class="profit font-semibold">P/L +</span> = <span data-i18n="legend_profit">profit (credit value bigger than cost)</span></div>
-    <div><span class="loss font-semibold">P/L -</span> = <span data-i18n="legend_loss">loss (cost bigger than credit value)</span></div>
+    <div><span class="text-yellow-400 font-semibold">Blk</span> = <span>pool blocks found that hour</span></div>
+    <div><span class="text-emerald-400 font-semibold">P/L est</span> = <span>estimated P/L from proportional block share</span></div>
+    <div><span class="profit font-semibold">P/L +</span> = <span data-i18n="legend_profit">profit (revenue bigger than cost)</span></div>
+    <div><span class="loss font-semibold">P/L -</span> = <span data-i18n="legend_loss">loss (cost bigger than revenue)</span></div>
   </div>
 </div>
 
@@ -645,17 +562,21 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 
     <!-- Pending list -->
     <div id="rewards-pending-pane" class="px-5 py-4">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
         <div class="bg-[#080b14] border border-[#162032] rounded p-3">
-          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="pending_balance">Pending Balance</p>
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="pending_balance">Pending</p>
           <p id="r-pending" class="text-base font-semibold font-mono-num text-emerald-400">—</p>
         </div>
         <div class="bg-[#080b14] border border-[#162032] rounded p-3">
-          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="maturing_blocks">Total Paid</p>
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="maturing_blocks">Matured</p>
           <p id="r-maturing" class="text-base font-semibold font-mono-num text-yellow-400">—</p>
         </div>
         <div class="bg-[#080b14] border border-[#162032] rounded p-3">
-          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="next_maturity">Last Epoch</p>
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1 font-semibold" data-i18n="total_earned">Total Earned</p>
+          <p id="r-total-earned" class="text-base font-bold font-mono-num text-cyan-400">—</p>
+        </div>
+        <div class="bg-[#080b14] border border-[#162032] rounded p-3">
+          <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="next_maturity">Next Maturity</p>
           <p id="r-next-mature" class="text-base font-semibold font-mono-num text-slate-200">—</p>
         </div>
         <div class="bg-[#080b14] border border-[#162032] rounded p-3">
@@ -667,7 +588,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
         <table class="w-full text-sm">
           <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
             <tr>
-              <th class="px-3 py-2 text-left">When</th>
               <th class="px-3 py-2 text-left">Block</th>
               <th class="px-3 py-2 text-right">PRL</th>
               <th class="px-3 py-2 text-right">Status</th>
@@ -686,7 +606,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
         <table class="w-full text-sm">
           <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
             <tr>
-              <th class="px-3 py-2 text-left" data-i18n="th_when">When</th>
               <th class="px-3 py-2 text-right" data-i18n="th_amount">Amount (PRL)</th>
               <th class="px-3 py-2 text-right" data-i18n="th_fee">Fee</th>
               <th class="px-3 py-2 text-left" data-i18n="th_tx">Reason</th>
@@ -720,7 +639,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
         <thead class="bg-[#0a0f1a] text-[11px] text-slate-600 uppercase tracking-wider">
           <tr>
             <th class="px-3 py-2 text-left" data-i18n="th_block_height">Block</th>
-            <th class="px-3 py-2 text-left" data-i18n="th_when">When</th>
             <th class="px-3 py-2 text-right" data-i18n="th_reward">Reward (PRL)</th>
             <th class="px-3 py-2 text-left" data-i18n="th_finder">Finder</th>
             <th class="px-3 py-2 text-left" data-i18n="th_status">Status</th>
@@ -757,7 +675,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       </div>
       <div>
         <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="prl_price">PRL Price $</p>
-        <p id="settings-price-display" class="text-base font-semibold font-mono-num text-purple-400">—</p>
+        <p id="settings-price-display" class="text-base font-semibold font-mono-num text-emerald-400">—</p>
       </div>
       <div class="flex items-end justify-end">
         <button id="cost-adv-btn" type="button" class="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-700/40 text-emerald-300 text-[11px] px-3 py-1.5 rounded transition flex items-center gap-1">
@@ -766,7 +684,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       </div>
     </div>
 
-    <!-- Cost advanced (range overrides) panel -->
+    <!-- Cost advanced panel -->
     <div id="cost-adv-panel" class="hidden mt-4 pt-4 border-t border-[#1a2235]">
       <div class="flex items-center justify-between mb-2">
         <p class="text-[11px] text-slate-400 uppercase tracking-wider font-medium" data-i18n="cost_adv_title">⚙️ Cost Advanced</p>
@@ -808,8 +726,9 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
     <div class="bg-[#0f1420] border border-[#162032] rounded-lg p-5 card-glow">
       <h2 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4" data-i18n="wallet">Wallet</h2>
       <div class="space-y-2.5">
-        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pending_balance">Pending balance</span><span id="w-pending" class="text-xs text-slate-300 font-mono-num">—</span></div>
-        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="total_paid_label">Total paid</span><span id="w-maturing" class="text-xs text-slate-300 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="pending_balance">Pending</span><span id="w-pending" class="text-xs text-emerald-400 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="maturing_blocks">Matured</span><span id="w-maturing" class="text-xs text-yellow-400 font-mono-num">—</span></div>
+        <div class="flex justify-between"><span class="text-xs text-slate-500 font-semibold" data-i18n="total_earned">Total Earned</span><span id="w-total-earned" class="text-xs text-cyan-400 font-mono-num font-semibold">—</span></div>
         <div class="flex justify-between"><span class="text-xs text-slate-500">Last seen</span><span id="w-next-mature" class="text-xs text-slate-300 font-mono-num">—</span></div>
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="status_label">Status</span><span id="w-status" class="text-xs text-slate-300 font-mono-num">—</span></div>
         <div class="flex justify-between"><span class="text-xs text-slate-500" data-i18n="block_height_label">Block height</span><span id="w-shares" class="text-xs text-slate-300 font-mono-num">—</span></div>
@@ -840,12 +759,12 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 
 <footer class="mt-2 pb-6 text-center">
   <p class="text-[10px] text-slate-700 uppercase tracking-wider mb-1" data-i18n="footer_data">Data: pearlfortune.org · Auto-refresh 60s · Timezone: WIB (UTC+7)</p>
-  <p class="text-[10px] text-slate-700 max-w-2xl mx-auto leading-relaxed" data-i18n="footer_explain">Profit/Loss = PPLNS rewards × $price − cost. Cost charged flat per hour while mining.</p>
+  <p class="text-[10px] text-slate-700 max-w-2xl mx-auto leading-relaxed" data-i18n="footer_explain">Profit/Loss = PRL earned × $price − cost. Cost charged flat per hour while mining.</p>
 </footer>
 
 </div><!-- /max-w wrap -->
 </div><!-- /app-shell -->
 
-<script src="pearlfortune.js?v=37"></script>
+<script src="pearlfortune.js?v=47"></script>
 </body>
 </html>

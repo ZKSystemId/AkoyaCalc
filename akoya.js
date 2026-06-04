@@ -64,6 +64,7 @@ const I18N = {
     donate_title: "Support This Tool", donate_sub: "Donate PRL · Tip the dev", copy: "Copy", copied: "Copied!",
     pool_label: "Pool", invalid_wallet: "Wallet must start with 'prl1'",
     switching: "Switching to",
+    
     footer_data: "Data: akoyapool.com · Auto-refresh 60s · Timezone: WIB (UTC+7)",
     footer_explain: "Profit/Loss = PRL paid × $price − cost. Rig OFF (HR &lt; 5% peak) = no cost.",
   },
@@ -119,6 +120,7 @@ const I18N = {
     donate_title: "Dukung Tool Ini", donate_sub: "Donasi PRL · Tip developer", copy: "Salin", copied: "Tersalin!",
     pool_label: "Pool", invalid_wallet: "Wallet harus dimulai dengan 'prl1'",
     switching: "Pindah ke",
+    
     footer_data: "Data: akoyapool.com · Auto-refresh 60d · Zona: WIB (UTC+7)",
     footer_explain: "Profit/Loss = PRL dibayar × harga$ − cost. Rig OFF (HR &lt; 5% peak) = ga ada cost.",
   },
@@ -174,6 +176,7 @@ const I18N = {
     donate_title: "支持此工具", donate_sub: "捐赠 PRL · 给开发者打赏", copy: "复制", copied: "已复制!",
     pool_label: "矿池", invalid_wallet: "钱包必须以 'prl1' 开头",
     switching: "切换到",
+    
     footer_data: "数据: akoyapool.com · 自动刷新60秒 · 时区: WIB (UTC+7)",
     footer_explain: "盈亏 = PRL支付 × 价格$ − 成本。矿机关闭 (算力 &lt; 5% 峰值) = 无成本。",
   },
@@ -509,6 +512,24 @@ if (!Period.PERIODS.includes(currentPeriod)) currentPeriod = "24h";
 let walletCache = null;
 let costCache = 11;
 let priceCache = 0.4;
+window._livePrice = 0;
+const DEX_PAIR_URL = 'https://api.dexscreener.com/latest/dex/pairs/ethereum/0x89a67c6dee35db9815da2fb9191f0998a8b37c39';
+async function fetchDexPrice() {
+  try {
+    const r = await fetch(DEX_PAIR_URL);
+    const j = await r.json();
+    const pair = (j.pairs || [])[0];
+    if (pair && pair.priceUsd) {
+      const p = parseFloat(pair.priceUsd);
+      if (p > 0) return p;
+    }
+  } catch (e) { console.warn('DexScreener fetch failed:', e); }
+  return null;
+}
+// Fetch live price immediately on page load
+fetchDexPrice().then(p => {
+  if (p) { priceCache = p; window._livePrice = p; setText('live-price-value', '$' + fmtNum(p, 4)); }
+}).catch(() => {});
 
 // Reward tab state
 let rewardTab = "pending";
@@ -703,11 +724,13 @@ async function refresh() {
       b.cost = bucketCost;
       b.actual_revenue = revenue;
       b.actual_pl = revenue - bucketCost;
-      b.is_active = isPast;
-      totalPL += b.actual_pl;
-      totalPRL += (b.amount || 0);
-      totalCost += bucketCost;
-      totalRev += revenue;
+      b.is_active = (b.hashrate > 0) || (b.payouts > 0) || (b.my_blocks > 0);
+      if (b.is_active) {
+        totalPL += b.actual_pl;
+        totalPRL += (b.amount || 0);
+        totalCost += bucketCost;
+        totalRev += revenue;
+      }
       const isCompleted = now >= b.end;
       if (isCompleted) {
         if (b.actual_pl > bestPL) { bestPL = b.actual_pl; bestLabel = b.label; }
@@ -742,7 +765,7 @@ async function refresh() {
     const rowsToShow = buckets.slice().reverse();
     hbody.innerHTML = rowsToShow.map(b => {
       const isCurrent = (now >= b.start && now < b.end);
-      const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
+      const aCls = !b.is_active ? "neutral" : b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
       const dot = b.payouts > 0 ? `<span class="text-cyan-400">●</span>` : "";
       const hrColor = b.is_active && b.hashrate > 0 ? "text-emerald-400" : "text-slate-700";
       const hrText = b.hashrate > 0 ? fmtHash(b.hashrate) : (b.is_active ? "off" : "—");
@@ -756,7 +779,7 @@ async function refresh() {
         <td class="px-3 py-2 text-xs ${b.payouts > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${b.payouts > 0 ? fmtNum(b.amount, 1) + " " + dot : "—"}</td>
         <td class="px-3 py-2 text-xs ${revColor} font-mono-num text-right">${revText}</td>
         <td class="px-3 py-2 text-xs ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
-        <td class="px-3 py-2 text-xs ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
+        <td class="px-3 py-2 text-xs ${aCls} font-mono-num font-bold text-right">${b.is_active ? fmtPL(b.actual_pl) : "—"}</td>
       </tr>`;
     }).join("");
 
@@ -1031,13 +1054,33 @@ document.addEventListener("DOMContentLoaded", () => {
     walletPrefix: "prl1",
     defaultCost: 11,
     defaultPrice: 0.40,
-    onReady: ({ wallet, cost, prl_price }) => {
+    onReady: ({ wallet, cost }) => {
       walletCache = wallet;
       costCache = cost;
-      priceCache = prl_price;
+      
+      // Display + auto-refresh IMMEDIATELY
       updateSettingsDisplay();
       refresh();
       startAutoRefresh();
+      
+      // Fetch live price from DexScreener + auto-refresh every 60s
+      function updateLivePrice(p) {
+        if (p && p > 0) {
+          priceCache = p;
+          window._livePrice = p;
+          setText('settings-price-display', '$' + fmtNum(p, 4));
+          setText('setup-price-live', '$' + fmtNum(p, 4));
+          setText('live-price-value', '$' + fmtNum(p, 4));
+        }
+      }
+      fetchDexPrice().then(p => {
+        updateLivePrice(p);
+        updateSettingsDisplay();
+        refresh();
+      }).catch(() => {});
+      setInterval(() => {
+        fetchDexPrice().then(updateLivePrice).catch(() => {});
+      }, 60000);
     },
     onPageChange: (page) => {
       // No-op for now; data already rendered on every refresh

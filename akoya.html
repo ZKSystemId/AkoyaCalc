@@ -362,11 +362,11 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
             class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
         </div>
         <div>
-          <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5" data-i18n="prl_price">PRL Price $</label>
-          <input id="setup-price" type="number" step="0.001" min="0" value="0.40"
-            class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-cyan-700/60 transition">
+          <label class="text-[11px] text-slate-500 uppercase tracking-wider block mb-1.5">PRL Price (Live)</label>
+          <p id="setup-price-live" class="w-full bg-[#080b14] border border-[#1f2937] rounded-md px-3 py-2.5 text-sm text-cyan-400 font-mono-num">Loading...</p>
         </div>
       </div>
+
       <div id="setup-error" class="hidden text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-3 py-2"></div>
       <button id="setup-save" type="submit"
         class="w-full mt-2 px-4 py-3 text-sm font-semibold bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-cyan-50 rounded-md transition shadow-lg shadow-cyan-900/30">
@@ -429,6 +429,10 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
           <button data-lang="zh" type="button" class="lang-btn w-full px-3 py-2.5 text-[13px] text-left text-slate-300 active:bg-cyan-900/40 hover:bg-cyan-900/30 transition border-t border-[#1f2937] select-none">🇨🇳 中文</button>
         </div>
       </div>
+    </div>
+    <div id="live-price-badge" class="flex items-center gap-1.5 bg-[#0f1420]/80 border border-[#1f2937]/60 rounded-md px-2.5 py-1 text-[11px]">
+      <span class="text-slate-500">PRL</span>
+      <span id="live-price-value" class="text-cyan-400 font-mono-num font-semibold">Loading...</span>
     </div>
   </div>
 </header>
@@ -757,7 +761,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       </div>
       <div>
         <p class="text-[10px] text-slate-600 uppercase tracking-wider mb-1" data-i18n="prl_price">PRL Price $</p>
-        <p id="settings-price-display" class="text-base font-semibold font-mono-num text-purple-400">—</p>
+        <p id="settings-price-display" class="text-base font-semibold font-mono-num text-emerald-400">—</p>
       </div>
       <div class="flex items-end justify-end">
         <button id="cost-adv-btn" type="button" class="bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-700/40 text-cyan-300 text-[11px] px-3 py-1.5 rounded transition flex items-center gap-1">
