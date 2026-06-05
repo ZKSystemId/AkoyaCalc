@@ -9,6 +9,9 @@ let currentPool = "akoya";
 const API = "https://akoyapool.com/api/v1";
 const STORAGE_KEY = "akoya_hybrid_pl_settings";
 const POOL_KEY = "akoya";
+const corsProxy = (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`;
+const corsProxyFallback = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
+const corsProxyFallback2 = (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
 
 // ============ I18N ============
 const I18N = {
@@ -505,6 +508,29 @@ async function fetchJSON(url) {
   return r.json();
 }
 
+// Robust fetch: direct first (no proxy), then proxy fallback chain, with 1 retry
+async function fetchWithProxyFallback(rawUrl, timeout = 10000) {
+  const proxies = [null, corsProxy, corsProxyFallback, corsProxyFallback2];
+  let lastErr;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    for (const p of proxies) {
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), timeout);
+        const url = p ? p(rawUrl) : rawUrl;
+        const r = await fetch(url, { signal: ctl.signal });
+        clearTimeout(timer);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return await r.json();
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
+  }
+  throw lastErr || new Error("All fetch attempts failed");
+}
+
 // ============ STATE ============
 let currentPeriod = localStorage.getItem("akoya_period") || "24h";
 if (!Period.PERIODS.includes(currentPeriod)) currentPeriod = "24h";
@@ -565,7 +591,7 @@ function toggleCostAdv() {
 async function fetchPayoutsSince(wallet, sinceTs) {
   const all = [];
   for (let page = 1; page <= 50; page++) {
-    const r = await fetchJSON(`${API}/miners/${wallet}/payouts?page=${page}&page_size=200`);
+    const r = await fetchWithProxyFallback(`${API}/miners/${wallet}/payouts?page=${page}&page_size=200`);
     const items = r.data || [];
     if (!items.length) break;
     all.push(...items);
@@ -577,7 +603,7 @@ async function fetchPayoutsSince(wallet, sinceTs) {
 async function fetchBlocksSince(sinceTs) {
   const all = [];
   for (let page = 1; page <= 80; page++) {
-    const r = await fetchJSON(`${API}/pool/blocks?page=${page}&page_size=100`);
+    const r = await fetchWithProxyFallback(`${API}/pool/blocks?page=${page}&page_size=100`);
     const blocks = r.data || [];
     if (!blocks.length) break;
     all.push(...blocks);
@@ -587,7 +613,7 @@ async function fetchBlocksSince(sinceTs) {
   return all;
 }
 async function fetchHashrateHistory(wallet) {
-  const r = await fetchJSON(`${API}/miners/${wallet}/hashrate_history`);
+  const r = await fetchWithProxyFallback(`${API}/miners/${wallet}/hashrate_history`);
   return (r.data && r.data.samples) || [];
 }
 
@@ -646,9 +672,9 @@ async function refresh() {
 
   try {
     const [miner, poolStats, poolLuck] = await Promise.all([
-      fetchJSON(`${API}/miners/${wallet}`),
-      fetchJSON(`${API}/pool/stats`),
-      fetchJSON(`${API}/pool/luck`),
+      fetchWithProxyFallback(`${API}/miners/${wallet}`),
+      fetchWithProxyFallback(`${API}/pool/stats`),
+      fetchWithProxyFallback(`${API}/pool/luck`),
     ]);
     const m = miner.data || {};
     const ps = poolStats.data || {};

@@ -518,23 +518,27 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-// Robust fetch with proxy fallback chain
+// Robust fetch: direct first (no proxy), then proxy fallback chain, with 1 retry
 async function fetchWithProxyFallback(rawUrl, timeout = 10000) {
-  const proxies = [corsProxy, corsProxyFallback, corsProxyFallback2];
+  const proxies = [null, corsProxy, corsProxyFallback, corsProxyFallback2]; // null = direct
   let lastErr;
-  for (const p of proxies) {
-    try {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), timeout);
-      const r = await fetch(p(rawUrl), { signal: ctl.signal });
-      clearTimeout(timer);
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return await r.json();
-    } catch (e) {
-      lastErr = e;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    for (const p of proxies) {
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), timeout);
+        const url = p ? p(rawUrl) : rawUrl;
+        const r = await fetch(url, { signal: ctl.signal });
+        clearTimeout(timer);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return await r.json();
+      } catch (e) {
+        lastErr = e;
+      }
     }
+    if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
   }
-  throw lastErr || new Error("All proxies failed");
+  throw lastErr || new Error("All fetch attempts failed");
 }
 
 // ============ STATE ============
