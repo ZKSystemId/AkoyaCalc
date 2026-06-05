@@ -728,26 +728,28 @@ async function refresh() {
     const totalEarnedPrl = pendingPrl + maturedPrl;
 
     // ====================================================
-    // MINING SINCE — oldest block we can find
+    // ACTIVE MINING SESSION — only count recent shares
     // ====================================================
-    // Mining since — oldest share timestamp (not pool blocks which are limited to 20)
+    const FRESH_SHARE_WINDOW = 3600; // 1 hour — shares older than this = stale session
+    const nowSec = Math.floor(Date.now() / 1000);
+    const recentShareTimestamps = [
+      ...sharesRows.map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0),
+      ...pendingRows.map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0),
+    ].filter(ts => ts > 0 && (nowSec - ts) < FRESH_SHARE_WINDOW).sort((a, b) => a - b);
     const allShareTimestamps = [
       ...sharesRows.map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0),
       ...pendingRows.map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0),
     ].filter(ts => ts > 0).sort((a, b) => a - b);
     const miningSinceTs = allShareTimestamps.length > 0 ? allShareTimestamps[0] : null;
-    const nowSec = Math.floor(Date.now() / 1000);
+    const isActivelyMining = isOnline || recentShareTimestamps.length > 0;
     const hoursActive = miningSinceTs ? Math.max(0.01, (nowSec - miningSinceTs) / 3600) : 0;
 
     // ====================================================
-    // COST — total cost since mining started
+    // COST & REVENUE — only when actively mining
     // ====================================================
-    const totalCost = miningSinceTs ? costAdv.costInRange(miningSinceTs, nowSec, cost) : 0;
-
-    // ====================================================
-    // REVENUE & P/L
-    // ====================================================
-    const totalRevenue = totalEarnedPrl * prlPrice;
+    const totalCost = isActivelyMining ? costAdv.costInRange(miningSinceTs || nowSec, nowSec, cost) : 0;
+    const activeRevenue = isActivelyMining ? totalEarnedPrl * prlPrice : 0;
+    const totalRevenue = activeRevenue;
     const totalPL = totalRevenue - totalCost;
 
     // ====================================================
@@ -856,8 +858,8 @@ async function refresh() {
     }
     
     const totalPeriodBlocks = buckets.reduce((s, b) => s + b.my_blocks, 0);
-    const prlPerBlock = totalPeriodBlocks > 0 ? totalEarnedPrl / totalPeriodBlocks : 0;
-    const revenuePerBlock = totalPeriodBlocks > 0 ? totalRevenue / totalPeriodBlocks : 0;
+    const prlPerBlock = totalPeriodBlocks > 0 && isActivelyMining ? totalEarnedPrl / totalPeriodBlocks : 0;
+    const revenuePerBlock = totalPeriodBlocks > 0 && isActivelyMining ? totalRevenue / totalPeriodBlocks : 0;
     
     for (const b of buckets) {
       b.prl_amount = b.my_blocks * prlPerBlock;
