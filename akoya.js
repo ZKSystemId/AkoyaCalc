@@ -9,9 +9,12 @@ let currentPool = "akoya";
 const API = "https://akoyapool.com/api/v1";
 const STORAGE_KEY = "akoya_hybrid_pl_settings";
 const POOL_KEY = "akoya";
-const corsProxy = (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`;
+// CORS proxy chain: direct first, then local proxy, then remote proxies
+const LOCAL_PROXY = (typeof window !== "undefined" && window.location.hostname === "localhost") 
+  ? window.location.protocol + "//" + window.location.hostname + ":8766" : "";
+const corsProxy = (url) => LOCAL_PROXY ? `${LOCAL_PROXY}/?url=${encodeURIComponent(url)}` : `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
 const corsProxyFallback = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
-const corsProxyFallback2 = (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+const corsProxyFallback2 = (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`;
 
 // ============ I18N ============
 const I18N = {

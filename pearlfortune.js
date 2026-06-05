@@ -7,9 +7,12 @@ const POOLS = {
 };
 let currentPool = "pearlfortune";
 const API = "https://pearlfortune.org/api/v1";
-const corsProxy = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
-const corsProxyFallback = (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`;
-const corsProxyFallback2 = (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+// CORS proxy chain: direct first, then local proxy, then remote proxies
+const LOCAL_PROXY = (typeof window !== "undefined" && window.location.hostname === "localhost") 
+  ? window.location.protocol + "//" + window.location.hostname + ":8766" : "";
+const corsProxy = (url) => LOCAL_PROXY ? `${LOCAL_PROXY}/?url=${encodeURIComponent(url)}` : `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
+const corsProxyFallback = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
+const corsProxyFallback2 = (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`;
 const STORAGE_KEY = "pearlfortune_hybrid_pl_settings";
 const POOL_KEY = "pearlfortune";
 const ATOMIC_UNITS = 1e8;
