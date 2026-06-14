@@ -810,27 +810,30 @@ async function refresh() {
     const lastEpochTs = myEpochBlocks.length ? Math.max(...myEpochBlocks.map(b => b.found_at)) : 0;
     const isOnline = (now - lastEpochTs < 7200) || workers.length > 0;
 
-    // Hashrate inference from last hour credit (pearlhash trick)
+    // Hashrate calculation:
+    // PRIMARY: sum of gpu_info[].hashrate from connected_workers (matches pearlhash.xyz dashboard)
+    // FALLBACK: estimate from last-hour epoch credits (only when no workers connected)
     const _poolHash = stats.hashrate || 0;
     const _netHash = chain.networkhashps || 0;
     const _blockTime = chain.avg_block_time_s || 124;
     const _BLOCK_REWARD = 2715;
     const _POOL_FEE = 0.05;
-    const recentCredits = txs
-      .filter(tx => tx.amount > 0 && /credit/i.test(tx.reason || "") && (tx.timestamp / 1000) >= now - 7200)
-      .sort((a, b) => b.timestamp - a.timestamp);
-    const lastHourCredit = recentCredits.length > 0 ? recentCredits[0].amount : 0;
     let myHashEst = 0;
-    if (_poolHash > 0 && _netHash > 0 && lastHourCredit > 0) {
-      const poolBlocksPerHour = (_poolHash / _netHash) * (3600 / _blockTime);
-      const poolCreditPerHour = poolBlocksPerHour * _BLOCK_REWARD * (1 - _POOL_FEE);
-      if (poolCreditPerHour > 0) myHashEst = _poolHash * (lastHourCredit / poolCreditPerHour);
+    // PRIMARY: live worker hashrate (this is what pearlhash.xyz shows on /account/<wallet>)
+    for (const w of workers) {
+      const gpuSum = (w.gpu_info || []).reduce((s, g) => s + (parseFloat(g.hashrate) || 0), 0);
+      myHashEst += gpuSum || (parseFloat(w.hashrate) || parseFloat(w.hash_rate) || 0);
     }
-    if (myHashEst === 0) {
-      for (const w of workers) {
-        // Pearlhash API: hashrate lives in gpu_info[].hashrate (sum across GPUs)
-        const gpuSum = (w.gpu_info || []).reduce((s, g) => s + (parseFloat(g.hashrate) || 0), 0);
-        myHashEst += gpuSum || (parseFloat(w.hashrate) || parseFloat(w.hash_rate) || 0);
+    // FALLBACK: estimate from last-hour credit only when workers are offline (no live hashrate)
+    if (myHashEst === 0 && _poolHash > 0 && _netHash > 0) {
+      const recentCredits = txs
+        .filter(tx => tx.amount > 0 && /credit/i.test(tx.reason || "") && (tx.timestamp / 1000) >= now - 7200)
+        .sort((a, b) => b.timestamp - a.timestamp);
+      const lastHourCredit = recentCredits.length > 0 ? recentCredits[0].amount : 0;
+      if (lastHourCredit > 0) {
+        const poolBlocksPerHour = (_poolHash / _netHash) * (3600 / _blockTime);
+        const poolCreditPerHour = poolBlocksPerHour * _BLOCK_REWARD * (1 - _POOL_FEE);
+        if (poolCreditPerHour > 0) myHashEst = _poolHash * (lastHourCredit / poolCreditPerHour);
       }
     }
 
