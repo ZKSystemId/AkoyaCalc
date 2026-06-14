@@ -9,12 +9,14 @@ let currentPool = "pearlhash";
 const API = "https://pearlhash.xyz/api";
 // CORS proxy chain: direct first, then local proxy, then remote proxies
 const _isLocal = (typeof window !== "undefined") && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname.match(/^(10|172\.(1[6-9]|2[0-9]|3[01])|192\.168)\./));
+// Production CORS proxy: Cloudflare Worker (immune to pearlhash.xyz CF bot challenge)
+const CF_PROXY = "https://akoyacalc-cors.skillmd.workers.dev";
 const LOCAL_PROXY = (typeof window !== "undefined")
-  ? (_isLocal ? (window.location.protocol + "//" + window.location.hostname + ":8766") : (window.location.origin + "/api/proxy"))
+  ? (_isLocal ? (window.location.protocol + "//" + window.location.hostname + ":8766") : CF_PROXY)
   : "";
-const corsProxy = (url) => LOCAL_PROXY ? `${LOCAL_PROXY}/?url=${encodeURIComponent(url)}` : `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
-const corsProxyFallback = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
-const corsProxyFallback2 = (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`;
+const corsProxy = (url) => LOCAL_PROXY ? `${LOCAL_PROXY}/?url=${encodeURIComponent(url)}` : `${CF_PROXY}/?url=${encodeURIComponent(url)}`;
+const corsProxyFallback = (url) => `${CF_PROXY}/?url=${encodeURIComponent(url)}`;
+const corsProxyFallback2 = (url) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`;
 const STORAGE_KEY = "pearl_hybrid_pl_settings";
 const POOL_KEY = "pearlhash";
 
