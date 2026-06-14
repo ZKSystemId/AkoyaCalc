@@ -522,9 +522,13 @@ async function fetchJSON(url) {
   return r.json();
 }
 
-// Robust fetch: direct first (no proxy), then proxy fallback chain, with 1 retry
+// Robust fetch: try local proxy FIRST when on localhost (avoids CORS), else direct first
+// Drops dead corsproxy.io (returns 403 since 2026-06)
 async function fetchWithProxyFallback(rawUrl, timeout = 10000) {
-  const proxies = [null, corsProxy, corsProxyFallback, corsProxyFallback2]; // null = direct
+  // Order matters: on localhost, local proxy is fastest + always works
+  const proxies = _isLocal
+    ? [corsProxy, null, corsProxyFallback]              // local: proxy → direct → codetabs
+    : [null, corsProxy, corsProxyFallback];             // prod:  direct → serverless → codetabs
   let lastErr;
   for (let attempt = 0; attempt < 2; attempt++) {
     for (const p of proxies) {
@@ -613,7 +617,8 @@ async function fetchPearlChain() {
 }
 async function fetchPearlPoolBlocks() {
   // Pool-wide recent blocks via pool-wallet coinbase txs (with proxy fallback chain)
-  return fetchWithProxyFallback(`${API}/pool-wallet-txs`, 12000).catch(() => ({}));
+  // 2MB JSON payload — give it 30s before giving up
+  return fetchWithProxyFallback(`${API}/pool-wallet-txs`, 30000).catch(() => ({}));
 }
 
 // Parse "1.86 EH/s", "274.50 TH/s" etc → raw H/s
@@ -682,13 +687,31 @@ async function refresh() {
 
   try {
     // Parallel fetch with proxy fallback chain
-    // corsproxy.io fast (~700ms with browser Origin header), codetabs/allorigins as fallback
-    const [accountResp, statsResp, chainResp, poolBlocksResp] = await Promise.all([
+    // FAST PATH: fetch top-3 (small) endpoints first → render hashrate/balance/etc IMMEDIATELY.
+    // pool-wallet-txs is 2MB+ and slow (~20s) — only fetch on first call, then cache.
+    const [accountResp, statsResp, chainResp] = await Promise.all([
       fetchPearlAccount(wallet),
       fetchPearlStats(),
       fetchPearlChain(),
-      fetchPearlPoolBlocks(),
     ]);
+    // Use cached pool blocks if recent (<5min), else background-fetch + use cached for now
+    const POOL_BLOCKS_TTL = 5 * 60 * 1000;
+    const cacheAge = Date.now() - (window._poolBlocksCacheTs || 0);
+    let poolBlocksResp = window._poolBlocksCache;
+    if (!poolBlocksResp || cacheAge > POOL_BLOCKS_TTL) {
+      // First call: must wait. Subsequent: use cache + bg-refresh.
+      if (!poolBlocksResp) {
+        poolBlocksResp = await fetchPearlPoolBlocks();
+        window._poolBlocksCache = poolBlocksResp;
+        window._poolBlocksCacheTs = Date.now();
+      } else {
+        // Stale cache: render with stale, refresh in background
+        fetchPearlPoolBlocks().then(fresh => {
+          window._poolBlocksCache = fresh;
+          window._poolBlocksCacheTs = Date.now();
+        }).catch(() => {});
+      }
+    }
     const account = accountResp || {};
     const stats = statsResp || {};
     const chain = chainResp || {};
@@ -700,11 +723,12 @@ async function refresh() {
     const skeleton = Period.buildSkeleton(currentPeriod);
     const sinceTs = skeleton.periodStart;
 
-    // Pearlhash data: account.balance_transactions (epoch credits) + workers
+    // Pearlhash data: account.balance_transactions (epoch credits) + workers + pending_rewards (live)
     const txs = account.balance_transactions || [];
     const workers = account.connected_workers || [];
+    const pendingRewards = account.pending_rewards || { total_pending: 0, epochs: [] };
 
-    // myEpochBlocks: epoch credits user dapet (dipakai untuk hourly P/L bucket)
+    // myEpochBlocks: gabungan dari (a) historical balance_transactions credits + (b) live pending_rewards.epochs
     const myEpochBlocks = [];
     const payouts = [];
     for (const tx of txs) {
@@ -729,6 +753,20 @@ async function refresh() {
           status: "confirmed",  // Auto Payment txs SUDAH dibayar
         });
       }
+    }
+    // Live pending_rewards.epochs → push as immature (not yet credited to balance_transactions)
+    for (const ep of (pendingRewards.epochs || [])) {
+      const m = (ep.epoch_label || "").match(/(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC/);
+      const epochStart = m ? Math.floor(new Date(m[1] + " UTC").getTime() / 1000) : Math.floor(Date.now() / 1000);
+      myEpochBlocks.push({
+        height: null,
+        found_at: epochStart,
+        found_by: wallet,
+        reward: ep.amount || 0,
+        share: ep.share || 0,
+        immature_tx: ep.immature_tx || 0,
+        status: "immature",
+      });
     }
 
     // allBlocks: SEMUA pool blocks dari pool-wallet coinbase txs
@@ -756,10 +794,13 @@ async function refresh() {
     _payoutsAll = payouts.slice();
     _blocksAll = allBlocks.slice();
 
-    // Pending balance = sum of all txs (pearlhash convention)
-    let pendingBalance = 0;
-    for (const tx of txs) pendingBalance += tx.amount;
-    pendingBalance = Math.max(0, pendingBalance);
+    // Pending balance = LIVE pending_rewards.total_pending (immature epoch credits, not yet on chain)
+    // Falls back to summing balance_transactions if API didn't return pending_rewards.
+    let pendingBalance = parseFloat(pendingRewards.total_pending) || 0;
+    if (pendingBalance === 0) {
+      for (const tx of txs) pendingBalance += tx.amount;
+      pendingBalance = Math.max(0, pendingBalance);
+    }
 
     // Build minimal m/ps/pl shape compatible with rest of code
     const now = Math.floor(Date.now() / 1000);
@@ -783,7 +824,11 @@ async function refresh() {
       if (poolCreditPerHour > 0) myHashEst = _poolHash * (lastHourCredit / poolCreditPerHour);
     }
     if (myHashEst === 0) {
-      for (const w of workers) myHashEst += (w.hashrate || w.hash_rate || 0);
+      for (const w of workers) {
+        // Pearlhash API: hashrate lives in gpu_info[].hashrate (sum across GPUs)
+        const gpuSum = (w.gpu_info || []).reduce((s, g) => s + (parseFloat(g.hashrate) || 0), 0);
+        myHashEst += gpuSum || (parseFloat(w.hashrate) || parseFloat(w.hash_rate) || 0);
+      }
     }
 
     const m = {
@@ -797,17 +842,22 @@ async function refresh() {
       is_online: isOnline,
       accepted_shares24_h: 0,
       total_shares24_h: 0,
-      instances: workers.map(w => ({
-        is_connected: w.online !== false && (!w.last_seen_at || (Math.floor(Date.now()/1000) - (w.last_seen_at || w.last_share_at || 0)) < 900),
-        worker_name: w.name || w.worker_name || "—",
-        // Defensive: hashrate could be raw number, or formatted string ("X TH/s") — handle both
-        hashrate: typeof w.hashrate === "string" ? parseHashStr(w.hashrate)
-                : typeof w.hash_rate === "string" ? parseHashStr(w.hash_rate)
-                : parseFloat(w.hashrate || w.hash_rate || 0),
-        shares1_h: w.shares1_h || w.shares_1h || 0,
-        stale_shares1_h: w.stale_shares1_h || 0,
-        last_seen_at: w.last_seen_at || w.last_share_at || null,
-      })),
+      instances: workers.map(w => {
+        // Pearlhash API: hashrate lives in gpu_info[].hashrate (sum across GPUs in this worker)
+        const gpuSum = (w.gpu_info || []).reduce((s, g) => s + (parseFloat(g.hashrate) || 0), 0);
+        const hr = gpuSum
+                || (typeof w.hashrate === "string" ? parseHashStr(w.hashrate) : parseFloat(w.hashrate))
+                || (typeof w.hash_rate === "string" ? parseHashStr(w.hash_rate) : parseFloat(w.hash_rate))
+                || 0;
+        return {
+          is_connected: w.online !== false && (!w.last_seen_at || (Math.floor(Date.now()/1000) - (w.last_seen_at || w.last_share_at || 0)) < 900),
+          worker_name: w.name || w.worker_name || "—",
+          hashrate: hr,
+          shares1_h: w.shares1_h || w.shares_1h || 0,
+          stale_shares1_h: w.stale_shares1_h || 0,
+          last_seen_at: w.last_seen_at || w.last_share_at || null,
+        };
+      }),
     };
     const ps = {
       total_hashrate: _poolHash,

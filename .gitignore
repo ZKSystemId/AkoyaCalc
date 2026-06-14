@@ -15,3 +15,7 @@ npm-debug.log*
 # Backup files
 *.bak
 *.bak.*
+
+# Local dev / test scripts (not part of repo)
+_serve.py
+_test_render.js
