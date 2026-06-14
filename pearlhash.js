@@ -689,30 +689,31 @@ async function refresh() {
 
   try {
     // Parallel fetch with proxy fallback chain
-    // FAST PATH: fetch top-3 (small) endpoints first → render hashrate/balance/etc IMMEDIATELY.
-    // pool-wallet-txs is 2MB+ and slow (~20s) — only fetch on first call, then cache.
+    // FAST PATH: only fetch the 3 small endpoints (account, stats, chain) for initial render.
+    // pool-wallet-txs is 1.4MB+ from a slow origin (often 30s timeout). It only feeds the
+    // pool-blocks table, which is non-essential. Render the rest immediately, fetch heavy
+    // payload in background, and re-render block table when it arrives.
     const [accountResp, statsResp, chainResp] = await Promise.all([
       fetchPearlAccount(wallet),
       fetchPearlStats(),
       fetchPearlChain(),
     ]);
-    // Use cached pool blocks if recent (<5min), else background-fetch + use cached for now
+    // Use cached pool blocks if recent (<5min). Otherwise fire-and-forget.
     const POOL_BLOCKS_TTL = 5 * 60 * 1000;
     const cacheAge = Date.now() - (window._poolBlocksCacheTs || 0);
     let poolBlocksResp = window._poolBlocksCache;
     if (!poolBlocksResp || cacheAge > POOL_BLOCKS_TTL) {
-      // First call: must wait. Subsequent: use cache + bg-refresh.
-      if (!poolBlocksResp) {
-        poolBlocksResp = await fetchPearlPoolBlocks();
-        window._poolBlocksCache = poolBlocksResp;
-        window._poolBlocksCacheTs = Date.now();
-      } else {
-        // Stale cache: render with stale, refresh in background
-        fetchPearlPoolBlocks().then(fresh => {
+      // Background-only fetch: never block the initial render
+      fetchPearlPoolBlocks().then(fresh => {
+        if (fresh && (Array.isArray(fresh.transactions) || Array.isArray(fresh.txs))) {
           window._poolBlocksCache = fresh;
           window._poolBlocksCacheTs = Date.now();
-        }).catch(() => {});
-      }
+          // Trigger one re-render so block table shows fresh data
+          setTimeout(() => { if (typeof refresh === 'function' && walletCache) refresh(); }, 0);
+        }
+      }).catch(() => {});
+      // Use empty if no cache at all (block table just shows "no data" first time)
+      if (!poolBlocksResp) poolBlocksResp = { transactions: [] };
     }
     const account = accountResp || {};
     const stats = statsResp || {};
