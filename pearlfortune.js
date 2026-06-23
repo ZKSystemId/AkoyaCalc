@@ -747,11 +747,10 @@ async function refresh() {
     const hoursActive = miningSinceTs ? Math.max(0.01, (nowSec - miningSinceTs) / 3600) : 0;
 
     // ====================================================
-    // COST & REVENUE — only when actively mining
+    // COST & REVENUE — all-time PRL
     // ====================================================
-    const totalCost = isActivelyMining ? costAdv.costInRange(miningSinceTs || nowSec, nowSec, cost) : 0;
-    const activeRevenue = isActivelyMining ? totalEarnedPrl * prlPrice : 0;
-    const totalRevenue = activeRevenue;
+    const totalRevenue = totalEarnedPrl * prlPrice;
+    const totalCost = miningSinceTs ? costAdv.costInRange(miningSinceTs, nowSec, cost) : 0;
     const totalPL = totalRevenue - totalCost;
 
     // ====================================================
