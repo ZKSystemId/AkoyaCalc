@@ -531,8 +531,8 @@ async function fetchWithProxyFallback(rawUrl, timeout = 10000) {
 }
 
 // ============ STATE ============
-let currentPeriod = localStorage.getItem("pearlfortune_period") || "24h";
-if (!Period.PERIODS.includes(currentPeriod)) currentPeriod = "24h";
+let currentPeriod = localStorage.getItem("pearlfortune_period") || "12h";
+if (!Period.PERIODS.includes(currentPeriod)) currentPeriod = "12h";
 
 let walletCache = null;
 let costCache = 11;
@@ -816,66 +816,70 @@ async function refresh() {
     setText("w-shares", latestHeight ? "#" + latestHeight : "—");
 
     // ====================================================
-    // HOURLY TABLE — count blocks by WIB hour directly
+    // HOURLY TABLE — PRL per hour from pending_hourly + shares (matured)
     // ====================================================
     const WIB_OFFSET = 7 * 3600;
-    // Use latest block time as current hour (matches pearlfortune.org website)
-    // API generated_at can be BEHIND latest block created_at
-    const allTs = [...sharesRows, ...pendingRows].map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0).filter(t => t > 0);
-    const latestBlockTs = allTs.length > 0 ? Math.max(...allTs) : apiNow;
-    const curRef = Math.max(apiNow, latestBlockTs); // pick whichever is more recent
-    const curRefWIB = curRef + WIB_OFFSET;
-    const curWIBHour = Math.floor(curRefWIB / 3600) * 3600;
-    
-    // Count blocks per WIB hour from created_at strings (already WIB)
-    const hourBlockCounts = {};
-    const hourTsMap = {};
-    const allRows = [...sharesRows, ...pendingRows.filter(r => !sharesRows.some(s => s.block_height === r.block_height))];
-    for (const r of allRows) {
-      if (!r.created_at) continue;
-      const parts = r.created_at.split(/[- :]/);
-      if (parts.length < 6) continue;
-      const h = ((parseInt(parts[3]) - 1) + 24) % 24;
-      const key = String(h).padStart(2, "0") + ":00";
-      hourBlockCounts[key] = (hourBlockCounts[key] || 0) + 1;
-      // Timestamp for cost calc
-      const ts = apiTimeToUTC(r.created_at);
-      if (!hourTsMap[key] || ts < hourTsMap[key].min) hourTsMap[key] = { min: ts, max: ts };
-      if (ts > hourTsMap[key].max) hourTsMap[key].max = ts;
-    }
-    
-    // Build fresh share timestamps per WIB hour (for determining which hours are ACTIVELY mined)
-    const freshSharesPerHour = {};
-    for (const ts of recentShareTimestamps) {
-      const wibTs = ts + WIB_OFFSET;
-      const h = Math.floor(wibTs / 3600);
-      freshSharesPerHour[h] = (freshSharesPerHour[h] || 0) + 1;
+
+    // Active hours from hourly_shares (to filter matured blocks)
+    const hourlySharesData = (miner.hourly_shares && miner.hourly_shares.series) || [];
+    const activeHours = new Set();
+    for (const s of hourlySharesData) {
+      if (s.hour && s.share_sum > 0) activeHours.add(s.hour);
     }
 
-    // Build period hours (24h = last 24 hours in WIB)
+    // Collect PRL per UTC hour
+    const hourPrlMap = {}; // UTC hour epoch -> { prl, isEst }
+
+    // 1. Pending: use pending_estimate_hourly_atomic (per-hour PRL breakdown) — estimate
+    const pendingHourly = (miner.pending_shares && miner.pending_shares.pending_estimate_hourly_atomic) || [];
+    for (const ph of pendingHourly) {
+      if (!ph.hour || !ph.amount_atomic) continue;
+      hourPrlMap[ph.hour] = { prl: ph.amount_atomic / ATOMIC_UNITS, isEst: true };
+    }
+
+    // 2. Matured: use sharesRows (has block timestamps), filter by active hours — fixed
+    for (const r of sharesRows) {
+      if (!r.created_at || !r.credit_amount) continue;
+      const ts = apiTimeToUTC(r.created_at);
+      if (ts <= 0) continue;
+      const hourEpoch = Math.floor(ts / 3600) * 3600;
+      // Only include if this hour is in active hours (current session)
+      if (!activeHours.has(hourEpoch)) continue;
+      if (!hourPrlMap[hourEpoch]) {
+        hourPrlMap[hourEpoch] = { prl: 0, isEst: false };
+      }
+      hourPrlMap[hourEpoch].prl += (r.credit_amount || 0) / ATOMIC_UNITS;
+      hourPrlMap[hourEpoch].isEst = false; // matured = not estimate
+    }
+
+    // Current WIB hour reference
+    const curRef = apiNow;
+    const curRefWIB = curRef + WIB_OFFSET;
+    const curWIBHour = Math.floor(curRefWIB / 3600) * 3600;
+
+    // Build period hours
     const periodHours = currentPeriod === "1h" ? 1 : currentPeriod === "6h" ? 6 : currentPeriod === "12h" ? 12 : 24;
     const buckets = [];
+
     for (let i = periodHours - 1; i >= 0; i--) {
-      const start = curWIBHour - (i * 3600);
-      const wibH = ((Math.floor(start / 3600) - 1) % 24 + 24) % 24;
+      const startWIB = curWIBHour - (i * 3600);
+      const wibH = Math.floor(startWIB / 3600) % 24;
       const label = String(wibH).padStart(2, "0") + ":00";
-      const blkCount = hourBlockCounts[label] || 0;
-      const isCurrent = (i === 0);
-      const hourEpoch = Math.floor(start / 3600);
-      // Active = has fresh shares in this hour (not just historical blocks)
-      const isActive = isCurrent ? isActivelyMining : (freshSharesPerHour[hourEpoch] > 0);
-      // Cost: full hourly cost only if actively mining this hour
+      const hourEpoch = startWIB - WIB_OFFSET;
+      const hourData = hourPrlMap[hourEpoch];
+      const prlAmt = hourData ? hourData.prl : 0;
+      const isEst = hourData ? hourData.isEst : false;
+      const isActive = prlAmt > 0;
       const bucketCost = isActive ? cost : 0;
-      buckets.push({ label, start: start - WIB_OFFSET, end: start + 3600 - WIB_OFFSET, my_blocks: blkCount, cost: bucketCost, is_active: isActive });
+      buckets.push({
+        label, start: hourEpoch, end: hourEpoch + 3600,
+        cost: bucketCost, is_active: isActive, is_est: isEst,
+        prl_amount: prlAmt,
+        actual_revenue: prlAmt * prlPrice
+      });
     }
-    
-    const totalPeriodBlocks = buckets.reduce((s, b) => s + b.my_blocks, 0);
-    const prlPerBlock = totalPeriodBlocks > 0 && isActivelyMining ? totalEarnedPrl / totalPeriodBlocks : 0;
-    const revenuePerBlock = totalPeriodBlocks > 0 && isActivelyMining ? totalRevenue / totalPeriodBlocks : 0;
-    
+
     for (const b of buckets) {
-      b.prl_amount = b.my_blocks * prlPerBlock;
-      b.actual_revenue = b.my_blocks * revenuePerBlock;
       b.actual_pl = b.actual_revenue - b.cost;
     }
 
@@ -885,15 +889,12 @@ async function refresh() {
     hbody.innerHTML = rowsToShow.map(b => {
       const isCurrent = b === buckets[buckets.length - 1];
       const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
-      const blkCount = b.my_blocks || 0;
-      const blkLabel = blkCount > 0 ? String(blkCount) : "—";
       const offlineRowCls = !b.is_active ? "opacity-50" : "";
       const rev = b.actual_revenue || 0;
       const prlAmt = b.prl_amount || 0;
       return '<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ' + (isCurrent ? "bg-emerald-950/20" : "") + " " + offlineRowCls + '">' +
         '<td class="px-3 py-2 text-xs ' + (isCurrent ? "text-emerald-400" : "text-slate-300") + ' font-mono-num">' + b.label + (isCurrent ? " ◀" : "") + '</td>' +
-        '<td class="px-3 py-2 text-xs ' + (blkCount > 0 ? "text-yellow-400" : "text-slate-700") + ' font-mono-num text-right">' + blkLabel + '</td>' +
-        '<td class="px-3 py-2 text-xs ' + (prlAmt > 0.001 ? "text-emerald-400" : "text-slate-700") + ' font-mono-num text-right">' + (prlAmt > 0 ? fmtNum(prlAmt, 2) : "—") + '</td>' +
+        '<td class="px-3 py-2 text-xs ' + (prlAmt > 0.001 ? "text-emerald-400" : "text-slate-700") + ' font-mono-num text-right">' + (prlAmt > 0 ? fmtNum(prlAmt, 4) : "—") + '</td>' +
         '<td class="px-3 py-2 text-xs ' + (rev > 0.01 ? "text-emerald-400" : "text-slate-700") + ' font-mono-num text-right">' + (rev > 0 ? "$" + rev.toFixed(2) : "—") + '</td>' +
         '<td class="px-3 py-2 text-xs ' + (b.cost > 0.01 ? "text-red-400" : "text-slate-700") + ' font-mono-num text-right">' + (b.is_active ? "$" + b.cost.toFixed(2) : "—") + '</td>' +
         '<td class="px-3 py-2 text-xs ' + aCls + ' font-mono-num font-bold text-right">' + fmtPL(b.actual_pl) + '</td>' +
