@@ -566,10 +566,11 @@ let blocksPage = 1;
 let _blocksAll = [];
 let _apiNow = 0;
 
-// Convert API created_at to UTC timestamp
+// Convert API created_at (ISO 8601 with timezone) to UTC timestamp
 function apiTimeToUTC(dateStr) {
   if (!dateStr) return 0;
-  return Math.floor(new Date(dateStr.replace(" ","T") + "Z").getTime() / 1000) - 7 * 3600;
+  const ms = new Date(dateStr).getTime();
+  return isNaN(ms) ? 0 : Math.floor(ms / 1000);
 }
 // Display age using API clock
 function fmtAgeApi(apiTs) {
