@@ -559,18 +559,18 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
     </div>
   </div>
   <div class="overflow-x-auto">
-    <table class="w-full text-sm">
+    <table class="w-full text-sm" style="table-layout: fixed;">
       <thead class="bg-[#0a0f1a] text-[10px] text-slate-600 uppercase tracking-wider">
         <tr>
-          <th class="px-3 py-2 text-left" data-i18n="th_hour">Hour</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_credit_prl">PRL</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_revenue">Revenue</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_cost">Cost</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_pl">P/L</th>
+          <th class="px-2 py-2 text-left w-14" data-i18n="th_hour">Hour</th>
+          <th class="px-2 py-2 text-right w-20" data-i18n="th_credit_prl">PRL</th>
+          <th class="px-2 py-2 text-right w-16" data-i18n="th_revenue">Rev</th>
+          <th class="px-2 py-2 text-right w-16" data-i18n="th_cost">Cost</th>
+          <th class="px-2 py-2 text-right w-20" data-i18n="th_pl">P/L</th>
         </tr>
       </thead>
       <tbody id="hourly-body">
-        <tr><td colspan="7" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
+        <tr><td colspan="5" class="px-5 py-6 text-center text-xs text-slate-600" data-i18n="loading">Loading...</td></tr>
       </tbody>
     </table>
   </div>

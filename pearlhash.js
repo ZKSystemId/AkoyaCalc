@@ -1009,24 +1009,17 @@ async function refresh() {
     hbody.innerHTML = rowsToShow.map(b => {
       const isCurrent = (now >= b.start && now < b.end);
       const aCls = b.actual_pl > 0.01 ? "profit" : b.actual_pl < -0.01 ? "loss" : "neutral";
-      // Pearlhash: my_blocks count (synthesized from epoch credits) → epoch count, my_reward → credit PRL
-      const epochCount = b.my_blocks || 0;
       const creditPRL = b.my_reward || 0;
-      const epochLabel = epochCount > 0 ? `${epochCount}×` : "—";
       const offlineRowCls = !b.is_active ? "opacity-50" : "";
       const revenue = b.actual_revenue || 0;
-      const revText = revenue > 0.001 ? "$" + fmtNum(revenue, revenue < 1 ? 3 : 2) : "—";
+      const revText = revenue > 0.001 ? "$" + fmtNum(revenue, 2) : "—";
       const revColor = revenue > 0.001 ? "text-emerald-400" : "text-slate-700";
-      const hrText = (b.hashrate || 0) > 0 ? fmtHash(b.hashrate) : "—";
-      const hrColor = (b.hashrate || 0) > 0 ? "text-cyan-300" : "text-slate-700";
       return `<tr class="border-t border-slate-800/40 hover:bg-slate-900/30 ${isCurrent ? "bg-cyan-950/20" : ""} ${offlineRowCls}">
-        <td class="px-3 py-2 text-xs ${isCurrent ? "text-cyan-400" : "text-slate-300"} font-mono-num">${b.label}${isCurrent ? " ◀" : ""}</td>
-        <td class="px-3 py-2 text-xs ${hrColor} font-mono-num text-right">${hrText}</td>
-        <td class="px-3 py-2 text-xs ${epochCount > 0 ? "text-purple-400" : "text-slate-700"} font-mono-num text-right">${epochLabel}</td>
-        <td class="px-3 py-2 text-xs ${creditPRL > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right">${creditPRL > 0 ? fmtNum(creditPRL, 4) : "—"}</td>
-        <td class="px-3 py-2 text-xs ${revColor} font-mono-num text-right">${revText}</td>
-        <td class="px-3 py-2 text-xs ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
-        <td class="px-3 py-2 text-xs ${aCls} font-mono-num font-bold text-right">${fmtPL(b.actual_pl)}</td>
+        <td class="px-2 py-1.5 text-[11px] ${isCurrent ? "text-cyan-400" : "text-slate-300"} font-mono-num whitespace-nowrap overflow-hidden text-ellipsis">${b.label}${isCurrent ? " ◀" : ""}</td>
+        <td class="px-2 py-1.5 text-[11px] ${creditPRL > 0 ? "text-cyan-400" : "text-slate-500"} font-mono-num text-right whitespace-nowrap overflow-hidden text-ellipsis">${creditPRL > 0 ? fmtNum(creditPRL, 4) : "—"}</td>
+        <td class="px-2 py-1.5 text-[11px] ${revColor} font-mono-num text-right whitespace-nowrap overflow-hidden text-ellipsis">${revText}</td>
+        <td class="px-2 py-1.5 text-[11px] ${b.cost > 0.01 ? "text-red-400" : "text-slate-700"} font-mono-num text-right whitespace-nowrap overflow-hidden text-ellipsis">${b.is_active ? "$" + b.cost.toFixed(2) : "—"}</td>
+        <td class="px-2 py-1.5 text-[11px] ${aCls} font-mono-num font-bold text-right whitespace-nowrap overflow-hidden text-ellipsis">${fmtPL(b.actual_pl)}</td>
       </tr>`;
     }).join("");
 
