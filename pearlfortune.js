@@ -791,12 +791,12 @@ async function refresh() {
     // ====================================================
     // P/L HERO
     // ====================================================
-    setText("total-pl-big", fmtPL(totalPL));
-    setClass("total-pl-big", totalPL > 0.01 ? "profit" : totalPL < -0.01 ? "loss" : "neutral");
+    setText("total-pl-big", fmtPL(periodPL));
+    setClass("total-pl-big", periodPL > 0.01 ? "profit" : periodPL < -0.01 ? "loss" : "neutral");
     setText("total-pl-period", t("period_" + currentPeriod));
-    setText("total-revenue", "$" + fmtNum(totalRevenue, 2));
-    setText("total-cost", "$" + fmtNum(totalCost, 2));
-    setText("total-prl", fmtNum(totalEarnedPrl, 2) + " PRL");
+    setText("total-revenue", "$" + fmtNum(periodTotalRevenue, 2));
+    setText("total-cost", "$" + fmtNum(periodTotalCost, 2));
+    setText("total-prl", fmtNum(periodTotalPrl, 2) + " PRL");
     setText("chart-axis-start", t("ago_" + currentPeriod));
 
     // ====================================================
@@ -885,6 +885,12 @@ async function refresh() {
     for (const b of buckets) {
       b.actual_pl = b.actual_revenue - b.cost;
     }
+
+    // Period totals (from buckets, not all-time)
+    const periodTotalPrl = buckets.reduce((s, b) => s + (b.prl_amount || 0), 0);
+    const periodTotalRevenue = buckets.reduce((s, b) => s + (b.actual_revenue || 0), 0);
+    const periodTotalCost = buckets.reduce((s, b) => s + (b.cost || 0), 0);
+    const periodPL = periodTotalRevenue - periodTotalCost;
 
     // Hourly table (newest first)
     const hbody = document.getElementById("hourly-body");
