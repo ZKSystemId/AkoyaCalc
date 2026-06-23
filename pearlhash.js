@@ -945,25 +945,32 @@ async function refresh() {
     for (const b of buckets) {
       const costEnd = Math.min(b.end, now);
       const isPast = costEnd > b.start;
-      // Pearlhash: charge cost only when mining is ACTUALLY happening.
-      // Current bucket: check if workers are genuinely active (last_seen_at within 15min).
-      // Past buckets: only charge if there's mining evidence (epoch credit/blocks).
-      // This prevents stale connected_workers data from charging all buckets.
-      const freshWorkerThreshold = 900; // 15 min
+      const freshWorkerThreshold = 900;
       const hasFreshWorkers = (workers || []).some(w => {
         const ls = w.last_seen_at || w.last_share_at || 0;
         return ls > 0 && (now - ls) < freshWorkerThreshold;
       });
       const isCurrentBucket = (now >= b.start && now < b.end);
+      const isDaily = (b.end - b.start) > 7200; // >2 hours = daily bucket
       let isActive;
       if (isCurrentBucket) {
-        // Current bucket: charge if workers active OR if time has passed today (for daily view)
-        isActive = hasFreshWorkers || (isPast && (now - b.start) > 600); // >10 min into the day
+        isActive = hasFreshWorkers || (isPast && (now - b.start) > 600);
       } else {
-        // Past buckets: charge only if there's actual mining evidence in this bucket
         isActive = isPast && ((b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0);
       }
-      const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
+
+      let bucketCost = 0;
+      if (isActive) {
+        if (isDaily && !isCurrentBucket) {
+          // Past daily bucket: charge only for hours with mining evidence
+          // Each epoch credit ≈ 1 hour of mining
+          const activeHours = Math.max(1, Math.min(24, b.my_blocks || 1));
+          bucketCost = activeHours * cost;
+        } else {
+          // Hourly bucket or current day: charge based on actual time range
+          bucketCost = costAdv.costInRange(b.start, costEnd, cost);
+        }
+      }
       // Pearlhash: revenue from epoch credit (my_reward)
       const revenue = (b.my_reward || 0) * prlPrice;
       b.cost = bucketCost;
