@@ -741,7 +741,8 @@ async function refresh() {
       ...pendingRows.map(r => r.created_at ? apiTimeToUTC(r.created_at) : 0),
     ].filter(ts => ts > 0).sort((a, b) => a - b);
     const miningSinceTs = allShareTimestamps.length > 0 ? allShareTimestamps[0] : null;
-    const isActivelyMining = isOnline || recentShareTimestamps.length > 0;
+    // Only actively mining if there are fresh shares in the last hour (not just stale API worker data)
+    const isActivelyMining = recentShareTimestamps.length > 0;
     const hoursActive = miningSinceTs ? Math.max(0.01, (nowSec - miningSinceTs) / 3600) : 0;
 
     // ====================================================
@@ -842,6 +843,14 @@ async function refresh() {
       if (ts > hourTsMap[key].max) hourTsMap[key].max = ts;
     }
     
+    // Build fresh share timestamps per WIB hour (for determining which hours are ACTIVELY mined)
+    const freshSharesPerHour = {};
+    for (const ts of recentShareTimestamps) {
+      const wibTs = ts + WIB_OFFSET;
+      const h = Math.floor(wibTs / 3600);
+      freshSharesPerHour[h] = (freshSharesPerHour[h] || 0) + 1;
+    }
+
     // Build period hours (24h = last 24 hours in WIB)
     const periodHours = currentPeriod === "1h" ? 1 : currentPeriod === "6h" ? 6 : currentPeriod === "12h" ? 12 : 24;
     const buckets = [];
@@ -851,8 +860,10 @@ async function refresh() {
       const label = String(wibH).padStart(2, "0") + ":00";
       const blkCount = hourBlockCounts[label] || 0;
       const isCurrent = (i === 0);
-      const isActive = isCurrent ? hasFreshWorkers : (blkCount > 0);
-      // Cost: full hourly cost if active
+      const hourEpoch = Math.floor(start / 3600);
+      // Active = has fresh shares in this hour (not just historical blocks)
+      const isActive = isCurrent ? isActivelyMining : (freshSharesPerHour[hourEpoch] > 0);
+      // Cost: full hourly cost only if actively mining this hour
       const bucketCost = isActive ? cost : 0;
       buckets.push({ label, start: start - WIB_OFFSET, end: start + 3600 - WIB_OFFSET, my_blocks: blkCount, cost: bucketCost, is_active: isActive });
     }
