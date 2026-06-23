@@ -957,10 +957,10 @@ async function refresh() {
       const isCurrentBucket = (now >= b.start && now < b.end);
       let isActive;
       if (isCurrentBucket) {
-        // Current hour: charge only if workers are actively mining NOW
-        isActive = hasFreshWorkers;
+        // Current bucket: charge if workers active OR if time has passed today (for daily view)
+        isActive = hasFreshWorkers || (isPast && (now - b.start) > 600); // >10 min into the day
       } else {
-        // Past hours: charge only if there's actual mining evidence in this bucket
+        // Past buckets: charge only if there's actual mining evidence in this bucket
         isActive = isPast && ((b.my_blocks || 0) > 0 || (b.my_reward || 0) > 0);
       }
       const bucketCost = isActive ? costAdv.costInRange(b.start, costEnd, cost) : 0;
