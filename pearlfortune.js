@@ -723,10 +723,11 @@ async function refresh() {
     // ====================================================
     // EARNINGS — DIRECT FROM API, NO ESTIMATION
     // ====================================================
+    const balanceAtomic = (miner.balance && miner.balance.balance_atomic) || 0;
+    const totalEarnedPrl = balanceAtomic / ATOMIC_UNITS;
     const pendingGross = pendingEstimateAtomic > 0 ? pendingEstimateAtomic / ATOMIC_UNITS : 0;
     const pendingPrl = pendingGross * (1 - POOL_FEE);
     const maturedPrl = creditsList.reduce((s, cr) => s + (cr.amount_atomic || 0), 0) / ATOMIC_UNITS;
-    const totalEarnedPrl = pendingPrl + maturedPrl;
 
     // ====================================================
     // ACTIVE MINING SESSION — only count recent shares
