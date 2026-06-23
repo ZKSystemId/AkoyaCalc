@@ -1,7 +1,10 @@
 /**
- * period.js — Hourly period buckets.
+ * period.js — Hourly/daily period buckets.
  *
- * Periods: 1h / 6h / 12h / 24h — always hourly granularity, N buckets ending at current hour.
+ * Periods: 1h / 6h / 12h / 24h / 3d / 7d
+ * - 1h-24h: hourly granularity
+ * - 3d: hourly granularity (72 buckets)
+ * - 7d: daily granularity (7 buckets)
  *
  * Each bucket: { start (utc-sec), end, label }
  */
@@ -9,19 +12,39 @@
   "use strict";
 
   const WIB_OFFSET = 7 * 3600;
-  const PERIODS = ["1h", "6h", "12h", "24h"];
-  const PERIOD_HOURS = { "1h": 1, "6h": 6, "12h": 12, "24h": 24 };
+  const PERIODS = ["1h", "6h", "12h", "24h", "3d", "7d"];
+  const PERIOD_HOURS = { "1h": 1, "6h": 6, "12h": 12, "24h": 24, "3d": 72, "7d": 168 };
 
   function fmtHour(ts) {
     const d = new Date(ts * 1000);
     return String((d.getUTCHours() + 7) % 24).padStart(2, "0") + ":00";
   }
 
-  // Build hourly skeleton — array oldest→newest, length = N hours.
+  function fmtDay(ts) {
+    const d = new Date((ts + WIB_OFFSET) * 1000);
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const mon = String(d.getUTCMonth() + 1).padStart(2, "0");
+    return mon + "/" + day;
+  }
+
+  // Build skeleton — hourly for 1h-3d, daily for 7d
   function buildSkeleton(period) {
-    const n = PERIOD_HOURS[period] || 24;
     const now = Math.floor(Date.now() / 1000);
     const cur = Math.floor(now / 3600) * 3600;
+
+    if (period === "7d") {
+      // Daily buckets: 7 days, each bucket = 24h aligned to WIB midnight
+      const curDayStart = Math.floor((now + WIB_OFFSET) / 86400) * 86400 - WIB_OFFSET;
+      const buckets = [];
+      for (let i = 6; i >= 0; i--) {
+        const start = curDayStart - (i * 86400);
+        buckets.push({ start, end: start + 86400, label: fmtDay(start) });
+      }
+      return { buckets, periodStart: buckets[0].start, granularity: "day", hours: 168 };
+    }
+
+    // Hourly buckets for 1h, 6h, 12h, 24h, 3d
+    const n = PERIOD_HOURS[period] || 24;
     const buckets = [];
     for (let i = n - 1; i >= 0; i--) {
       const start = cur - (i * 3600);
@@ -64,7 +87,7 @@
   global.Period = {
     PERIODS, PERIOD_HOURS, WIB_OFFSET,
     buildSkeleton, findIdx,
-    fmtHour,
+    fmtHour, fmtDay,
     paginate, renderPagination,
   };
 })(typeof window !== "undefined" ? window : this);

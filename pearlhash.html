@@ -323,7 +323,7 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 /* Hero brand smaller */
 .hero-title { line-height: 1; }
 </style>
-<script src="assets/period.js?v=42"></script>
+<script src="assets/period.js?v=43"></script>
 <script src="assets/cost-adv.js?v=42"></script>
 <script src="assets/spa.js?v=42"></script>
 </head>
@@ -544,16 +544,18 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 
 <!-- Hourly Breakdown (table first, then chart) -->
 <div class="bg-[#0f1420] border border-[#162032] rounded-lg overflow-hidden card-glow mb-6">
-  <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between flex-wrap gap-2">
+  <div class="px-5 py-3 border-b border-[#162032] flex items-center justify-between gap-3">
     <div class="flex items-center gap-3">
       <h2 id="chart-title" class="text-xs font-medium text-slate-300 uppercase tracking-wider" data-i18n="hourly_breakdown">Hourly Breakdown</h2>
       <span id="period-loading" class="text-[10px] text-cyan-500 hidden">loading…</span>
     </div>
-    <div id="period-selector" class="flex items-center gap-1 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
-      <button data-period="1h"  class="period-btn text-[11px] px-2.5 py-1 rounded">1H</button>
-      <button data-period="6h"  class="period-btn text-[11px] px-2.5 py-1 rounded">6H</button>
-      <button data-period="12h" class="period-btn text-[11px] px-2.5 py-1 rounded">12H</button>
-      <button data-period="24h" class="period-btn active text-[11px] px-2.5 py-1 rounded">24H</button>
+    <div id="period-selector" class="flex items-center gap-0.5 bg-[#080b14] rounded-md p-0.5 border border-[#1f2937]">
+      <button data-period="1h"  class="period-btn text-[10px] px-2 py-0.5 rounded">1H</button>
+      <button data-period="6h"  class="period-btn text-[10px] px-2 py-0.5 rounded">6H</button>
+      <button data-period="12h" class="period-btn text-[10px] px-2 py-0.5 rounded">12H</button>
+      <button data-period="24h" class="period-btn active text-[10px] px-2 py-0.5 rounded">24H</button>
+      <button data-period="3d"  class="period-btn text-[10px] px-2 py-0.5 rounded">3D</button>
+      <button data-period="7d"  class="period-btn text-[10px] px-2 py-0.5 rounded">7D</button>
     </div>
   </div>
   <div class="overflow-x-auto">
@@ -561,8 +563,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
       <thead class="bg-[#0a0f1a] text-[10px] text-slate-600 uppercase tracking-wider">
         <tr>
           <th class="px-3 py-2 text-left" data-i18n="th_hour">Hour</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_hr">HR</th>
-          <th class="px-3 py-2 text-right" data-i18n="th_epoch">Epoch</th>
           <th class="px-3 py-2 text-right" data-i18n="th_credit_prl">PRL</th>
           <th class="px-3 py-2 text-right" data-i18n="th_revenue">Revenue</th>
           <th class="px-3 py-2 text-right" data-i18n="th_cost">Cost</th>
@@ -851,6 +851,6 @@ tbody tr { animation: fadeIn 0.3s ease-out backwards; }
 </div><!-- /max-w wrap -->
 </div><!-- /app-shell -->
 
-<script src="pearlhash.js?v=42"></script>
+<script src="pearlhash.js?v=43"></script>
 </body>
 </html>
