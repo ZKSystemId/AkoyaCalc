@@ -610,6 +610,7 @@ async function fetchPFBlocks() { return fetchWithProxyFallback(`${API}/blocks?li
 async function fetchPFCredits(wallet) { return fetchWithProxyFallback(`${API}/miners/${wallet}/credits?limit=200`, 10000).catch(() => ({credits:[]})); }
 async function fetchPFShares(wallet) { return fetchWithProxyFallback(`${API}/miners/${wallet}/shares?limit=500`, 10000).catch(() => ({rows:[]})); }
 async function fetchPFConfig() { return fetchWithProxyFallback(`${API}/config`, 6000).catch(() => ({})); }
+async function fetchPFLedger(wallet, page) { return fetchWithProxyFallback(`${API}/miners/${wallet}/ledger?limit=100&page=${page}`, 10000).catch(() => ({entries:[]})); }
 
 function parseHashStr(s) {
   if (!s || typeof s !== "string") return 0;
@@ -647,7 +648,7 @@ async function refresh() {
   window._lastWallet = wallet;
 
   try {
-    const [summaryResp, minerResp, connectionsResp, blocksResp, configResp, creditsResp, sharesResp] = await Promise.all([
+    const [summaryResp, minerResp, connectionsResp, blocksResp, configResp, creditsResp, sharesResp, ledgerResp] = await Promise.all([
       fetchPFSummary(),
       fetchPFMiner(wallet),
       fetchPFConnections(wallet),
@@ -655,6 +656,7 @@ async function refresh() {
       fetchPFConfig(),
       fetchPFCredits(wallet),
       fetchPFShares(wallet),
+      fetchPFLedger(wallet, 1),
     ]);
 
     // Unwrap proxy wrapper
@@ -723,8 +725,9 @@ async function refresh() {
     // ====================================================
     // EARNINGS — DIRECT FROM API, NO ESTIMATION
     // ====================================================
-    const balanceAtomic = (miner.balance && miner.balance.balance_atomic) || 0;
-    const totalEarnedPrl = balanceAtomic / ATOMIC_UNITS;
+    const ledgerData = (ledgerResp && ledgerResp.data) || ledgerResp || {};
+    const totalEarnedPrl = parseFloat(ledgerData.sum_credit_amount_coin || 0);
+    const totalPaidPrl = parseFloat(ledgerData.sum_payout_amount_coin || 0);
     const pendingGross = pendingEstimateAtomic > 0 ? pendingEstimateAtomic / ATOMIC_UNITS : 0;
     const pendingPrl = pendingGross * (1 - POOL_FEE);
     const maturedPrl = creditsList.reduce((s, cr) => s + (cr.amount_atomic || 0), 0) / ATOMIC_UNITS;
