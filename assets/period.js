@@ -46,7 +46,7 @@
     // Hourly buckets for 1h, 6h, 12h, 24h, 3d
     const n = PERIOD_HOURS[period] || 24;
     const buckets = [];
-    for (let i = n - 1; i >= 0; i--) {
+    for (let i = n; i >= 1; i--) {
       const start = cur - (i * 3600);
       buckets.push({ start, end: start + 3600, label: fmtHour(start) });
     }
