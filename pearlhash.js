@@ -732,11 +732,15 @@ async function refresh() {
     const pendingRewards = account.pending_rewards || { total_pending: 0, epochs: [] };
 
     // myEpochBlocks: gabungan dari (a) historical balance_transactions credits + (b) live pending_rewards.epochs
+    // FILTER: hanya ambil credits yang transaction time-nya ada di periode yang dipilih
+    const periodStartTs = buckets.length > 0 ? buckets[0].start : 0;
     const myEpochBlocks = [];
     const payouts = [];
     for (const tx of txs) {
       const ts = (tx.timestamp || 0) / 1000;
       if (tx.amount > 0 && /credit/i.test(tx.reason || "")) {
+        // Skip credits yang transaction time-nya sebelum periode dimulai
+        if (ts < periodStartTs) continue;
         const m = (tx.reason || "").match(/Epoch (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC/);
         const epochStart = m ? Math.floor(new Date(m[1] + " UTC").getTime() / 1000) : Math.floor(ts);
         myEpochBlocks.push({
