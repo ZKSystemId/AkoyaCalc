@@ -817,7 +817,7 @@ async function refresh() {
     const _netHash = chain.networkhashps || 0;
     const _blockTime = chain.avg_block_time_s || 124;
     const _BLOCK_REWARD = 2715;
-    const _POOL_FEE = 0.01;
+    const _POOL_FEE = 0; // API data already net (1% deducted by pool)
     let myHashEst = 0;
     // PRIMARY: live worker hashrate (this is what pearlhash.xyz shows on /account/<wallet>)
     for (const w of workers) {
