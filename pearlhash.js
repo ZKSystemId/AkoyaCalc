@@ -733,7 +733,8 @@ async function refresh() {
 
     // myEpochBlocks: gabungan dari (a) historical balance_transactions credits + (b) live pending_rewards.epochs
     // FILTER: hanya ambil credits yang transaction time-nya ada di periode yang dipilih
-    const periodStartTs = buckets.length > 0 ? buckets[0].start : 0;
+    const periodHours = currentPeriod === "1h" ? 1 : currentPeriod === "6h" ? 6 : currentPeriod === "12h" ? 12 : 24;
+    const periodStartTs = Math.floor(Date.now() / 1000 / 3600) * 3600 - (periodHours * 3600);
     const myEpochBlocks = [];
     const payouts = [];
     for (const tx of txs) {
